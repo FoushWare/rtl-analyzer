@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "generatedStyleOwner": "mui-generated",
+  "ownership": { "css": "custom-css" },
+  "approvals": [],
+  "exceptions": [],
+  "issueBindings": [],
+  "dynamicExceptions": [],
+  "roles": [],
+  "ownerOverrides": [
+    { "path": "apps/x/src/a.css", "context": "stylesheet/.x", "owner": "custom-css", "reason": "Fixture only" },
+    { "path": "apps/x/src/a.css", "context": "stylesheet/.x", "owner": "unknown", "reason": "Conflicting fixture only" }
+  ]
+}

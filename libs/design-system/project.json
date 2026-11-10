@@ -1,0 +1,6 @@
+{
+  "name": "design-system",
+  "projectType": "library",
+  "sourceRoot": "libs/design-system/src",
+  "tags": ["scope:shared", "type:ui"]
+}

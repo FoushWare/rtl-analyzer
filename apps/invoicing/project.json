@@ -1,0 +1,6 @@
+{
+  "name": "invoicing",
+  "projectType": "application",
+  "sourceRoot": "apps/invoicing/src",
+  "tags": ["scope:invoicing", "type:app"]
+}

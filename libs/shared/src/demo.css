@@ -1,0 +1,18 @@
+/* Only the opt-in demonstration controls; no legacy component selectors. */
+.atlas-demo-controls {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff3d4;
+  color: #594110;
+  border-bottom: 1px solid #d5b665;
+  font-size: 12px;
+}
+.atlas-demo-controls label { white-space: nowrap; }
+.atlas-demo-controls select { font: inherit; padding: 4px; }

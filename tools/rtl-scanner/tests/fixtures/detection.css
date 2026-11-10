@@ -1,0 +1,4 @@
+.logo { display: flex; }
+.months { display: flex; padding-left: 20px; }
+.main { margin-left: 200px; }
+.kpi { position: absolute; right: 10px; }

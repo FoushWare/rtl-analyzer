@@ -1,0 +1,28 @@
+{
+  "name": "rtl-scanner",
+  "projectType": "library",
+  "sourceRoot": "tools/rtl-scanner/src",
+  "tags": [
+    "type:tooling"
+  ],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p tools/rtl-scanner/tsconfig.typecheck.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --config tools/rtl-scanner/vitest.config.ts"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p tools/rtl-scanner/tsconfig.json"
+      }
+    }
+  }
+}

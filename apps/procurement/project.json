@@ -1,0 +1,6 @@
+{
+  "name": "procurement",
+  "projectType": "application",
+  "sourceRoot": "apps/procurement/src",
+  "tags": ["scope:procurement", "type:app"]
+}
