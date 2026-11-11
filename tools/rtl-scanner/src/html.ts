@@ -1,5 +1,7 @@
 import { parse } from "parse5";
 import { fact, range, type Diagnostic, type Evidence } from "./model.js";
+import { extractTailwind } from './tailwind.js';
+import { extractBootstrap } from './bootstrap.js';
 export function extractHtml(path: string, text: string) {
   const evidence: Evidence[] = [];
   const diagnostics:Diagnostic[]=[];
@@ -9,6 +11,17 @@ export function extractHtml(path: string, text: string) {
       for (const attr of n.attrs.filter(a => ['dir','lang'].includes(a.name))) {
         const loc = n.sourceCodeLocation?.attrs?.[attr.name];
         if (loc) evidence.push(fact(path,text,'html-root','html',attr.name,attr.value,loc.startOffset,loc.endOffset,'initial-document-attribute'));
+      }
+    }
+    if ('tagName' in n) {
+      for (const attr of n.attrs.filter(a => a.name === 'class' || a.name === 'className')) {
+        const loc = n.sourceCodeLocation?.attrs?.[attr.name];
+        if (loc) {
+          const segment = text.slice(loc.startOffset, loc.endOffset);
+          const valueOffset = loc.startOffset + segment.indexOf(attr.value);
+          evidence.push(...extractTailwind(path, text, attr.value, valueOffset, `${n.tagName}`));
+          evidence.push(...extractBootstrap(path, text, attr.value, valueOffset, `${n.tagName}`));
+        }
       }
     }
     if ('childNodes' in n) n.childNodes.forEach(walk);

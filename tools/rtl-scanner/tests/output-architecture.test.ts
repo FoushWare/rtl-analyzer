@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtemp, mkdir, symlink, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, symlink, writeFile, rm, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { planOutputPath, OutputPathError } from '../src/output-path.js';
@@ -24,8 +24,9 @@ describe('Milestone 1 output architecture', () => {
   });
 
   it('plans safe report destinations without filesystem writes', async () => {
-    expect((await planOutputPath('/repo', join(tmpdir(), 'atlas-scan-output.json'), 'json')).format).toBe('json');
-    expect((await planOutputPath('/repo', join(tmpdir(), 'atlas-scan-output.md'), 'markdown')).format).toBe('markdown');
+    const tempRoot = await realpath(tmpdir());
+    expect((await planOutputPath('/repo', join(tempRoot, 'atlas-scan-output.json'), 'json')).format).toBe('json');
+    expect((await planOutputPath('/repo', join(tempRoot, 'atlas-scan-output.md'), 'markdown')).format).toBe('markdown');
   });
 
   it.each(['../scan.json', 'C:/scan.json', '\\\\server\\share\\scan.json', 'apps/a/report.json', 'reports/scan.md', 'reports\\scan.json', ''])('rejects unsafe output path %s', async path => {
@@ -33,8 +34,9 @@ describe('Milestone 1 output architecture', () => {
   });
 
   it('rejects existing destinations and symlinked ancestors read-only', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'atlas-output-'));
-    const external = await mkdtemp(join(tmpdir(), 'atlas-output-external-'));
+    const tempRoot = await realpath(tmpdir());
+    const root = await mkdtemp(join(tempRoot, 'atlas-output-'));
+    const external = await mkdtemp(join(tempRoot, 'atlas-output-external-'));
     try {
       await mkdir(join(root, 'reports'));
       await writeFile(join(root, 'reports', 'existing.json'), '{}');
