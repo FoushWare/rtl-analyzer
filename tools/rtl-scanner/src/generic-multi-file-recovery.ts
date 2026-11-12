@@ -5,12 +5,13 @@ import type { ProjectIdentity } from './generic-authorization.js';
 import { projectIdentityDigest } from './generic-authorization.js';
 import { GenericRecordStore, type PersistedRecord } from './generic-persistence.js';
 import type { TrustedRoot } from './generic-trusted-root.js';
+import { openSecureRead } from './secure-file-access.js';
 
 export type MultiRecoveryStatus = 'PREPARED' | 'APPLYING' | 'PARTIAL_APPLY' | 'APPLIED' | 'PARTIAL_ROLLBACK' | 'ROLLED_BACK' | 'RECOVERY_REQUIRED' | 'ROLLBACK_CONFLICT' | 'CORRUPTED_RECORD' | 'UNSUPPORTED_STATE';
 export interface MultiFileRecoveryFile { readonly path: string; readonly state: string; readonly progressState: string; readonly currentDigest?: string; readonly originalDigest: string; readonly candidateDigest: string; readonly backupValid: boolean; readonly reason?: string; }
 export interface MultiFileRecoveryAssessment { readonly transactionId: string; readonly status: MultiRecoveryStatus; readonly files: readonly MultiFileRecoveryFile[]; readonly reason: string; }
 const sha = (value: string) => createHash('sha256').update(value).digest('hex');
-const readNoFollow = async (path: string): Promise<string> => { const handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0)); try { return await handle.readFile('utf8'); } finally { await handle.close(); } };
+const readNoFollow = async (path: string): Promise<string> => { const handle = await openSecureRead(path); try { return await handle.readFile('utf8'); } finally { await handle.close(); } };
 
 export class GenericMultiFileRecoveryService {
   constructor(private readonly root: TrustedRoot, private readonly project: ProjectIdentity) {}

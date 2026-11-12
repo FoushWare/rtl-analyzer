@@ -5,13 +5,14 @@ import type { ProjectIdentity } from './generic-authorization.js';
 import { projectIdentityDigest } from './generic-authorization.js';
 import { GenericRecordStore, type PersistedRecord } from './generic-persistence.js';
 import type { TrustedRoot } from './generic-trusted-root.js';
+import { openSecureRead } from './secure-file-access.js';
 
 export type GenericRecoveryStatus = 'COMMITTED' | 'ROLLED_BACK' | 'RECOVERY_REQUIRED' | 'ROLLBACK_CONFLICT' | 'CORRUPTED_RECORD' | 'UNSUPPORTED_STATE';
 export interface GenericRecoveryAssessment { readonly transactionId: string; readonly status: GenericRecoveryStatus; readonly projectIdentityDigest?: string; readonly sourcePath?: string; readonly currentDigest?: string; readonly originalDigest?: string; readonly candidateDigest?: string; readonly backupDigest?: string; readonly receiptPresent: boolean; readonly journalStates: readonly string[]; readonly reason: string; }
 export class GenericRecoveryRejected extends Error { constructor(readonly code: string) { super(code); } }
 const sha = (value: string) => createHash('sha256').update(value).digest('hex');
 const stateRank: Record<string, number> = { Prepared: 1, Applying: 2, Applied: 3, Failed: 4, 'Recovery Required': 5, 'Rolled Back': 6 };
-const readNoFollow = async (path: string): Promise<string> => { const handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0)); try { return await handle.readFile('utf8'); } finally { await handle.close(); } };
+const readNoFollow = async (path: string): Promise<string> => { const handle = await openSecureRead(path); try { return await handle.readFile('utf8'); } finally { await handle.close(); } };
 
 export class GenericRecoveryService {
   constructor(private readonly root: TrustedRoot, private readonly project: ProjectIdentity) {}

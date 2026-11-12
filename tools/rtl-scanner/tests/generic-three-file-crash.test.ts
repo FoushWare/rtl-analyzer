@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it as vitestIt } from 'vitest';
 import { fork, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -11,6 +11,18 @@ import { createGenericAuthorization } from '../src/generic-authorization.js';
 import { TrustedRoot } from '../src/generic-trusted-root.js';
 import { GenericMultiFileApplyService, GenericMultiFileRollbackService, GENERIC_MULTI_APPLY_CONFIRMATION, GENERIC_MULTI_ROLLBACK_CONFIRMATION } from '../src/generic-multi-file-transaction.js';
 import type { Finding } from '../src/model.js';
+
+const posixOnlyTests = new Set([
+  'R1/R2 uses the single durable pre-restoration boundary',
+  'R3 restores exactly the first reverse-order file',
+  'R4 restores exactly the first two reverse-order files',
+  'R5 never infers completion from three restored files',
+  'R6 reports completed rollback after fresh-process recovery',
+]);
+
+const it = (name: string, fn: () => unknown) => process.platform === 'win32' && posixOnlyTests.has(name)
+  ? vitestIt.skip(`${name} (POSIX secure access; Windows fail-closed contract covered separately)`, fn)
+  : vitestIt(name, fn);
 
 const worker = join(process.cwd(), 'tools/rtl-scanner/tests/fixtures/generic-crash-worker.mjs');
 const make = (path: string, source: string) => { const original = 'margin-left'; const offset = source.indexOf(original); const finding: Finding = { id: 'three:' + path, ruleId: 'RTL.CSS.PHYSICAL', ruleVersion: 1, category: 'MANUAL_REVIEW', severity: 'Minor', confidence: 'High', title: 'physical', sourceMechanism: 'css', applications: [], path, range: { start: { offset, line: 1, column: offset + 1 }, end: { offset: offset + original.length, line: 1, column: offset + original.length + 1 } }, original, context: '.x', ownership: 'custom-css', rationale: 'r', treatment: 't', evidenceIds: [], relatedLocations: [], issueIds: [], suggestion: null, limitation: 'l' }; return createFixProposal(finding, source, [{ path, startOffset: offset, endOffset: offset + original.length, expectedText: original, replacement: 'margin-inline-start' }], { inputDigest: 'input', policyDigest: 'policy', transformationId: 'three-css', transformationVersion: 1 }); };

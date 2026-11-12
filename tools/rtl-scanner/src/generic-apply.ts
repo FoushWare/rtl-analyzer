@@ -14,6 +14,7 @@ import { GenericRecordStore } from './generic-persistence.js';
 import { createGenericAuthorization, assertGenericAuthorizationCurrent, type GenericAuthorization, type ProjectIdentity } from './generic-authorization.js';
 import { createTransactionJournal, transitionTransaction, type GenericTransactionJournal } from './generic-transaction-journal.js';
 import type { TrustedRoot } from './generic-trusted-root.js';
+import { assertSecureFileAccessSupported, openSecureRead } from './secure-file-access.js';
 
 export const GENERIC_APPLY_CONFIRMATION = 'GENERIC_APPLY_CONFIRMED';
 export interface GenericApplyPolicy { readonly confirmation: string; readonly allowHardLinks?: boolean; }
@@ -23,14 +24,15 @@ export interface GenericApplyReceipt { readonly id: string; readonly transaction
 export class GenericApplyRejected extends Error { constructor(readonly code: string) { super(code); } }
 const sha = (value: string) => createHash('sha256').update(value).digest('hex');
 const integrity = (value: Omit<GenericApplyReceipt, 'integritySha256'>): string => sha(JSON.stringify(value));
-const readNoFollow = async (path: string): Promise<string> => { const handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0)); try { return await handle.readFile('utf8'); } finally { await handle.close(); } };
+const readNoFollow = async (path: string): Promise<string> => { const handle = await openSecureRead(path); try { return await handle.readFile('utf8'); } finally { await handle.close(); } };
 
 async function atomicReplace(path: string, text: string, mode: number): Promise<void> {
   const temporary = `${path}.rtl-generic.${process.pid}.${randomUUID()}.tmp`;
   const handle = await open(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL, mode & 0o777);
   try { await handle.writeFile(text, 'utf8'); await handle.sync(); } finally { await handle.close(); }
   await rename(temporary, path);
-  try { const directory = await open(dirname(path), 'r'); await directory.sync(); await directory.close(); } catch { /* directory sync unavailable */ }
+  let directory: Awaited<ReturnType<typeof open>> | undefined;
+  try { directory = await open(dirname(path), 'r'); await directory.sync(); } catch { /* directory sync unavailable */ } finally { await directory?.close().catch(() => undefined); }
 }
 
 export class GenericApplyService {
@@ -39,6 +41,7 @@ export class GenericApplyService {
   private checkpoint(boundary: GenericApplyBoundary): void { this.hooks.onBoundary?.(boundary); if (this.hooks.failAt === boundary) throw new GenericApplyRejected(`INJECTED_FAILURE:${boundary}`); }
 
   async apply(review: GenericReviewSet, approval: GenericApproval, proposal: FixProposal, evidence: GenericCodeEvidence, authorization: GenericAuthorization, policy: GenericApplyPolicy): Promise<GenericApplyReceipt> {
+    assertSecureFileAccessSupported();
     if (policy.confirmation !== GENERIC_APPLY_CONFIRMATION) throw new GenericApplyRejected('APPLY_CONFIRMATION_REQUIRED');
     if (review.proposals.length !== 1 || proposal.sourcePath !== review.proposals[0]?.sourcePath) throw new GenericApplyRejected('SINGLE_FILE_ONLY');
     assertApprovalCurrent(approval, review);

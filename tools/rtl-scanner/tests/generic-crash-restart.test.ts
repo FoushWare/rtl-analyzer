@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it as vitestIt } from 'vitest';
 import { fork, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -12,6 +12,15 @@ import { TrustedRoot } from '../src/generic-trusted-root.js';
 import { GenericApplyService, GENERIC_APPLY_CONFIRMATION } from '../src/generic-apply.js';
 import { GenericRollbackService, GENERIC_ROLLBACK_CONFIRMATION } from '../src/generic-rollback.js';
 import type { Finding } from '../src/model.js';
+
+const posixOnlyTests = new Set([
+  'discovers Apply interrupted after source replacement in a fresh process',
+  'discovers Rollback interrupted after restoration in a fresh process',
+]);
+
+const it = (name: string, fn: () => unknown) => process.platform === 'win32' && posixOnlyTests.has(name)
+  ? vitestIt.skip(`${name} (POSIX secure access; Windows fail-closed contract covered separately)`, fn)
+  : vitestIt(name, fn);
 
 const worker = join(process.cwd(), 'tools/rtl-scanner/tests/fixtures/generic-crash-worker.mjs');
 const finding = (path: string, source: string): Finding => { const property = 'margin-left'; const start = source.indexOf(property); return { id: `crash:${path}`, ruleId: 'RTL.CSS.PHYSICAL', ruleVersion: 1, category: 'MANUAL_REVIEW', severity: 'Minor', confidence: 'High', title: 'physical', sourceMechanism: 'css', applications: [], path, range: { start: { offset: start, line: 1, column: start + 1 }, end: { offset: start + property.length, line: 1, column: start + property.length + 1 } }, original: property, context: '.x', ownership: 'custom-css', rationale: 'r', treatment: 't', evidenceIds: [], relatedLocations: [], issueIds: [], suggestion: null, limitation: 'l' }; };

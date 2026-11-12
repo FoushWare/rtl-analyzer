@@ -127,8 +127,23 @@ it('finding identities validate shape, rule agreement and duplicates without a n
 it('policy diagnostics have exact CRLF/UTF-16 record positions and deterministic order', () => {
   const p=base();p.ownerOverrides=[{path:'apps/x/src/a.css',context:'missing',owner:'custom-css',reason:'عربي 😀'}];const text=JSON.stringify(p,null,2).replace(/\n/g,'\r\n');const d=auditPolicy(p,text,[],new Map(),[],[])[0];expect(text.slice(d.range.start.offset,d.range.end.offset)).toContain('"reason": "عربي 😀"');expect(d.range.start.column).toBe(5);expect(d).toEqual(auditPolicy(p,text,[],new Map(),[],[])[0]);
 });
-it('malformed JSON and symlink policy input fail safely', async () => {
-  await temporary(base(),async root=>{await writeFile(join(root,'rtl-scanner.config.json'),'{bad');await expect(loadPolicy(root)).rejects.toThrow('POLICY_INVALID_JSON');await rm(join(root,'rtl-scanner.config.json'));await writeFile(join(root,'other.json'),JSON.stringify(base()));await symlink('other.json',join(root,'rtl-scanner.config.json'));await expect(loadPolicy(root)).rejects.toThrow('POLICY_INVALID_PATH');});
+it('malformed JSON and symlink policy input fail safely', async ({ skip }) => {
+  await temporary(base(), async root => {
+    await writeFile(join(root, 'rtl-scanner.config.json'), '{bad');
+    await expect(loadPolicy(root)).rejects.toThrow('POLICY_INVALID_JSON');
+    await rm(join(root, 'rtl-scanner.config.json'));
+    await writeFile(join(root, 'other.json'), JSON.stringify(base()));
+    try {
+      await symlink('other.json', join(root, 'rtl-scanner.config.json'));
+    } catch (error) {
+      if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EPERM') {
+        skip('Windows file symlink fixture requires privileges unavailable in this environment');
+        return;
+      }
+      throw error;
+    }
+    await expect(loadPolicy(root)).rejects.toThrow('POLICY_INVALID_PATH');
+  });
 });
 it('negative JSON fixtures reject broad implied approval and conflicting ownership', async () => {
   for (const [file,code] of [['policy-unknown-field.json','POLICY_INVALID'],['policy-conflicting-owners.json','POLICY_CONFLICT']]) {

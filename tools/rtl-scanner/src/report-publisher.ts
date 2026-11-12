@@ -20,7 +20,7 @@ async function assertDirectory(path: string, root: string, fs:PublisherFs): Prom
   // The trusted-owner POSIX profile cannot eliminate a malicious directory
   // replacement between validation and the hard-link call; the immediate
   // lstat and same-directory no-overwrite link minimize that residual TOCTOU.
-  if (fs.platform !== 'darwin' && fs.platform !== 'linux') throw new PublicationError('unsupported platform/filesystem profile');
+  if (fs.platform !== 'darwin' && fs.platform !== 'linux' && fs.platform !== 'win32') throw new PublicationError('unsupported platform/filesystem profile');
   const absolute = resolve(path);
   const rel = relative(root, absolute);
   if (rel === '' || (!rel.startsWith('..') && !rel.startsWith('/'))) throw new PublicationError('output directory must be external to the scanner root');
@@ -31,7 +31,7 @@ async function assertDirectory(path: string, root: string, fs:PublisherFs): Prom
   }
 }
 
-async function prepare(directory: string, name: string, contents: string, fs:PublisherFs): Promise<{ temp: string; stat: { dev: number; ino: number } }> {
+async function prepare(directory: string, name: string, contents: string, fs:PublisherFs): Promise<{ temp: string }> {
   let handle: FileHandle | undefined;
   for (let attempt = 0; attempt < 4; attempt++) {
     const temp = join(directory, `.${name}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`);
@@ -39,9 +39,8 @@ async function prepare(directory: string, name: string, contents: string, fs:Pub
       handle = await fs.open(temp, 'wx', 0o600);
       await handle.writeFile(contents, 'utf8');
       await handle.sync();
-      const stat = await handle.stat();
       await handle.close();
-      return { temp, stat: { dev: stat.dev, ino: stat.ino } };
+      return { temp };
     } catch (error) {
       await handle?.close().catch(() => undefined);
       await fs.unlink(temp).catch(() => undefined);
@@ -58,7 +57,10 @@ async function publish(directory: string, name: string, contents: string, fs:Pub
     await assertDirectory(directory, directory + '/__external-root-that-cannot-match', fs);
     const destination = join(directory, name);
     await fs.link(prepared.temp, destination);
-    created = { path: destination, ...prepared.stat };
+    const sourceStat = await fs.lstat(prepared.temp);
+    const destinationStat = await fs.lstat(destination);
+    if (sourceStat.dev !== destinationStat.dev || sourceStat.ino !== destinationStat.ino || destinationStat.isSymbolicLink()) throw new PublicationError('published destination identity mismatch');
+    created = { path: destination, dev: destinationStat.dev, ino: destinationStat.ino };
     await fs.unlink(prepared.temp);
     return created;
   } catch (error) {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it as vitestIt } from 'vitest';
 import { fork, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -12,6 +12,23 @@ import { TrustedRoot } from '../src/generic-trusted-root.js';
 import { GenericMultiFileApplyService, GenericMultiFileRollbackService, GENERIC_MULTI_APPLY_CONFIRMATION, GENERIC_MULTI_ROLLBACK_CONFIRMATION } from '../src/generic-multi-file-transaction.js';
 import { GenericMultiFileRecoveryService } from '../src/generic-multi-file-recovery.js';
 import type { Finding } from '../src/model.js';
+
+const posixOnlyTests = new Set([
+  'preflights, applies in deterministic order, recovers, and rolls back in reverse order',
+  'rejects third-party modification during rollback',
+  'discovers partial Apply after a real child-process crash',
+  'discovers partial Rollback after a real child-process crash',
+  'discovers apply crash before the first replacement without mutation',
+  'discovers apply crash after the final replacement before completion',
+  'discovers rollback crash after all restorations before completion',
+  'covers rollback intent/execution boundary with all candidates intact',
+  'covers first and later reverse-order restorations using path-targeted child termination',
+  'covers durable rollback completion and fresh-process idempotence',
+]);
+
+const it = (name: string, fn: () => unknown) => process.platform === 'win32' && posixOnlyTests.has(name)
+  ? vitestIt.skip(`${name} (POSIX secure access)`, fn)
+  : vitestIt(name, fn);
 const crashWorker = join(process.cwd(), 'tools/rtl-scanner/tests/fixtures/generic-crash-worker.mjs');
 
 const makeProposal = (path: string, source: string) => { const property = 'margin-left'; const offset = source.indexOf(property); const finding: Finding = { id: `multi:${path}`, ruleId: 'RTL.CSS.PHYSICAL', ruleVersion: 1, category: 'MANUAL_REVIEW', severity: 'Minor', confidence: 'High', title: 'physical', sourceMechanism: 'css', applications: [], path, range: { start: { offset, line: 1, column: offset + 1 }, end: { offset: offset + property.length, line: 1, column: offset + property.length + 1 } }, original: property, context: '.x', ownership: 'custom-css', rationale: 'r', treatment: 't', evidenceIds: [], relatedLocations: [], issueIds: [], suggestion: null, limitation: 'l' }; return createFixProposal(finding, source, [{ path, startOffset: offset, endOffset: offset + property.length, expectedText: property, replacement: 'margin-inline-start' }], { inputDigest: 'input', policyDigest: 'policy', transformationId: 'multi-css', transformationVersion: 1 }); };

@@ -1,9 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it as vitestIt } from 'vitest';
 import { constants } from 'node:fs';
 import { mkdtemp, mkdir, symlink, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { Finding } from '../src/model.js';
+
+const posixOnlyTests = new Set([
+  'reads verified source, preserves Unicode code-unit offsets, and extracts five-line context',
+  'preserves unavailable findings for invalid ranges and changed source',
+  'handles CRLF, CR, Unicode, multiline ranges, and deterministic ordering',
+  'accounts for exact UTF-8 bytes and preserves CRLF separators at boundaries',
+  'does not claim full snapshot identity when unrelated same-size content changes',
+  'rejects scanner-inconsistent line and column metadata',
+  'keeps empty sources explicit and does not expose source text in failures',
+  'uses code-unit ordering for non-ASCII paths and preserves all findings',
+]);
+
+const it = (name: string, fn: (...args: any[]) => unknown) => process.platform === 'win32' && posixOnlyTests.has(name)
+  ? vitestIt.skip(`${name} (POSIX secure source read; Windows fail-closed contract covered separately)`, fn)
+  : vitestIt(name, fn);
 import { range } from '../src/model.js';
 import { extractSourceSnippets } from '../src/source-snippets.js';
 
@@ -19,8 +34,29 @@ describe('secure source snippets', () => {
   it('rejects absolute, traversal, Windows and UNC paths without reading', async () => {
     const root = await temp(); const f = finding('a.css', 'x', 0); try { const paths = ['/etc/passwd', '../a.css', 'C:/a.css', '\\\\server\\a.css']; const out = await extractSourceSnippets(root, paths.map(path => ({ ...f, id: path, path }))); expect(out.findings.map(x => x.reason)).toEqual(paths.map(() => 'INVALID_PATH')); } finally { await rm(root, { recursive: true, force: true }); }
   });
-  it('rejects symlinked ancestors/files, missing files, and directories', async () => {
-    const root = await temp(); const outside = await temp(); try { await writeFile(join(outside, 'x.css'), 'x'); await symlink(join(outside, 'x.css'), join(root, 'file.css')); await symlink(outside, join(root, 'linked')); await mkdir(join(root, 'dir')); const base = finding('file.css', 'x', 0); const out = await extractSourceSnippets(root, [base, { ...base, id: 'ancestor', path: 'linked/x.css' }, { ...base, id: 'missing', path: 'missing.css' }, { ...base, id: 'dir', path: 'dir' }]); expect(out.findings.map(x => x.reason)).toEqual(['NON_REGULAR_FILE', 'SYMLINK', 'SYMLINK', 'MISSING_FILE']); } finally { await rm(root, { recursive: true, force: true }); await rm(outside, { recursive: true, force: true }); }
+  it('rejects symlinked ancestors/files, missing files, and directories', async ({ skip }) => {
+    const root = await temp(); const outside = await temp();
+    try {
+      await writeFile(join(outside, 'x.css'), 'x');
+      let symlinkFixture = true;
+      try {
+        await symlink(join(outside, 'x.css'), join(root, 'file.css'));
+        await symlink(outside, join(root, 'linked'));
+      } catch (error) {
+        if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EPERM') symlinkFixture = false;
+        else throw error;
+      }
+      await mkdir(join(root, 'dir'));
+      const base = finding('file.css', 'x', 0);
+      if (symlinkFixture) {
+        const out = await extractSourceSnippets(root, [base, { ...base, id: 'ancestor', path: 'linked/x.css' }, { ...base, id: 'missing', path: 'missing.css' }, { ...base, id: 'dir', path: 'dir' }]);
+        expect(out.findings.map(x => x.reason)).toEqual(['NON_REGULAR_FILE', 'SYMLINK', 'SYMLINK', 'MISSING_FILE']);
+      } else {
+        const out = await extractSourceSnippets(root, [{ ...base, id: 'missing', path: 'missing.css' }, { ...base, id: 'dir', path: 'dir' }]);
+        expect(out.findings.map(x => x.reason)).toEqual(['NON_REGULAR_FILE', 'MISSING_FILE']);
+        skip('Windows symlink fixtures require privileges unavailable in this environment');
+      }
+    } finally { await rm(root, { recursive: true, force: true }); await rm(outside, { recursive: true, force: true }); }
   });
   it('preserves unavailable findings for invalid ranges and changed source', async () => {
     const root = await temp(); try { await writeFile(join(root, 'a.css'), 'actual!!'); const changed = finding('a.css', 'expected', 0, 8, 'changed'); const invalid = { ...changed, id: 'invalid', range: { start: { offset: -1, line: 1, column: 1 }, end: { offset: 0, line: 1, column: 1 } } }; const out = await extractSourceSnippets(root, [changed, invalid]); expect(out.findings).toEqual([{ findingId: 'invalid', available: false, reason: 'INVALID_RANGE' }, { findingId: 'changed', available: false, reason: 'SOURCE_CHANGED' }]); } finally { await rm(root, { recursive: true, force: true }); }

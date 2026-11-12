@@ -30,9 +30,9 @@ describe('durable review record store', () => {
     try { const original = '{"formatVersion":999,"records":[]}\n'; await writeFile(path, original); const store = new ReviewRecordStore(path); await store.load(); expect(store.loadError).toBe('INCOMPATIBLE_REVIEW_STORE'); await expect(store.saveAndPersist(record)).rejects.toThrow('REVIEW_STORE_UNAVAILABLE'); expect(await readFile(path, 'utf8')).toBe(original); }
     finally { await rm(root, { recursive: true, force: true }); }
   });
-  it('rejects symlinked storage paths', async () => {
+  it('rejects symlinked storage paths', async ({ skip }) => {
     const root = await mkdtemp(join(tmpdir(), 'rtl-review-store-link-')); const real = join(root, 'real'); const link = join(root, 'link');
-    try { await mkdir(real); await symlink(real, link); expect(() => new ReviewRecordStore(join(link, 'review-records-v1.json'))).not.toThrow(); const store = new ReviewRecordStore(join(link, 'review-records-v1.json')); await expect(store.load()).rejects.toThrow('REVIEW_STORE_SYMLINK'); }
+    try { await mkdir(real); try { await symlink(real, link); } catch (error) { if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EPERM') { skip('Windows directory symlink fixtures require privileges unavailable in this environment'); return; } throw error; } expect(() => new ReviewRecordStore(join(link, 'review-records-v1.json'))).not.toThrow(); const store = new ReviewRecordStore(join(link, 'review-records-v1.json')); await expect(store.load()).rejects.toThrow('REVIEW_STORE_SYMLINK'); }
     finally { await rm(root, { recursive: true, force: true }); }
   });
   it('writes a complete JSON document through the atomic replacement path', async () => {

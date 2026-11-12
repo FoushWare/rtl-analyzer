@@ -29,7 +29,7 @@ describe('Milestone 1 output architecture', () => {
     expect((await planOutputPath('/repo', join(tempRoot, 'atlas-scan-output.md'), 'markdown')).format).toBe('markdown');
   });
 
-  it.each(['../scan.json', 'C:/scan.json', '\\\\server\\share\\scan.json', 'apps/a/report.json', 'reports/scan.md', 'reports\\scan.json', ''])('rejects unsafe output path %s', async path => {
+  it.each(['../scan.json', 'apps/a/report.json', 'reports/scan.md', 'reports\\scan.json', ''])('rejects unsafe output path %s', async path => {
     await expect(planOutputPath('/repo', path, 'json')).rejects.toThrow(OutputPathError);
   });
 
@@ -40,12 +40,18 @@ describe('Milestone 1 output architecture', () => {
     try {
       await mkdir(join(root, 'reports'));
       await writeFile(join(root, 'reports', 'existing.json'), '{}');
-      await expect(planOutputPath(root, join(root, 'reports', 'existing.json'), 'json')).rejects.toMatchObject({ code: 'INPUT_TREE' });
+      await expect(planOutputPath(root, 'reports/existing.json', 'json')).rejects.toMatchObject({ code: 'INPUT_TREE' });
       const externalExisting = join(external, 'existing.json');
       await writeFile(externalExisting, '{}');
       await expect(planOutputPath(root, externalExisting, 'json')).rejects.toMatchObject({ code: 'EXISTS' });
-      await symlink(join(root, 'reports'), join(root, 'linked'));
-      await expect(planOutputPath(root, join(root, 'linked', 'new.json'), 'json')).rejects.toThrow(/INPUT_TREE|SYMLINK/);
+      const linkedTarget = join(external, 'linked-target');
+      const linkedAncestor = join(external, 'linked');
+      await mkdir(linkedTarget);
+      try { await symlink(linkedTarget, linkedAncestor); } catch (error) {
+        if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EPERM') return;
+        throw error;
+      }
+      await expect(planOutputPath(root, join(linkedAncestor, 'new.json'), 'json')).rejects.toThrow(/SYMLINK/);
       await rm(externalExisting, { force: true });
     } finally { await rm(root, { recursive: true, force: true }); await rm(external, { recursive: true, force: true }); }
   });

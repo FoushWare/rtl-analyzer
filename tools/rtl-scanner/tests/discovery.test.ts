@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it as vitestIt } from 'vitest';
 import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { realpathSync } from 'node:fs';
@@ -6,6 +6,10 @@ import { tmpdir } from 'node:os';
 import { discover } from '../src/discovery.js';
 import { scan } from '../src/scan.js';
 import { json } from '../src/report.js';
+
+const it = (name: string, fn: () => unknown) => name === 'skips symlinked files and directories without following them' && process.platform === 'win32'
+  ? vitestIt.skip(`${name} (unprivileged Windows file/directory symlink fixtures unavailable)`, fn)
+  : vitestIt(name, fn);
 
 async function fixture() { return mkdtemp(join(realpathSync(tmpdir()), 'rtl-discovery-')); }
 async function clean(root: string) { await rm(root, { recursive: true, force: true }); }

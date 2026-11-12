@@ -3,6 +3,7 @@ import { constants } from 'node:fs';
 import { chmod, lstat, open, readFile, rename } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { TrustedRoot } from './generic-trusted-root.js';
+import { assertSecureFileAccessSupported, openSecureRead } from './secure-file-access.js';
 import { acquireGenericLock } from './generic-lock.js';
 import { GenericRecordStore } from './generic-persistence.js';
 import type { GenericApplyReceipt } from './generic-apply.js';
@@ -19,10 +20,11 @@ export class GenericRollbackService {
   private checkpoint(boundary: GenericRollbackBoundary): void { this.hooks.onBoundary?.(boundary); if (this.hooks.failAt === boundary) throw new GenericRollbackRejected(`INJECTED_FAILURE:${boundary}`); }
   async rollback(receipt: GenericApplyReceipt, confirmation: string): Promise<'Rolled Back' | 'Already Rolled Back'> {
     if (confirmation !== GENERIC_ROLLBACK_CONFIRMATION) throw new GenericRollbackRejected('ROLLBACK_CONFIRMATION_REQUIRED');
+    assertSecureFileAccessSupported();
     const lock = await acquireGenericLock(this.root, `apply-${sha(this.root.projectRoot).slice(0, 24)}`);
     try {
       const path = await this.root.validateProjectPath(receipt.sourcePath, { file: true });
-      const currentHandle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      const currentHandle = await openSecureRead(path);
       let text: string; try { text = await currentHandle.readFile('utf8'); } finally { await currentHandle.close(); }
       if (sha(text) === receipt.originalDigest) return 'Already Rolled Back';
       if (sha(text) !== receipt.candidateDigest) throw new GenericRollbackRejected('ROLLBACK_CONFLICT');

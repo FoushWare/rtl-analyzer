@@ -21,11 +21,22 @@ const makeProposal = (path: string, source: string) => {
 async function roots() { const root = await mkdtemp(join(tmpdir(), 'rtl-generic-security-')); const project = join(root, 'project'); const storage = join(root, 'storage'); await mkdir(project); await mkdir(storage); return { root, trusted: await TrustedRoot.create(project, storage) }; }
 
 describe('generic security foundation', () => {
-  it('rejects traversal, absolute paths, and symlinked project ancestors', async () => {
+  it('rejects traversal and absolute paths', async () => {
     const { root, trusted } = await roots();
     await expect(trusted.validateProjectPath('../outside')).rejects.toThrow('PROJECT_PATH_REJECTED');
     await expect(trusted.validateProjectPath(join(root, 'outside'))).rejects.toThrow('PROJECT_PATH_REJECTED');
-    await symlink(trusted.projectRoot, join(root, 'link'));
+  });
+  it('rejects symlinked project ancestors when the Windows fixture is available', async ({ skip }) => {
+    const { root, trusted } = await roots();
+    try {
+      await symlink(trusted.projectRoot, join(root, 'link'));
+    } catch (error) {
+      if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EPERM') {
+        skip('Windows symlink creation requires privileges unavailable in this environment');
+        return;
+      }
+      throw error;
+    }
     await expect(TrustedRoot.create(join(root, 'link'), trusted.storageRoot)).rejects.toThrow('SYMLINK_ROOT_REJECTED');
   });
   it('provides cross-process-style exclusive lock ownership', async () => {

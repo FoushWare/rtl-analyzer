@@ -25,7 +25,8 @@ async function durableWrite(path: string, content: string): Promise<void> {
   const handle = await open(temporary, 'wx', 0o600);
   try { await handle.writeFile(content, 'utf8'); await handle.sync(); } finally { await handle.close(); }
   await rename(temporary, path);
-  try { const directory = await open(dirname(path), 'r'); await directory.sync(); await directory.close(); } catch { /* directory fsync is unavailable on some platforms */ }
+  let directory: Awaited<ReturnType<typeof open>> | undefined;
+  try { directory = await open(dirname(path), 'r'); await directory.sync(); } catch { /* directory fsync is unavailable on some platforms */ } finally { await directory?.close().catch(() => undefined); }
 }
 
 export class GenericRecordStore {
