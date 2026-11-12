@@ -8,10 +8,14 @@ import { exitCode } from '../src/coverage.js';
 it('Atlas actual inventory maps reference evidence without approving transformations',async()=>{
  const a=await scan(process.cwd()),b=await scan(process.cwd());const prepared = a.evidence.filter(e=>e.path==='libs/design-system/src/runtime.tsx'&&e.context.startsWith('rtlTheme/'));
  const invoiceSource=await readFile('apps/invoicing/src/components/InvoiceTable.tsx','utf8');
+ const stylesSource=await readFile('libs/design-system/src/styles.css','utf8');
  const arrowBackSourceStart=invoiceSource.indexOf('<ArrowBack');
  const arrowBackFontSizeOffset=invoiceSource.indexOf('fontSize: 15',arrowBackSourceStart);
  const arrowBackColorOffset=invoiceSource.indexOf('color: "#9aa2b3"',arrowBackSourceStart);
+ const appLinkTransform='transform: scaleX(-1);';
+ const appLinkTransformOffset=stylesSource.indexOf(appLinkTransform);
  if(arrowBackSourceStart<0||arrowBackFontSizeOffset<0||arrowBackColorOffset<0)throw new Error('InvoiceTable ArrowBack anchors not found');
+ if(appLinkTransformOffset<0)throw new Error('styles.css app-link transform anchor not found');
  const expectedPrepared = [
   [
     "9a594b91eb9e5b9b4c785e5d610818690118b67a765d041edfc64a330ce3c0eb",
@@ -73,7 +77,7 @@ it('Atlas actual inventory maps reference evidence without approving transformat
  expect(brandDirection).toEqual([expect.objectContaining({id:'6bf8bbaa631fcb5e992d714826b7e9904bb1440572bbe2cd8df6fe650fcdd978',value:'ltr',original:'direction: ltr;',mechanism:'css'})]);
  const arrowBack=a.evidence.filter(e=>e.path==='apps/invoicing/src/components/InvoiceTable.tsx'&&e.context==='InvoiceTable/ArrowBack');
   expect(arrowBack).toEqual([{"id":"32869cf5037c74759f509f79dfeb84bfffe2289a939313afeb0cf4541aa3e221","path":"apps/invoicing/src/components/InvoiceTable.tsx","mechanism":"mui-sx","context":"InvoiceTable/ArrowBack","property":"fontSize","value":"15","original":"fontSize: 15","range":{"start":{"offset":arrowBackFontSizeOffset,"line":78,"column":34},"end":{"offset":arrowBackFontSizeOffset+'fontSize: 15'.length,"line":78,"column":46}},"semantics":"mui-system"},{"id":"f05e60a9be9bc2433fb95fc3c40c60a082d02143d4d6f1fa7d7e5f7a9fd7d57e","path":"apps/invoicing/src/components/InvoiceTable.tsx","mechanism":"mui-sx","context":"InvoiceTable/ArrowBack","property":"color","value":"\"#9aa2b3\"","original":"color: \"#9aa2b3\"","range":{"start":{"offset":arrowBackColorOffset,"line":78,"column":48},"end":{"offset":arrowBackColorOffset+'color: \"#9aa2b3\"'.length,"line":78,"column":64}},"semantics":"mui-system"}]);
-  expect(a.evidence.find(e=>e.id==='ac7e998160b4c8f482d48521712d68062325e5b7cb138b7a0c39d326f2dafe8a')).toEqual({"id":"ac7e998160b4c8f482d48521712d68062325e5b7cb138b7a0c39d326f2dafe8a","path":"libs/design-system/src/styles.css","mechanism":"css","context":"stylesheet/html[dir=\"rtl\"] .app-link > svg:last-child","property":"transform","value":"scaleX(-1)","original":"transform: scaleX(-1);","range":{"start":{"offset":1311,"line":81,"column":3},"end":{"offset":1333,"line":81,"column":25}},"semantics":"css","tokens":["scaleX(-1)"]});
+ expect(a.evidence.find(e=>e.id==='ac7e998160b4c8f482d48521712d68062325e5b7cb138b7a0c39d326f2dafe8a')).toEqual({"id":"ac7e998160b4c8f482d48521712d68062325e5b7cb138b7a0c39d326f2dafe8a","path":"libs/design-system/src/styles.css","mechanism":"css","context":"stylesheet/html[dir=\"rtl\"] .app-link > svg:last-child","property":"transform","value":"scaleX(-1)","original":"transform: scaleX(-1);","range":{"start":{"offset":appLinkTransformOffset,"line":81,"column":3},"end":{"offset":appLinkTransformOffset+appLinkTransform.length,"line":81,"column":25}},"semantics":"css","tokens":["scaleX(-1)"]});
  expect(a.evidence.filter(e=>!prepared.includes(e)&&!rtlClosed.includes(e)&&!chartDirections.includes(e)&&!brandDirection.includes(e)&&!arrowBack.includes(e))).toHaveLength(420);
 expect(a.complete).toBe(true);expect(a.diagnostics).toHaveLength(9);expect(a.diagnostics.every(d=>d.blocking===false)).toBe(true);expect(a.findings.filter(f=>f.category==='AUTO_CANDIDATE')).toEqual([]);expect(new Set(a.findings.flatMap(f=>f.issueIds))).toEqual(new Set(['RTL-01','RTL-02','RTL-04','RTL-05','RTL-06','RTL-07','RTL-08','RTL-09']));expect(json(a)).toBe(json(b));expect(markdown(a)).toBe(markdown(b));
  // RTL-03's migrated physical edge has no remaining static risk anchor;
