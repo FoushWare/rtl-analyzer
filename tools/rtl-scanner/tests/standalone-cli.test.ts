@@ -3,8 +3,9 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { main, openDashboard, runDefaultDashboard, type DefaultDashboardOptions } from '../src/standalone-cli.js';
+import { isDirectExecution, main, openDashboard, runDefaultDashboard, type DefaultDashboardOptions } from '../src/standalone-cli.js';
 import type { CliIO } from '../src/cli.js';
 import { discover } from '../src/discovery.js';
 
@@ -110,5 +111,12 @@ describe('standalone CLI defaults', () => {
     const version = io();
     expect(await main(['--version'], version.io)).toBe(0);
     expect(version.stdout[0]).toMatch(/^\d+\.\d+\.\d+\n$/);
+  });
+
+  it('canonicalizes the npm-installed entry point before direct execution', async () => {
+    const modulePath = fileURLToPath(import.meta.url);
+    expect(isDirectExecution(modulePath.toUpperCase(), modulePath, 'win32')).toBe(true);
+    expect(isDirectExecution(`${modulePath}.cmd`, modulePath, 'win32')).toBe(false);
+    expect(isDirectExecution(null, modulePath, 'win32')).toBe(false);
   });
 });

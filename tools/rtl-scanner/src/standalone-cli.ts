@@ -2,7 +2,7 @@
 import { lstat, mkdtemp, readFile, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
 import { runCli, type CliIO } from './cli.js';
 
@@ -24,6 +24,11 @@ const io: CliIO = {
 };
 
 type Launcher = (command: string, args: readonly string[], options: SpawnOptions) => ChildProcess;
+
+export function isDirectExecution(invokedPath: string | null, modulePath: string | null, platform = process.platform): boolean {
+  if (!invokedPath || !modulePath) return false;
+  return platform === 'win32' ? invokedPath.toLowerCase() === modulePath.toLowerCase() : invokedPath === modulePath;
+}
 
 export async function openDashboard(path: string, platform = process.platform, launcher: Launcher = spawn, timeoutMs = browserLaunchTimeoutMs): Promise<boolean> {
   const command = platform === 'darwin' ? 'open' : platform === 'win32' ? 'explorer.exe' : 'xdg-open';
@@ -103,4 +108,5 @@ export async function main(argv: string[], output: CliIO = io): Promise<number> 
 }
 
 const invokedPath = process.argv[1] ? await realpath(process.argv[1]).catch(() => null) : null;
-if (invokedPath && import.meta.url === pathToFileURL(invokedPath).href) process.exitCode = await main(process.argv.slice(2));
+const modulePath = await realpath(fileURLToPath(import.meta.url)).catch(() => null);
+if (isDirectExecution(invokedPath, modulePath)) process.exitCode = await main(process.argv.slice(2));
