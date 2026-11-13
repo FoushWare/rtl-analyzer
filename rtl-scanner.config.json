@@ -137,21 +137,21 @@
       "property": "background",
       "valueDigest": "7d03ad09a710291004e50b4386689321d97ae307fe9c8a504f3d0f3ecc7c2b3f",
       "reason": "Reviewed source expression changes only angular status color-stop proportions, not reading-direction properties; donut geometry remains a manual visual concern.",
-      "sourceDigest": "d372ed18a69dbce8d8baa7b529fcda3968f8a9a7e41097484d9186d460dfabcc"
+      "sourceDigest": "7253ee7538e849c08f884147bf4dfb0cd5fe3fa6f91a822b181970186909ed1e"
     },
     {
       "path": "apps/invoicing/src/pages/Dashboard.tsx",
       "property": "background",
       "valueDigest": "a9ed8dcac59fe6abe3c4e1cdeed3177f6edc02176e580dea3459acde89fec45a",
       "reason": "Legend color comes from the reviewed local status-color tuple; no directional background-position input.",
-      "sourceDigest": "d372ed18a69dbce8d8baa7b529fcda3968f8a9a7e41097484d9186d460dfabcc"
+      "sourceDigest": "7253ee7538e849c08f884147bf4dfb0cd5fe3fa6f91a822b181970186909ed1e"
     },
     {
       "path": "libs/design-system/src/index.tsx",
       "property": "background",
       "valueDigest": "3c7f9c16a09ca1ac96b83240c6703118c78de201885e7d3f9bcd03c8434fab39",
       "reason": "Reviewed status-color dictionary contains literal color values only.",
-      "sourceDigest": "f10089c631de986522996aa14ad1b83fbce4be57a1257ce999e56b696d77ff3b"
+      "sourceDigest": "6493f544a7858be20d078b74f0c51ab957890230da9a66160318d93ebc2384ab"
     }
   ],
   "roles": [
