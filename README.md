@@ -4,6 +4,12 @@ RTL Migration Analyzer is a conservative, read-only analysis and review tool for
 
 The project is published by FoushWare. This repository also contains the fictional Atlas invoicing demo application used as an Analyzer fixture and browser-test target. Atlas is supporting demonstration material; it is not the Analyzer product.
 
+## Interactive architecture explorer
+
+Explore the [RTL Analyzer interactive architecture map](https://foushware.github.io/rtl-analyzer/architecture/) to navigate scanner modules, package boundaries, code relationships, and guided execution flows. The map is a standalone static Floorplan export hosted on GitHub Pages; it does not require a running Floorplan server.
+
+The map documents the standalone CLI package as merged and locally packable, **not yet published to npm**. See the [architecture map publication notes](docs/architecture/README.md) for its source revision and refresh process.
+
 ## Capabilities
 
 The Analyzer provides:
