@@ -1,17 +1,18 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 const repo = resolve(import.meta.dirname, '../../..');
 const packageDir = join(repo, 'packages/rtl-analyzer');
 const workspace = mkdtempSync(join(realpathSync(tmpdir()), 'rtl-analyzer-package-smoke-'));
 const fixture = join(workspace, 'fixture');
 const external = join(workspace, 'external');
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const runNpm = (args, options) => execFileSync(npmCommand, args, options);
-const runNpx = (args, options) => execFileSync(npxCommand, args, options);
+const npmCli = process.env.npm_execpath;
+if (!npmCli) throw new Error('npm_execpath is required to run the package smoke test');
+const npxCli = join(dirname(npmCli), 'npx-cli.js');
+const runNpm = (args, options) => execFileSync(process.execPath, [npmCli, ...args], options);
+const runNpx = (args, options) => execFileSync(process.execPath, [npxCli, ...args], options);
 mkdirSync(join(fixture, 'src'), { recursive: true });
 mkdirSync(external);
 writeFileSync(join(fixture, 'index.html'), '<html dir="ltr"></html>\n');
