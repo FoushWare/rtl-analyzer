@@ -1,6 +1,6 @@
 {
   "name": "rtl-analyzer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Conservative RTL risk scanning and report generation",
   "repository": {
     "type": "git",

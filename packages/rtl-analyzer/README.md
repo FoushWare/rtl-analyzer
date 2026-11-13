@@ -1,8 +1,37 @@
 # RTL Analyzer CLI
 
-Standalone CLI packaging for RTL Analyzer. The CLI performs read-only RTL risk scans and can emit JSON, Markdown, structured Markdown, or a self-contained dashboard HTML report.
+RTL Analyzer performs read-only RTL risk scans and can emit JSON, Markdown, structured Markdown, or a self-contained dashboard HTML report.
 
-## Build and pack
+## Quick start
+
+No global installation is required:
+
+```bash
+npx rtl-analyzer
+```
+
+With no arguments, RTL Analyzer recursively scans the current working directory, writes JSON, Markdown, structured Markdown, and HTML dashboard files to a unique temporary directory outside the project, then opens the dashboard in your default browser. When the dashboard is successfully generated, the CLI prints its path. If the browser cannot be opened, use that printed path instead.
+
+On the first run, npm may ask for confirmation before installing the package. Confirm the prompt, or use `npx --yes rtl-analyzer` in scripts and other non-interactive environments.
+
+Use `--help` to see the available options:
+
+```bash
+npx rtl-analyzer --help
+npx rtl-analyzer --version
+```
+
+For explicit scans, preserve control over the root, format, and output directory:
+
+```bash
+npx rtl-analyzer scan . --format json
+npx rtl-analyzer scan ./src --format markdown --output-dir ./rtl-report
+npx rtl-analyzer scan . --format dashboard --output-dir ./rtl-report
+```
+
+Options include `--root <path>`, `--format <format>`, `--output-dir <path>`, `--fail-on-findings`, and `--embed-source-snippets` (dashboard output only). Explicit scans do not open a browser automatically.
+
+## Developer build and pack
 
 From a fresh checkout, install the repository dependencies, then build and pack the standalone package:
 

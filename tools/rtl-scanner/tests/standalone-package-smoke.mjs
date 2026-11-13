@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, realpathSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
 const repo = resolve(import.meta.dirname, '../../..');
 const packageDir = join(repo, 'packages/rtl-analyzer');
+const expectedVersion = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8')).version;
 const workspace = mkdtempSync(join(realpathSync(tmpdir()), 'rtl-analyzer-package-smoke-'));
 const fixture = join(workspace, 'fixture');
 const external = join(workspace, 'external');
@@ -29,7 +30,7 @@ runNpm(['init', '-y'], { cwd: external, stdio: 'ignore' });
 runNpm(['install', '--ignore-scripts', tarball], { cwd: external, stdio: 'inherit' });
 const run = (args) => runNpx(['--no-install', 'rtl-analyzer', ...args], { cwd: external, encoding: 'utf8' });
 if (!run(['--help']).includes('rtl-analyzer scan')) throw new Error('CLI help failed');
-if (run(['--version']).trim() !== '0.1.0') throw new Error('CLI version failed');
+if (run(['--version']).trim() !== expectedVersion) throw new Error(`CLI version failed: expected ${expectedVersion}`);
 for (const format of ['json', 'markdown', 'dashboard']) {
   const output = join(workspace, format);
   mkdirSync(output);
