@@ -9,8 +9,9 @@ From a fresh checkout, install the repository dependencies, then build and pack 
 ```bash
 npm ci
 npm run build --prefix packages/rtl-analyzer
-npm pack --dry-run --prefix packages/rtl-analyzer
-npm pack --prefix packages/rtl-analyzer
+cd packages/rtl-analyzer
+npm pack --dry-run
+npm pack
 ```
 
 The package `prepack` hook rebuilds `dist/` automatically, so packing cannot silently use a missing or stale CLI build. The tarball contains only the compiled scanner/reporting runtime, this README, and the MIT license.
