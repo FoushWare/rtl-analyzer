@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - feat/standalone-cli-packaging
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build RTL scan
+        run: npm run rtl:scan:build
+
+      - name: Test RTL scan
+        run: npm run rtl:scan:test
+
+      - name: Package CLI smoke test
+        run: npm run rtl:cli:package:smoke

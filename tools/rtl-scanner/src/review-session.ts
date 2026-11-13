@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { cp, lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, normalize, posix, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { request as httpRequest } from 'node:http';
@@ -33,7 +33,8 @@ export const reviewStatusTransitions: Record<ReviewStatus, readonly ReviewStatus
   'Rejected': ['Candidate Proposed', 'Needs Manual Investigation'],
 };
 export function reviewRecordKey(identity: ReviewIdentity): string { return recordKey(identity); }
-export function validateReviewIdentity(identity: ReviewIdentity): void { if (!identity || typeof identity.findingId !== 'string' || !identity.findingId.trim() || identity.findingId.length > 500 || typeof identity.sourcePath !== 'string' || !identity.sourcePath || isAbsolute(identity.sourcePath) || normalize(identity.sourcePath) !== identity.sourcePath || identity.sourcePath.split(/[\\/]/).includes('..') || identity.schemaVersion !== 2 || !identity.inputDigest || !identity.policyDigest) throw new Error('INVALID_REVIEW_IDENTITY'); }
+const validSerializedReviewPath = (path: string): boolean => Boolean(path) && !path.includes('\0') && !path.includes('\\') && !/^[A-Za-z](?::|[\\/])/.test(path) && !posix.isAbsolute(path) && !path.endsWith('/') && !path.split('/').some(part => part === '' || part === '.' || part === '..') && posix.normalize(path) === path;
+export function validateReviewIdentity(identity: ReviewIdentity): void { if (!identity || typeof identity.findingId !== 'string' || !identity.findingId.trim() || identity.findingId.length > 500 || typeof identity.sourcePath !== 'string' || !validSerializedReviewPath(identity.sourcePath) || identity.schemaVersion !== 2 || !identity.inputDigest || !identity.policyDigest) throw new Error('INVALID_REVIEW_IDENTITY'); }
 export function validateReviewRecordShape(input: Omit<ReviewRecord, 'timestamp'> & { timestamp?: string }): void { validateReviewIdentity(input); if (!Object.prototype.hasOwnProperty.call(input, 'status') || !reviewStatusTransitions[input.status]) throw new Error('INVALID_REVIEW_STATUS'); if (typeof input.reviewerNotes !== 'string' || input.reviewerNotes.length > 4000 || !Array.isArray(input.evidenceReferences) || input.evidenceReferences.length > 50 || input.evidenceReferences.some(reference => typeof reference !== 'string' || reference.length > 500)) throw new Error('REVIEW_EVIDENCE_TOO_LARGE'); if (input.candidateSessionId !== undefined && (typeof input.candidateSessionId !== 'string' || input.candidateSessionId.length > 100)) throw new Error('INVALID_CANDIDATE_SESSION_ID'); if (input.timestamp !== undefined && (!Number.isFinite(Date.parse(input.timestamp)))) throw new Error('INVALID_REVIEW_TIMESTAMP'); }
 export function getReviewRecord(identity: ReviewIdentity): ReviewRecord | null { validateReviewIdentity(identity); return reviewRecords.get(recordKey(identity)) ?? null; }
 export function saveReviewRecord(input: Omit<ReviewRecord, 'timestamp'> & { timestamp?: string }): ReviewRecord {
@@ -46,13 +47,13 @@ export function saveReviewRecord(input: Omit<ReviewRecord, 'timestamp'> & { time
 export function clearReviewRecords(): void { reviewRecords.clear(); }
 const inside = (root: string, target: string) => { const r = relative(root, target); return r === '' || (r !== '..' && !r.startsWith(`..${sep}`) && !isAbsolute(r)); };
 export function validateReviewPath(root: string, path: string): string {
-  if (!path || isAbsolute(path) || normalize(path) !== path || path.split(/[\\/]/).includes('..')) throw new Error('INVALID_REVIEW_PATH');
+  if (!validSerializedReviewPath(path)) throw new Error('INVALID_REVIEW_PATH');
   const target = resolve(root, path);
   if (!inside(resolve(root), target) || path !== REVIEW_SOURCE) throw new Error('REVIEW_SOURCE_NOT_ALLOWED');
   return target;
 }
 export async function validateProjectSourcePath(root: string, path: string): Promise<string> {
-  if (!path || isAbsolute(path) || normalize(path) !== path || path.split(/[\\/]/).includes('..')) throw new Error('INVALID_REVIEW_PATH');
+  if (!validSerializedReviewPath(path)) throw new Error('INVALID_REVIEW_PATH');
   const canonicalRoot = await realpath(resolve(root));
   const target = resolve(canonicalRoot, path);
   if (!inside(canonicalRoot, target)) throw new Error('REVIEW_SOURCE_NOT_ALLOWED');
@@ -73,7 +74,7 @@ export async function createReviewSession(root: string): Promise<ReviewSession> 
   const candidateRoot = await mkdtemp(join(tmpdir(), 'rtl-review-'));
   try {
     const allowedTopLevel = new Set(['apps', 'libs', 'package.json', 'package-lock.json', 'nx.json', 'tsconfig.json', 'tsconfig.base.json', 'vite.config.ts', 'playwright.config.ts']);
-    await cp(root, candidateRoot, { recursive: true, dereference: false, filter: (sourcePath) => { const relativePath = sourcePath.slice(root.length + 1); const top = relativePath.split('/')[0] ?? ''; return relativePath === '' || allowedTopLevel.has(top); } });
+    await cp(root, candidateRoot, { recursive: true, dereference: false, filter: (sourcePath) => { const relativePath = relative(root, sourcePath); const top = relativePath.split(/[\\/]/)[0] ?? ''; return relativePath === '' || allowedTopLevel.has(top); } });
     const copied = validateReviewPath(candidateRoot, REVIEW_SOURCE);
     const text = await readFile(copied, 'utf8');
     return { id: randomUUID(), root: resolve(root), candidateRoot, sourcePath: REVIEW_SOURCE, state: 'Candidate Proposed', classification: 'Manual', originalSha256: digest(text), createdAt: new Date().toISOString() };

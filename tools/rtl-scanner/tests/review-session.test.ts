@@ -57,6 +57,13 @@ describe('review session isolation', () => {
     expect(() => validateReviewPath('/tmp/repo', '../secret.ts')).toThrow('INVALID_REVIEW_PATH');
     expect(() => validateReviewPath('/tmp/repo', 'apps/other.tsx')).toThrow('REVIEW_SOURCE_NOT_ALLOWED');
   });
+  it('validates serialized review paths independently of the host platform', () => {
+    expect(() => validateReviewIdentity({ ...identity, sourcePath: 'apps/other/src/file.tsx' })).not.toThrow();
+    for (const sourcePath of ['../secret.ts', 'apps/../secret.ts', '/etc/passwd', 'C:/repo/file.tsx', 'C/file.tsx', '//server/share/file.tsx', 'apps\\other.tsx', 'apps//other.tsx', './apps/other.tsx', 'apps/./other.tsx', 'apps/other/']) {
+      expect(() => validateReviewIdentity({ ...identity, sourcePath })).toThrow('INVALID_REVIEW_IDENTITY');
+    }
+    expect(() => validateReviewIdentity({ ...identity, sourcePath: 'apps/other/\0file.tsx' })).toThrow('INVALID_REVIEW_IDENTITY');
+  });
   it('rejects stale or out-of-range patches', () => {
     const text = 'abcdef';
     expect(() => validatePatch(text, { findingId: REVIEW_FINDING_ID, path: REVIEW_SOURCE, startOffset: 1, endOffset: 4, expectedSha256: sha('xxx'), replacement: 'X' })).toThrow('STALE_REVIEW_SOURCE');
@@ -76,9 +83,9 @@ describe('review session isolation', () => {
       await (await import('../src/review-session.js')).disposeReviewSession(next);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
-  it('rejects symlinked source files', async () => {
+  it('rejects symlinked source files', async ({ skip }) => {
     const root = await mkdtemp(join(tmpdir(), 'rtl-review-link-'));
-    try { await (await import('node:fs/promises')).mkdir(join(root, 'apps/invoicing/src/components'), { recursive: true }); await writeFile(join(root, 'real.tsx'), 'x'); await symlink(join(root, 'real.tsx'), join(root, REVIEW_SOURCE)); await expect(createReviewSession(root)).rejects.toThrow('REVIEW_SOURCE_NOT_REGULAR_FILE'); }
+    try { await (await import('node:fs/promises')).mkdir(join(root, 'apps/invoicing/src/components'), { recursive: true }); await writeFile(join(root, 'real.tsx'), 'x'); try { await symlink(join(root, 'real.tsx'), join(root, REVIEW_SOURCE)); } catch (error) { if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EPERM') { skip('Windows file symlink fixtures require privileges unavailable in this environment'); return; } throw error; } await expect(createReviewSession(root)).rejects.toThrow('REVIEW_SOURCE_NOT_REGULAR_FILE'); }
     finally { await rm(root, { recursive: true, force: true }); }
   });
 });

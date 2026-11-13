@@ -17,6 +17,25 @@ The Analyzer provides:
 
 The scanner is intentionally conservative. A finding is analysis evidence for human review, not proof of a visual defect or authorization to change source code.
 
+### Confirmed syntax coverage
+
+These results describe tested syntax patterns, not complete framework compatibility:
+
+| Area | Status | Confirmed scope |
+| --- | --- | --- |
+| React inline styles | Verified | Tested JSX/TSX object styles such as `marginLeft`, `marginRight`, `paddingLeft`, `paddingRight`, and `textAlign`. |
+| Emotion `styled` | Verified | Static tagged templates imported from `@emotion/styled`. |
+| Emotion `css` prop | Verified | Tagged templates from `@emotion/react` and static object expressions. |
+| MUI `sx` | Partial | Tested MUI components and supported aliases such as `ml` and `pr`; broader wrappers and semantics remain conservative. |
+| MUI `styled` | Verified | Static tagged templates imported from `@mui/material/styles`. |
+| Vanilla CSS and HTML | Verified | Physical CSS declarations and tested HTML direction attributes. |
+| CSS Modules | Verified | Physical declarations in discovered `.module.css` files. |
+| Tailwind utilities | Partial | Static class strings recognize `ml-*`, `mr-*`, `pl-*`, `pr-*`, `left-*`, `right-*`, `border-l-*`, `border-r-*`, `text-left`, `text-right`, and identifiable `rtl:`/`ltr:` variants. Dynamic composition and framework semantics are not evaluated. |
+| Bootstrap 4 directional utilities | Partial | Static class strings recognize Bootstrap 4 `float-left/right`, responsive `float-{sm,md,lg,xl}-left/right`, `text-{sm,md,lg,xl}-left/right`, and `border-left/right[-0]`. Shared physical classes such as `ml-*` remain framework-neutral; Bootstrap version and runtime semantics are not inferred. |
+| SCSS/Sass | Unsupported with diagnostic | Files are not parsed; directional-looking source produces a `SOURCE_COVERAGE` diagnostic. |
+
+Next.js App Router and Pages Router directories are discoverable as ordinary source layouts, but directory discovery does not certify Next.js framework behavior.
+
 See the [scanner documentation](tools/rtl-scanner/README.md), [architecture](docs/rtl-analyzer-v3/ARCHITECTURE.md), [data contracts](docs/rtl-analyzer-v3/DATA-CONTRACTS.md), and [acceptance checklist](docs/rtl-analyzer-v3/ACCEPTANCE-CHECKLIST.md).
 
 ## Requirements
@@ -106,6 +125,8 @@ Run the complete portable Analyzer regression:
 npm run test:e2e:regression
 ```
 
+Verified portable E2E baseline (macOS, 2026-11-11): the canonical command runs three groups—`playwright.apply-rollback.config.ts` (1 test), `playwright.phase5.config.ts` (2 tests), and `playwright.manual-regression.config.ts` (20 tests)—for 23 tests total, all passed and none skipped. The historical “23” report therefore describes the aggregate command; the “20” report described only the final manual-regression group. No test configuration was changed to reconcile the counts.
+
 That script runs each suite with its isolated Playwright configuration:
 
 - Apply/Rollback disposable fixture: `playwright.apply-rollback.config.ts`;
@@ -136,6 +157,11 @@ This starts the invoicing demo at `http://localhost:4200`. The demo's historical
 ## Known limitations
 
 - Static analysis cannot prove the complete computed CSS cascade, runtime ownership graph, browser rendering result, font-dependent collisions, or all dynamic direction behavior.
+- MUI `styled` object syntax is not currently analyzed; use a static tagged template for the verified pattern.
+- Tailwind support is limited to literal static class strings and the listed physical utilities; responsive/state prefixes and arbitrary values are recorded when the final utility is statically identifiable, while dynamic `clsx`/`classnames`/template expressions are not guessed.
+- Bootstrap support is limited to the listed Bootstrap 4 physical utility forms. Bootstrap 5 logical utilities such as `ms-*`, `me-*`, `ps-*`, and `pe-*`, custom classes, project configuration, and dynamic class composition are not interpreted.
+- SCSS/Sass is intentionally unsupported and produces a coverage diagnostic rather than parsed findings.
+- Framework names and directories do not imply framework-specific rule support.
 - Findings require human interpretation and approval.
 - The scanner does not provide a general-purpose automated RTL codemod.
 - Compatibility experiments under `tools/rtl-scanner/tests/experiments/` require separate external setup and are not part of the normal clean-checkout regression.

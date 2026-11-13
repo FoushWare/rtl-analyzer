@@ -17,11 +17,11 @@ const unavailable = (findingId: string, reason: SnippetUnavailableReason): Findi
 
 async function validatePath(root: string, path: string): Promise<{ absolute: string } | SnippetUnavailableReason> {
   if (pathError(path)) return 'INVALID_PATH';
-  const rootAbsolute = resolve(root), normalized = normalize(path), absolute = resolve(rootAbsolute, normalized), rel = relative(rootAbsolute, absolute);
-  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel) || normalized !== path) return 'INVALID_PATH';
+  const rootAbsolute = resolve(root), portablePath = path.split('/').join(sep), normalized = normalize(portablePath), absolute = resolve(rootAbsolute, normalized), rel = relative(rootAbsolute, absolute);
+  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel) || normalized !== portablePath) return 'INVALID_PATH';
   try {
     const rootStat = await lstat(rootAbsolute); if (rootStat.isSymbolicLink()) return 'SYMLINK';
-    const parts = normalized.split('/'); let current = rootAbsolute;
+    const parts = path.split('/'); let current = rootAbsolute;
     for (const part of parts) { current = join(current, part); const stat = await lstat(current); if (stat.isSymbolicLink()) return 'SYMLINK'; }
     const stat = await lstat(absolute); if (!stat.isFile()) return 'NON_REGULAR_FILE';
   } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 'MISSING_FILE'; return 'READ_FAILURE'; }

@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { lstat, mkdir, readFile, symlink, writeFile, rm } from 'node:fs/promises';
+import { lstat, mkdir, readFile, symlink, writeFile, rm, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { publishReports, publishArtifacts, PublicationError, type PublisherFs } from '../src/report-publisher.js';
 import * as fs from 'node:fs/promises';
 
 async function dirs() {
-  const root = await (await import('node:fs/promises')).mkdtemp(join(tmpdir(), 'rtl-publisher-root-'));
-  const out = await (await import('node:fs/promises')).mkdtemp(join(tmpdir(), 'rtl-publisher-out-'));
+  const tempRoot = await realpath(tmpdir());
+  const root = await (await import('node:fs/promises')).mkdtemp(join(tempRoot, 'rtl-publisher-root-'));
+  const out = await (await import('node:fs/promises')).mkdtemp(join(tempRoot, 'rtl-publisher-out-'));
   return { root, out };
 }
 
@@ -42,13 +43,13 @@ describe('report publication', () => {
     const { root, out } = await dirs();
     const linked = join(root, 'linked');
     try {
-      await symlink(out, linked);
+      await symlink(out, linked, 'junction');
       await expect(publishReports(root, linked, 'j\n', 'm\n')).rejects.toThrow(/external|non-symlink/);
       await mkdir(join(root, 'nested'));
       await expect(publishReports(root, join(root, 'nested'), 'j\n', 'm\n')).rejects.toThrow(/external/);
-      const ancestor = await (await import('node:fs/promises')).mkdtemp(join(tmpdir(), 'rtl-publisher-parent-'));
+      const ancestor = await (await import('node:fs/promises')).mkdtemp(join(await realpath(tmpdir()), 'rtl-publisher-parent-'));
       const nested = join(ancestor, 'nested');
-      await symlink(out, nested);
+      await symlink(out, nested, 'junction');
       await expect(publishReports(root, nested, 'j\n', 'm\n')).rejects.toThrow(/symlink/);
       await rm(ancestor, { recursive: true, force: true });
     } finally { await rm(root, { recursive: true, force: true }); await rm(out, { recursive: true, force: true }); }
@@ -61,17 +62,32 @@ describe('report publication', () => {
     finally { await rm(root,{recursive:true,force:true}); await rm(out,{recursive:true,force:true}); }
   });
 
-  it('preserves an identity-uncertain artifact and reports incomplete rollback', async () => {
+  it('preserves an identity-uncertain artifact without claiming ownership', async () => {
     const { root, out } = await dirs(); let published=false;
-    const ops=injected({link:async(a,b)=>{await fs.link(a,b);if(b.endsWith('rtl-report.md'))published=true;},unlink:async path=>{if(path.includes('.rtl-report.md.'))throw new Error('injected cleanup failure');return fs.unlink(path);},lstat:async path=>{const s=await fs.lstat(path);return published&&path.endsWith('rtl-report.md')?{...s,ino:s.ino+1}:s;}});
-    try { const error=await publishReports(root,out,'json\n','md\n',ops).catch(e=>e as PublicationError); expect(error).toMatchObject({rollbackIncomplete:true}); expect(String(error)).toContain('ROLLBACK_INCOMPLETE'); expect(await readFile(join(out,'rtl-report.md'),'utf8')).toBe('md\n'); }
+    const ops=injected({link:async(a,b)=>{await fs.link(a,b);if(b.includes('rtl-report.md')&&!b.includes('.rtl-report.md.'))published=true;},unlink:async path=>{if(path.includes('.rtl-report.md.'))throw new Error('injected cleanup failure');return fs.unlink(path);},lstat:async path=>{const s=await fs.lstat(path);const matches=published&&path.includes('rtl-report.md')&&!path.includes('.rtl-report.md.');return matches?{...s,ino:s.ino===0?1:0,isSymbolicLink:()=>s.isSymbolicLink(),isDirectory:()=>s.isDirectory()}:s;}});
+    try { const error=await publishReports(root,out,'json\n','md\n',ops).catch(e=>e as PublicationError); expect(error).toMatchObject({rollbackIncomplete:false}); expect(String(error)).toContain('identity mismatch'); expect(await readFile(join(out,'rtl-report.md'),'utf8')).toBe('md\n'); }
     finally { await rm(root,{recursive:true,force:true}); await rm(out,{recursive:true,force:true}); }
   });
 
   it('fails closed for unsupported platforms without touching existing destinations', async () => {
     const { root, out } = await dirs(); const existing=join(out,'rtl-report.json');
-    try { await writeFile(existing,'old\n'); await expect(publishReports(root,out,'new\n','md\n',injected({platform:'win32'}))).rejects.toThrow(/unsupported platform/); expect(await readFile(existing,'utf8')).toBe('old\n'); expect(await lstat(join(out,'rtl-report.md')).catch(()=>undefined)).toBeUndefined(); }
+    try { await writeFile(existing,'old\n'); await expect(publishReports(root,out,'new\n','md\n',injected({platform:'freebsd'}))).rejects.toThrow(/unsupported platform/); expect(await readFile(existing,'utf8')).toBe('old\n'); expect(await lstat(join(out,'rtl-report.md')).catch(()=>undefined)).toBeUndefined(); }
     finally { await rm(root,{recursive:true,force:true}); await rm(out,{recursive:true,force:true}); }
+  });
+
+  it('rejects a destination whose identity changes before ownership is recorded', async () => {
+    const { root, out } = await dirs();
+    const ops = injected({ lstat: async path => {
+      const stat = await fs.lstat(path);
+      const matches = path.includes('rtl-report.json') && !path.includes('.rtl-report.json.');
+      if (matches) return { ...stat, ino: stat.ino===0?1:0, isSymbolicLink:()=>stat.isSymbolicLink(), isDirectory:()=>stat.isDirectory() };
+      return stat;
+    }});
+    try {
+      await expect(publishReports(root, out, 'json\n', 'md\n', ops)).rejects.toThrow(/identity mismatch/);
+      expect(await readFile(join(out, 'rtl-report.json'), 'utf8')).toBe('json\n');
+      expect((await (await import('node:fs/promises')).readdir(out)).filter(name => name.includes('.rtl-report.'))).toEqual([]);
+    } finally { await rm(root, { recursive: true, force: true }); await rm(out, { recursive: true, force: true }); }
   });
 
   it('fails closed on unsupported hard links before publication and cleans the temp file', async () => {

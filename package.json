@@ -17,6 +17,7 @@
     "rtl:scan:test": "vitest run --config tools/rtl-scanner/vitest.config.ts",
     "rtl:scan:typecheck": "tsc -p tools/rtl-scanner/tsconfig.typecheck.json",
     "rtl:scan:build": "tsc -p tools/rtl-scanner/tsconfig.json",
+    "rtl:cli:package:smoke": "node tools/rtl-scanner/tests/standalone-package-smoke.mjs",
     "rtl:preview": "node dist/tools/rtl-scanner/preview-companion.js"
   },
   "dependencies": {
@@ -47,6 +48,7 @@
     "nx": "23.3.0",
     "parse5": "7.3.0",
     "postcss": "8.5.29",
+    "postcss-scss": "4.0.9",
     "postcss-value-parser": "4.2.0",
     "storybook": "10.6.7",
     "typescript": "~5.9.0",

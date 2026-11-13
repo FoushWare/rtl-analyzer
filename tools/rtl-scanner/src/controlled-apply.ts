@@ -6,6 +6,7 @@ import { homedir, tmpdir } from 'node:os';
 import { validateEvidenceSnapshot, type EvidenceSnapshot } from './evidence-store.js';
 import type { ReviewIdentity, ReviewRecord, PatchRequest } from './review-session.js';
 import { validateReviewIdentity, validateReviewPath, validatePatch, REVIEW_SOURCE } from './review-session.js';
+import { assertSecureFileAccessSupported, openSecureRead } from './secure-file-access.js';
 
 export const APPLY_CONFIRMATION = 'APPLY_CONFIRMED';
 export interface ApplyAuthorization { identity: ReviewIdentity; reviewRecord: ReviewRecord; evidence: readonly EvidenceSnapshot[]; patch: PatchRequest; confirmation: string }
@@ -13,7 +14,7 @@ export interface ApplyReceipt { auditId: string; path: string; originalSha256: s
 export interface ApplyAuditEvent { auditId: string; type: 'APPLIED' | 'ROLLED_BACK' | 'APPLY_FAILED' | 'ROLLBACK_FAILED'; path: string; sourceSha256: string; resultingSha256?: string; backupPath?: string; timestamp: string; reason?: string }
 const active = new Set<string>();
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
-const readNoFollow = async (path: string): Promise<string> => { const handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0)); try { return await handle.readFile('utf8'); } finally { await handle.close(); } };
+const readNoFollow = async (path: string): Promise<string> => { const handle = await openSecureRead(path); try { return await handle.readFile('utf8'); } finally { await handle.close(); } };
 const atomicWrite = async (path: string, content: string): Promise<void> => { const temporary = `${path}.rtl-apply.${process.pid}.${randomUUID()}.tmp`; try { await writeFile(temporary, content, { encoding: 'utf8', flag: 'wx', mode: 0o600 }); await rename(temporary, path); } catch (error) { try { await access(temporary, constants.F_OK); await rename(temporary, `${temporary}.failed`); } catch { /* preserve original error */ } throw error; } };
 
 export class ApplyAuditStore {
@@ -32,6 +33,7 @@ export class ControlledApplyService {
     return { auditId: applied.auditId, path: pathValue, originalSha256, appliedSha256, backupPath: applied.backupPath, appliedAt: applied.timestamp };
   }
   async apply(auth: ApplyAuthorization): Promise<ApplyReceipt> {
+    assertSecureFileAccessSupported();
     validateReviewIdentity(auth.identity);
     if (auth.confirmation !== APPLY_CONFIRMATION) throw new Error('APPLY_CONFIRMATION_REQUIRED');
     if (auth.reviewRecord.status !== 'Approved' || auth.reviewRecord.findingId !== auth.identity.findingId || auth.reviewRecord.inputDigest !== auth.identity.inputDigest || auth.reviewRecord.policyDigest !== auth.identity.policyDigest) throw new Error('APPROVED_REVIEW_REQUIRED');

@@ -28,10 +28,10 @@ export interface OutputPathOptions { readonly protectedRoots?: readonly string[]
  * no-follow/atomic write strategy to protect against symlink races.
  */
 export async function planOutputPath(root: string, requestedPath: string, format: 'json' | 'markdown', options: OutputPathOptions = {}): Promise<OutputPathPlan> {
-  const windowsPath = /^[A-Za-z]:[\\/]/.test(requestedPath) || requestedPath.startsWith('\\\\') || requestedPath.startsWith('//');
   const requestedAbsolute = isAbsolute(requestedPath);
-  if (!requestedPath || windowsPath || requestedPath.includes('\\') || /[\0\r\n]/.test(requestedPath)) {
-    throw new OutputPathError('ABSOLUTE', 'output path must be a non-empty repository-relative POSIX path');
+  const windowsAbsolute = (/^[A-Za-z]:[\\/]/.test(requestedPath) || requestedPath.startsWith('\\\\') || requestedPath.startsWith('//')) && requestedAbsolute;
+  if (!requestedPath || ((/^[A-Za-z]:[\\/]/.test(requestedPath) || requestedPath.startsWith('\\\\') || requestedPath.startsWith('//')) && !requestedAbsolute) || (requestedPath.includes('\\') && !windowsAbsolute) || /[\0\r\n]/.test(requestedPath)) {
+    throw new OutputPathError('ABSOLUTE', 'output path must be a non-empty POSIX path or absolute filesystem path');
   }
   const normalized = normalize(requestedPath);
   const rootPath = resolve(root);

@@ -1,8 +1,10 @@
 import ts from "typescript";
 import { extractCss } from "./css.js";
 import { fact, range, type Evidence, type Diagnostic, type Mechanism } from "./model.js";
+import { extractTailwind } from './tailwind.js';
+import { extractBootstrap } from './bootstrap.js';
 export function extractTypescript(path: string, text: string) {
-  const sf = ts.createSourceFile(path,text,ts.ScriptTarget.Latest,true,path.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const sf = ts.createSourceFile(path,text,ts.ScriptTarget.Latest,true,/\.(?:tsx|jsx)$/.test(path) ? ts.ScriptKind.TSX : /\.js$/.test(path) ? ts.ScriptKind.JSX : ts.ScriptKind.TS);
   const evidence: Evidence[] = [], diagnostics: Diagnostic[] = [];
   const imports = new Map<string,string>(); const constants = new Map<string,ts.Expression>(); const ambiguousConstants=new Set<string>();
   function pre(n: ts.Node) {
@@ -43,12 +45,27 @@ export function extractTypescript(path: string, text: string) {
     }
   }
   function visit(n:ts.Node){
+    if(ts.isCallExpression(n)&&ts.isPropertyAccessExpression(n.expression)&&n.expression.getText(sf)==='React.createElement'){
+      const props=n.arguments[1];
+      if(props&&ts.isObjectLiteralExpression(props)) for(const p of props.properties) if(ts.isPropertyAssignment(p)&&p.name.getText(sf)==='style') object(p.initializer,'react-inline','React.createElement/style');
+    }
     if(ts.isJsxAttribute(n)&&n.initializer&&ts.isJsxExpression(n.initializer)&&n.initializer.expression){
       const key=n.name.getText(sf); const opening=n.parent.parent;
       const tag=ts.isJsxOpeningElement(opening)||ts.isJsxSelfClosingElement(opening)?opening.tagName.getText(sf):'';
       const mui=imports.get(tag)?.startsWith('@mui/')||['FormField','Button'].includes(tag)&&imports.get(tag)?.startsWith('@atlas/design-system');
       if(key==='style')object(n.initializer.expression,'react-inline',`${context(n)}/${tag}`);
       if(key==='sx'){if(mui)object(n.initializer.expression,'mui-sx',`${context(n)}/${tag}`);else diag(n,'UNRESOLVED_SX_OWNER','sx owner not resolved to a known MUI import/wrapper.');}
+      if(key==='css'&&ts.isObjectLiteralExpression(n.initializer.expression)) object(n.initializer.expression,'react-inline',`${context(n)}/${tag}/css`);
+      if(key==='className'&&ts.isStringLiteral(n.initializer.expression)) {
+        const valueStart=n.initializer.expression.getStart(sf)+1;
+        evidence.push(...extractTailwind(path,text,n.initializer.expression.text,valueStart,`${context(n)}/${tag}`));
+        evidence.push(...extractBootstrap(path,text,n.initializer.expression.text,valueStart,`${context(n)}/${tag}`));
+      }
+    }
+    if(ts.isJsxAttribute(n)&&n.name.getText(sf)==='className'&&n.initializer&&ts.isStringLiteral(n.initializer)) {
+      const opening=n.parent.parent; const tag=ts.isJsxOpeningElement(opening)||ts.isJsxSelfClosingElement(opening)?opening.tagName.getText(sf):'';
+      evidence.push(...extractTailwind(path,text,n.initializer.text,n.initializer.getStart(sf)+1,`${context(n)}/${tag}`));
+      evidence.push(...extractBootstrap(path,text,n.initializer.text,n.initializer.getStart(sf)+1,`${context(n)}/${tag}`));
     }
     if(ts.isCallExpression(n)&&ts.isIdentifier(n.expression)&&imports.get(n.expression.text)?.endsWith(':createTheme')){
       for(const a of n.arguments) if(ts.isObjectLiteralExpression(a)) for(const p of a.properties) if(ts.isPropertyAssignment(p)&&p.name.getText(sf)==='components'&&ts.isObjectLiteralExpression(p.initializer)){
@@ -57,7 +74,10 @@ export function extractTypescript(path: string, text: string) {
     }
     if(ts.isTaggedTemplateExpression(n)){
       let tag:ts.Expression=n.tag; while(ts.isPropertyAccessExpression(tag)||ts.isCallExpression(tag))tag=tag.expression;
-      if(ts.isIdentifier(tag)&&imports.get(tag.text)==='@emotion/styled'){
+      const imported=ts.isIdentifier(tag)?imports.get(tag.text):undefined;
+      const cssProp=ts.isIdentifier(tag)&&imported==='@emotion/react:css'&&ts.isJsxExpression(n.parent)&&ts.isJsxAttribute(n.parent.parent)&&n.parent.parent.name.getText(sf)==='css';
+      const muiStyled=ts.isIdentifier(tag)&&Boolean(imported&&((imported==='@mui/material/styles:styled')||imported==='@mui/material/styles'));
+      if(ts.isIdentifier(tag)&&(imported==='@emotion/styled'||cssProp||muiStyled)){
         if(ts.isNoSubstitutionTemplateLiteral(n.template)){ const start=n.template.getStart(sf)+1; const raw=text.slice(start,n.template.end-1); if(raw.includes('\\'))diag(n.template,'TEMPLATE_ESCAPE','Escaped template requires cooked/raw mapping; fragment skipped.');else {const r=extractCss(path,text,raw,start,'emotion-template',context(n));evidence.push(...r.evidence);diagnostics.push(...r.diagnostics);} }
         else {diag(n.template,'EMOTION_INTERPOLATION','Interpolated template not evaluated; independent declarations extracted conservatively.'); const chunks=[n.template.head,...n.template.templateSpans.map(s=>s.literal)]; for(const chunk of chunks){const start=chunk.getStart(sf)+1; const end=chunk.end-(chunk.kind===ts.SyntaxKind.TemplateTail?1:2);const raw=text.slice(start,end); if(raw.includes('\\')){diag(chunk,'TEMPLATE_ESCAPE','Escaped interpolated fragment skipped.');continue;} // Only standalone semicolon-terminated declarations; no crossing holes.
           const regex=/(?:^|[;\n])\s*([a-z-]+\s*:[^;{}$]+;)/g; let m; while((m=regex.exec(raw))){const offset=start+m.index+m[0].indexOf(m[1]);const r=extractCss(path,text,m[1],offset,'emotion-template',context(n));evidence.push(...r.evidence);diagnostics.push(...r.diagnostics);}}
