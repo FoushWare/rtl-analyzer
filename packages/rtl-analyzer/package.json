@@ -2,6 +2,10 @@
   "name": "rtl-analyzer",
   "version": "0.1.0",
   "description": "Conservative RTL risk scanning and report generation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FoushWare/rtl-analyzer.git"
+  },
   "type": "module",
   "bin": {
     "rtl-analyzer": "dist/standalone-cli.js"
