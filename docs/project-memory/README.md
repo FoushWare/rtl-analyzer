@@ -4,10 +4,7 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Current status
 
-- Repository: `https://github.com/FoushWare/rtl-analyzer.git`
-- Branch: `feat/standalone-cli-packaging`
-- Current milestone: **M4D.4T complete — final Native Windows verification and documentation synchronization**. Historical milestones remain documented in the project history.
-- Next action: **Final commit-candidate audit**. Do not begin Windows verification in the macOS workspace.
+**Verified 2026-11-19.** Existing public `rtl-analyzer` 0.2.0 is being prepared for **0.3.0** on `codex/rtl-analyzer-0.3.0-prep`. The [release record](../releases/rtl-analyzer-0.3.0.md) owns current evidence, pinned implementation, commands, acceptance and publication procedure. Build/runtime now use the lab implementation submodule plus the existing standalone router. Prior M4D Windows milestones below are historical and do not certify this candidate. No publication/tag/deployment is authorized in this task.
 
 ## Documents
 

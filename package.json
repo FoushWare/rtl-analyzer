@@ -13,12 +13,12 @@
     "test:e2e:regression": "playwright test --config=playwright.apply-rollback.config.ts tests/e2e/apply-rollback-disposable.spec.ts && playwright test --config=playwright.phase5.config.ts tests/e2e/phase5-progress.spec.ts && playwright test --config=playwright.manual-regression.config.ts tests/e2e/security-negative.spec.ts tests/e2e/restart-infrastructure.spec.ts tests/e2e/stale-lifecycle.spec.ts tests/e2e/failed-lifecycle.spec.ts",
     "test:visual": "playwright test --grep visual",
     "storybook": "storybook dev -p 6006",
-    "rtl:scan": "node dist/tools/rtl-scanner/cli.js",
-    "rtl:scan:test": "vitest run --config tools/rtl-scanner/vitest.config.ts",
-    "rtl:scan:typecheck": "tsc -p tools/rtl-scanner/tsconfig.typecheck.json",
-    "rtl:scan:build": "tsc -p tools/rtl-scanner/tsconfig.json",
-    "rtl:cli:package:smoke": "node tools/rtl-scanner/tests/standalone-package-smoke.mjs",
-    "rtl:preview": "node dist/tools/rtl-scanner/preview-companion.js"
+    "rtl:scan": "node packages/rtl-analyzer/dist/cli.js",
+    "rtl:scan:test": "npm --prefix implementation run rtl:scan:test",
+    "rtl:scan:typecheck": "npm --prefix implementation run rtl:scan:typecheck",
+    "rtl:scan:build": "npm run build --prefix packages/rtl-analyzer",
+    "rtl:cli:package:smoke": "node scripts/consumer-smoke.mjs",
+    "rtl:preview": "node packages/rtl-analyzer/dist/preview-cli.js"
   },
   "dependencies": {
     "@emotion/cache": "11.14.0",
@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@nx/vite": "23.3.0",
-    "@playwright/test": "^1.56.0",
+    "@playwright/test": "1.64.0",
     "@storybook/react-vite": "10.6.7",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.3.0",

@@ -1,0 +1,54 @@
+[
+  {
+    "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-2jwAq6/project",
+    "command": [
+      "npx",
+      "--no-install",
+      "rtl-analyzer",
+      "scan",
+      ".",
+      "--format",
+      "json"
+    ],
+    "exit": 0,
+    "log": "extra-consumer-0.log"
+  },
+  {
+    "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-2jwAq6/project",
+    "command": [
+      "npx",
+      "--no-install",
+      "rtl-scanner",
+      "--help"
+    ],
+    "exit": 0,
+    "log": "extra-consumer-1.log"
+  },
+  {
+    "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-2jwAq6/project",
+    "command": [
+      "npx",
+      "--no-install",
+      "rtl-preview",
+      "--help"
+    ],
+    "exit": 0,
+    "log": "extra-consumer-2.log"
+  },
+  {
+    "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-2jwAq6/project",
+    "command": [
+      "npx",
+      "--no-install",
+      "rtl-analyzer",
+      "scan",
+      ".",
+      "--format",
+      "dashboard",
+      "--output-dir",
+      "./rtl-report"
+    ],
+    "exit": 2,
+    "log": "extra-consumer-3.log"
+  }
+]

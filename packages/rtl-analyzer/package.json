@@ -1,17 +1,20 @@
 {
   "name": "rtl-analyzer",
-  "version": "0.2.0",
-  "description": "Conservative RTL risk scanning and report generation",
+  "version": "0.3.0",
+  "description": "RTL analysis with isolated review, accepted-only Apply and receipt-backed rollback",
   "repository": {
     "type": "git",
-    "url": "https://github.com/FoushWare/rtl-analyzer.git"
+    "url": "https://github.com/FoushWare/rtl-analyzer.git",
+    "directory": "packages/rtl-analyzer"
   },
   "type": "module",
   "bin": {
-    "rtl-analyzer": "dist/standalone-cli.js"
+    "rtl-analyzer": "dist/standalone-cli.js",
+    "rtl-scanner": "dist/cli.js",
+    "rtl-preview": "dist/preview-cli.js"
   },
   "files": [
-    "dist/**",
+    "dist/*.js",
     "README.md",
     "LICENSE"
   ],
@@ -19,7 +22,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node build.mjs",
     "prepack": "npm run build"
   },
   "dependencies": {
@@ -27,6 +30,12 @@
     "postcss": "8.5.29",
     "postcss-scss": "4.0.9",
     "postcss-value-parser": "4.2.0",
-    "typescript": "~5.9.0"
-  }
+    "typescript": "~5.9.0",
+    "@playwright/test": "1.64.0"
+  },
+  "rtlAnalyzerImplementation": {
+    "repository": "https://github.com/FoushWare/enterprise-rtl-migration-lab",
+    "commit": "0a10d65bf3bf7a7aa7a9fa287263bde9639ab1db"
+  },
+  "license": "MIT"
 }

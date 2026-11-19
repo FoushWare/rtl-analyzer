@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -34,11 +36,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck RTL scan
+        run: npm run rtl:scan:typecheck
+
       - name: Build RTL scan
         run: npm run rtl:scan:build
 
       - name: Test RTL scan
         run: npm run rtl:scan:test
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Package CLI smoke test
         run: npm run rtl:cli:package:smoke
