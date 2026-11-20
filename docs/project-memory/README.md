@@ -8,6 +8,8 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Documents
 
+- [Review-mode entry and restoration](../verification/review-mode-entry-2026-11-21.md) — verified 2026-11-21: both modes, saved-session chooser behavior, per-review draft restoration, both-mode cross-file navigation, final package/browser/Apply/rollback evidence and fresh manual tab; human acceptance pending.
+
 - [Project-wide review navigation](../verification/cross-file-review-2026-11-21.md) — verified 2026-11-21: shared scope/progress model, explicit cross-file/filter continuation, unresolved summary routes, final installed package/browser/Apply/rollback evidence and running URLs; human acceptance pending.
 
 - [Preview mappings and sidebar decisions](../verification/preview-status-2026-11-21.md) — verified 2026-11-21: independent JSX targets, intentional unmapped state, persisted indicators, final installed package/browser/Apply/rollback evidence and running URLs; human acceptance pending.
