@@ -1,6 +1,6 @@
 # RTL Analyzer 0.3.0 publication
 
-Verified **2026-11-20**. The user explicitly authorized finalizing and publishing the existing public package through ordinary PR review/merge and the existing GitHub release → OIDC workflow. Existing repository lint debt and deferred broader platform/real-world acceptance are accepted for this bounded release. Ahmed manual visual/workflow acceptance **[ ]** remains unchecked. This supersedes current-status claims in the [November 19 preparation snapshot](rtl-analyzer-0.3.0.md), preserving its historical evidence.
+**Published and registry-verified 2026-11-20:** [rtl-analyzer 0.3.0](https://www.npmjs.com/package/rtl-analyzer/v/0.3.0), `latest: 0.3.0`. The user explicitly authorized finalizing and publishing the existing public package through ordinary PR review/merge and the existing GitHub release → OIDC workflow. Existing repository lint debt and deferred broader platform/real-world acceptance are accepted for this bounded release. Ahmed manual visual/workflow acceptance **[ ]** remains unchecked. This supersedes current-status claims in the [November 19 preparation snapshot](rtl-analyzer-0.3.0.md), preserving its historical evidence.
 
 ## Reviewed scope
 
@@ -24,15 +24,15 @@ Host: macOS arm64, Node **v22.21.1**, npm **10.9.4**. Evidence root: `/private/v
 
 Both review modes start Pending, prepare without changing source, verify real LTR/RTL frames and computed spacing, then pass typecheck/build/test/scanner/runtime-LTR/runtime-RTL. Accepting only one finding recomposes one patch. Separate source Apply changes only that declaration and creates one receipt per mode. Rollback restores all five source hashes exactly and starts fresh Pending / Not run state. Six unauthorized writes return 403; no browser page errors. Owned services are terminated and awaited; individual service exit codes are not captured. Automated fixture decisions do not substitute for Ahmed's manual acceptance.
 
-## Publication status
+## Initial availability and publication plan (historical)
 
 Before finalization: remote `main` was `253912c85dfadda09abb42361b9a9776dc9916eb`, the preparation branch was `ffe979b968984cdeb9a1c73ac33a80b8dddf641d`. GitHub API reported main unprotected, no rulesets, no existing preparation PR, no v0.3.0 tag/release; npm lookup returned E404 for 0.3.0. Policies/version availability must be rechecked immediately before publication.
 
-Publication is pending ordinary PR CI/review and merge. Only `.github/workflows/publish.yml` on **release.published** may publish npm. It validates tag/version, installs submodules, runs typecheck/build/tests/Chromium/full wrapper smoke, checks version availability and uses OIDC. No manual npm publish or protection bypass is authorized. Final merge/tag/Actions/npm provenance and registry-installed verification will be recorded after execution.
+At this preparation snapshot, publication was pending ordinary PR CI/review and merge. Only `.github/workflows/publish.yml` on **release.published** may publish npm. It validates tag/version, installs submodules, runs typecheck/build/tests/Chromium/full wrapper smoke, checks version availability and uses OIDC. No manual npm publish or protection bypass is authorized. Final merge/tag/Actions/npm provenance and registry-installed verification will be recorded after execution.
 
 ## Accepted limitations
 
-The retained Windows CI leg must be reported honestly; historical Windows milestones do not certify this implementation. Protected source/report operations use the trusted POSIX filesystem profile and Windows protected operations are unsupported. Linux full runtime acceptance awaits current CI. Safari, other package managers, general framework compatibility, an existing real-world consumer and Ahmed's manual acceptance remain unverified. Historical Before runtime is unavailable after Apply, test-change coverage is Unknown, and trusted project scripts/single-process coordination remain assumptions.
+The retained Windows CI leg must be reported honestly; historical Windows milestones do not certify this implementation. Protected source/report operations use the trusted POSIX filesystem profile and Windows protected operations are unsupported. Linux full installed-wrapper runtime verification subsequently passed, as recorded below. Safari, other package managers, general framework compatibility, an existing real-world consumer and Ahmed's manual acceptance remain unverified. Historical Before runtime is unavailable after Apply, test-change coverage is Unknown, and trusted project scripts/single-process coordination remain assumptions.
 
 Historical asset/memory links remain unresolved; no historical files were regenerated. Release repository has no memory validator script. Lab validation and current publication evidence will be recorded in its affected memory entries only.
 
@@ -45,3 +45,32 @@ Final implementation pin: [`8d3946a40b024a042cf315aa33cfcb560e69dc75`](https://g
 Final corrected artifact: [pack manifest](rtl-analyzer-0.3.0-final-pack-2026-11-20.json), **67 files, 171,699 compressed / 653,804 unpacked bytes**, SHA-256 `19c575c0468b93de150c6e7e8db039231a4a22550bfb355565b23652a20dbfb8`, SHA-1 `b86f96da4c38d280c10dc370e98e7a310d6311fd`, integrity `sha512-+dUfRsji8JmCQd0VODS+PZ3CulTZQo0hBHcJ5DmMTrQ90wwXZUhjvCUY5nHjCz4pQ9HFc4jrSQw5bYYG6UASTg==`. Archive comparison proves all runtime/README/license bytes match the pre-CI artifact; only package metadata's implementation commit changes. Actual allowlist and sensitive-pattern inspection pass again.
 
 The actual `npm run rtl:cli:package:smoke` exits 0 on this corrected artifact. [Final installed consumer evidence](rtl-analyzer-0.3.0-final-consumer-2026-11-20.json) records both complete modes and the same six checks, accepted-only Apply, receipt counts, five-file exact rollback, six denied writes and no browser page errors. The independent prepack and smoke pack are byte-identical. Current PR CI must be rechecked at the new head before merge.
+
+## Ordinary merge and GitHub release
+
+[PR #11](https://github.com/FoushWare/rtl-analyzer/pull/11) was reviewed and ordinarily merged at **`b4c19d3857dd961b5d9e72fe0d36f47f5999cd7f`** on 2026-11-20. Its final head was `fd7d736c2aac5135eaf1844b2230fd4a93eee871`; the merge tree is identical. Review was a scoped source/workflow/pack/consumer audit; Copilot reported insufficient review quota and supplied no independent approval. No required review policy exists. Main was unprotected with no rulesets; no admin override, force push or protection change was used.
+
+[Final PR CI](https://github.com/FoushWare/rtl-analyzer/actions/runs/44674349533): **Ubuntu passes** typecheck/build, all 397 scanner tests, Chromium installation and full wrapper smoke. [Linux consumer evidence](rtl-analyzer-0.3.0-linux-consumer-2026-11-20.json) records Node v22.23.4, both complete review modes and exact Apply/rollback. **Windows fails**: 54 failed / 342 passed / 1 platform-conditional skipped in 33 files, including unsupported POSIX/path semantics. It does not reach Chromium/consumer smoke. The retained check remains visibly failing, with no test/check/rule weakened to obtain a green result. This is within the user's explicitly accepted deferred broader-platform scope, and does not certify Windows.
+
+Immediately before release creation, npm 0.3.0/tag/release availability were checked again (E404/404/absent), and main's exact merge SHA was verified. [GitHub v0.3.0](https://github.com/FoushWare/rtl-analyzer/releases/tag/v0.3.0) was published at that merge commit. Its release event starts [Publish package run 44674724255](https://github.com/FoushWare/rtl-analyzer/actions/runs/44674724255), which independently reruns all mandatory Linux checks before OIDC publication. No manual npm publish was executed.
+
+## Registry verification completed
+
+[Publish run](https://github.com/FoushWare/rtl-analyzer/actions/runs/44674724255) **succeeded** with Node v22.14.0/npm 11.5.1, all 397 scanner tests and [both-mode publication-gate consumer evidence](rtl-analyzer-0.3.0-publish-consumer-2026-11-20.json). [Run/job/step results](rtl-analyzer-0.3.0-publish-run-2026-11-20.json) preserve every mandatory gate. npm accepted the OIDC publication and emitted signed provenance. Its asynchronous processing and a cached 404 briefly delayed archive availability; normal registry installation now succeeds. No republish/retry publication was attempted.
+
+[Registry verification](rtl-analyzer-0.3.0-registry-verification-2026-11-20.json): `version` and `latest` are **0.3.0**, `gitHead` is **`b4c19d3857dd961b5d9e72fe0d36f47f5999cd7f`**, matching the tag and merge. Registry tarball: **67 files / 653,804 unpacked bytes**, SHA-256 **`bb2cb3ce5cd261c4371df3286f691d9cc4eb27bc5f36068dee1c387ece7b16d8`**, SHA-1 **`173d7609bb9d2375d8654ca51908fddc6acc4e49`**, integrity **`sha512-Xe0LJaOMlFSRThreLzF9dHxLW3huU6qpC7CyjxTtkn+LVkE/lV4AOBWzxODjZMa4rClv81vA8BtpHaOnyPIxuA==`**. The downloaded archive matches the Linux publication-gate tarball byte-for-byte. All 67 member contents and inspected headers also match the local macOS artifact, although compressed archive bytes differ between local packaging and Linux. npm normalized `repository.url` in registry metadata; there is no runtime content change.
+
+The signed SLSA provenance names `refs/tags/v0.3.0`, `FoushWare/rtl-analyzer`, `.github/workflows/publish.yml`, this exact merge SHA and Actions run **44674724255 / attempt 1**. Both attestation subject SHA-512 digests match the downloaded archive. A fresh registry-version install's **`npm audit signatures` exits 0**; its output and exact command exits are retained in the registry verification evidence.
+
+`npm pack rtl-analyzer@0.3.0 --ignore-scripts --json --pack-destination <external>` downloads actual registry bytes, then the existing wrapper harness installs that archive in a fresh disposable target. [Registry consumer evidence](rtl-analyzer-0.3.0-registry-consumer-2026-11-20.json) proves both full review modes, all six checks per mode, explicit accepted-only one-patch Apply, one receipt per mode, exact five-file rollback and fresh Pending / Not run state, six denied writes and no browser page errors. Harness exit **0**. A separate **`npm install --save-dev rtl-analyzer@0.3.0`**, installed `--version`, `--help`, read-only `scan . --format json`, and signature audit all exit **0**. The lockfile integrity equals registry integrity. Every service started by the harness is terminated and awaited; individual service exit codes are not captured.
+
+Developer commands from a frontend project's root (Node >=22.12):
+
+```sh
+npm install --save-dev rtl-analyzer@0.3.0
+npx --no-install rtl-analyzer --version
+npx --no-install rtl-analyzer scan . --format json
+npx --no-install rtl-analyzer
+```
+
+Live review is configured separately using the [developer testing guide](../guides/developer-testing.md): real project checks, source/selector/route bindings, Chromium, source-enabled external reports, Python server at 4320 and companion at 4318. No new example project or Nx infrastructure was added. **Ahmed manual acceptance [ ]** remains unchecked; accepted lint/platform/real-world limitations above remain visible.

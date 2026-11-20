@@ -1,0 +1,157 @@
+{
+  "conclusion": "success",
+  "createdAt": "2026-11-20T04:29:19Z",
+  "headSha": "b4c19d3857dd961b5d9e72fe0d36f47f5999cd7f",
+  "jobs": [
+    {
+      "completedAt": "2026-11-20T04:32:32Z",
+      "conclusion": "success",
+      "databaseId": 136083729977,
+      "name": "publish",
+      "startedAt": "2026-11-20T04:29:23Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-20T04:29:27Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-20T04:29:24Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:29:33Z",
+          "conclusion": "success",
+          "name": "Checkout release tag",
+          "number": 2,
+          "startedAt": "2026-11-20T04:29:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:29:37Z",
+          "conclusion": "success",
+          "name": "Set up Node.js",
+          "number": 3,
+          "startedAt": "2026-11-20T04:29:33Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:29:40Z",
+          "conclusion": "success",
+          "name": "Set up supported npm",
+          "number": 4,
+          "startedAt": "2026-11-20T04:29:37Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:29:40Z",
+          "conclusion": "success",
+          "name": "Verify release tag",
+          "number": 5,
+          "startedAt": "2026-11-20T04:29:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:30:25Z",
+          "conclusion": "success",
+          "name": "Install dependencies",
+          "number": 6,
+          "startedAt": "2026-11-20T04:29:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:30:25Z",
+          "conclusion": "success",
+          "name": "Verify toolchain",
+          "number": 7,
+          "startedAt": "2026-11-20T04:30:25Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:30:28Z",
+          "conclusion": "success",
+          "name": "Typecheck RTL scan",
+          "number": 8,
+          "startedAt": "2026-11-20T04:30:25Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:30:30Z",
+          "conclusion": "success",
+          "name": "Build RTL scan",
+          "number": 9,
+          "startedAt": "2026-11-20T04:30:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:30:38Z",
+          "conclusion": "success",
+          "name": "Test RTL scan",
+          "number": 10,
+          "startedAt": "2026-11-20T04:30:30Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:31:35Z",
+          "conclusion": "success",
+          "name": "Install Chromium",
+          "number": 11,
+          "startedAt": "2026-11-20T04:30:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:32:09Z",
+          "conclusion": "success",
+          "name": "Validate package",
+          "number": 12,
+          "startedAt": "2026-11-20T04:31:35Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:32:09Z",
+          "conclusion": "success",
+          "name": "Prevent republishing an existing version",
+          "number": 13,
+          "startedAt": "2026-11-20T04:32:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:32:25Z",
+          "conclusion": "success",
+          "name": "Publish to npm with OIDC",
+          "number": 14,
+          "startedAt": "2026-11-20T04:32:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:32:29Z",
+          "conclusion": "success",
+          "name": "Post Set up Node.js",
+          "number": 27,
+          "startedAt": "2026-11-20T04:32:25Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:32:30Z",
+          "conclusion": "success",
+          "name": "Post Checkout release tag",
+          "number": 28,
+          "startedAt": "2026-11-20T04:32:29Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-20T04:32:30Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 29,
+          "startedAt": "2026-11-20T04:32:30Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/FoushWare/rtl-analyzer/actions/runs/44674724255/job/136083729977"
+    }
+  ],
+  "status": "completed",
+  "updatedAt": "2026-11-20T04:32:33Z",
+  "url": "https://github.com/FoushWare/rtl-analyzer/actions/runs/44674724255"
+}

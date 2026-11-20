@@ -1,0 +1,188 @@
+{
+  "verified": "2026-11-20",
+  "name": "rtl-analyzer",
+  "version": "0.3.0",
+  "distTags": {
+    "latest": "0.3.0"
+  },
+  "gitHead": "b4c19d3857dd961b5d9e72fe0d36f47f5999cd7f",
+  "dist": {
+    "shasum": "173d7609bb9d2375d8654ca51908fddc6acc4e49",
+    "tarball": "https://registry.npmjs.org/rtl-analyzer/-/rtl-analyzer-0.3.0.tgz",
+    "fileCount": 67,
+    "integrity": "sha512-Xe0LJaOMlFSRThreLzF9dHxLW3huU6qpC7CyjxTtkn+LVkE/lV4AOBWzxODjZMa4rClv81vA8BtpHaOnyPIxuA==",
+    "signatures": [
+      {
+        "sig": "MEQCIA1atIj87VFWQBCXjJXUiRX6sXioDQVjz5u6KD+ssHylAiBA0dZ6WlSA6gSwhqIvmdH3EiAv+SEq7Wbl0pfVWSyUcQ==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "sig": "MEUCIGfMdBa78atIHgiXZuV92/vEzwRMQ3Telgrzf//XP+dIAiEA879ZCg+1O5RjcK+aSVAnSceyCOxWz0Swnouo5IDQb5A="
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/rtl-analyzer@0.3.0",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 653804
+  },
+  "registrySha256": "bb2cb3ce5cd261c4371df3286f691d9cc4eb27bc5f36068dee1c387ece7b16d8",
+  "comparison": {
+    "registrySha256": "bb2cb3ce5cd261c4371df3286f691d9cc4eb27bc5f36068dee1c387ece7b16d8",
+    "localSha256": "19c575c0468b93de150c6e7e8db039231a4a22550bfb355565b23652a20dbfb8",
+    "files": 67,
+    "differences": []
+  },
+  "provenance": {
+    "_type": "https://in-toto.io/Statement/v1",
+    "subject": [
+      {
+        "name": "pkg:npm/rtl-analyzer@0.3.0",
+        "digest": {
+          "sha512": "5ded0b25a38c9454914e1ade2f317d747c4b5b786e53aaa90bb0b28f14ed927f8b56413f955e003815b3c4e0e364c6b8ac296ff35bc0f01b691da3a7c8f231b8"
+        }
+      }
+    ],
+    "predicateType": "https://slsa.dev/provenance/v1",
+    "predicate": {
+      "buildDefinition": {
+        "buildType": "https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1",
+        "externalParameters": {
+          "workflow": {
+            "ref": "refs/tags/v0.3.0",
+            "repository": "https://github.com/FoushWare/rtl-analyzer",
+            "path": ".github/workflows/publish.yml"
+          }
+        },
+        "internalParameters": {
+          "github": {
+            "event_name": "release",
+            "repository_id": "1453191418",
+            "repository_owner_id": "18531447"
+          }
+        },
+        "resolvedDependencies": [
+          {
+            "uri": "git+https://github.com/FoushWare/rtl-analyzer@refs/tags/v0.3.0",
+            "digest": {
+              "gitCommit": "b4c19d3857dd961b5d9e72fe0d36f47f5999cd7f"
+            }
+          }
+        ]
+      },
+      "runDetails": {
+        "builder": {
+          "id": "https://github.com/actions/runner/github-hosted"
+        },
+        "metadata": {
+          "invocationId": "https://github.com/FoushWare/rtl-analyzer/actions/runs/44674724255/attempts/1"
+        }
+      }
+    }
+  },
+  "commands": [
+    {
+      "label": "metadata",
+      "command": [
+        "npm",
+        "view",
+        "rtl-analyzer@0.3.0",
+        "--json",
+        "--prefer-online",
+        "--registry=https://registry.npmjs.org"
+      ],
+      "cwd": "/Users/a.fouad/rtl-analyzer-0.3.0-prep",
+      "exit": 0
+    },
+    {
+      "label": "registry-pack",
+      "command": [
+        "npm",
+        "pack",
+        "rtl-analyzer@0.3.0",
+        "--ignore-scripts",
+        "--json",
+        "--pack-destination",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-publish-20261120-j4gx4n2t/registry",
+        "--registry=https://registry.npmjs.org"
+      ],
+      "cwd": "/Users/a.fouad/rtl-analyzer-0.3.0-prep",
+      "exit": 0
+    },
+    {
+      "label": "registry-wrapper-smoke",
+      "command": [
+        "node",
+        "/Users/a.fouad/rtl-analyzer-0.3.0-prep/implementation/tests/e2e/package-consumer-smoke.mjs",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-publish-20261120-j4gx4n2t/registry/rtl-analyzer-0.3.0.tgz",
+        "--wrapper"
+      ],
+      "cwd": "/Users/a.fouad/rtl-analyzer-0.3.0-prep",
+      "exit": 0
+    },
+    {
+      "label": "install-by-version",
+      "command": [
+        "npm",
+        "install",
+        "--save-dev",
+        "--no-audit",
+        "--no-fund",
+        "rtl-analyzer@0.3.0",
+        "--registry=https://registry.npmjs.org"
+      ],
+      "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-publish-20261120-j4gx4n2t/registry/installed-by-version",
+      "exit": 0
+    },
+    {
+      "label": "installed-version",
+      "command": [
+        "npx",
+        "--no-install",
+        "rtl-analyzer",
+        "--version"
+      ],
+      "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-publish-20261120-j4gx4n2t/registry/installed-by-version",
+      "exit": 0
+    },
+    {
+      "label": "installed-help",
+      "command": [
+        "npx",
+        "--no-install",
+        "rtl-analyzer",
+        "--help"
+      ],
+      "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-publish-20261120-j4gx4n2t/registry/installed-by-version",
+      "exit": 0
+    },
+    {
+      "label": "installed-scan",
+      "command": [
+        "npx",
+        "--no-install",
+        "rtl-analyzer",
+        "scan",
+        ".",
+        "--format",
+        "json"
+      ],
+      "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-publish-20261120-j4gx4n2t/registry/installed-by-version",
+      "exit": 0
+    },
+    {
+      "label": "audit-signatures",
+      "command": [
+        "npm",
+        "audit",
+        "signatures"
+      ],
+      "cwd": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-publish-20261120-j4gx4n2t/registry/installed-by-version",
+      "exit": 0
+    }
+  ],
+  "signatureAudit": "audited 13 packages in 3s\n\n13 packages have verified registry signatures\n\n6 packages have verified attestations\n\n"
+}
