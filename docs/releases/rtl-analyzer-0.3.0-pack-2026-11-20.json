@@ -1,0 +1,350 @@
+{
+  "id": "rtl-analyzer@0.3.0",
+  "name": "rtl-analyzer",
+  "version": "0.3.0",
+  "size": 171699,
+  "unpackedSize": 653804,
+  "shasum": "44c5bedf3bd3d41d8d2814da3109e183c927ca8f",
+  "integrity": "sha512-1dYWOLfy2mlffwCek+qPCz+aE14FvDOl9OeOMoSZxCZpLi0hCqdBdLhOq0uaW5xNa6zQApc8W9f1OdQ2pqXT3Q==",
+  "filename": "rtl-analyzer-0.3.0.tgz",
+  "files": [
+    {
+      "path": "LICENSE",
+      "size": 1068,
+      "mode": 420
+    },
+    {
+      "path": "README.md",
+      "size": 5919,
+      "mode": 420
+    },
+    {
+      "path": "dist/bootstrap.js",
+      "size": 1198,
+      "mode": 420
+    },
+    {
+      "path": "dist/cli.js",
+      "size": 5319,
+      "mode": 420
+    },
+    {
+      "path": "dist/codemod.js",
+      "size": 5718,
+      "mode": 420
+    },
+    {
+      "path": "dist/companion-security.js",
+      "size": 146,
+      "mode": 420
+    },
+    {
+      "path": "dist/contextual-preview-bridge.js",
+      "size": 19211,
+      "mode": 420
+    },
+    {
+      "path": "dist/contextual-preview.js",
+      "size": 7726,
+      "mode": 420
+    },
+    {
+      "path": "dist/controlled-apply.js",
+      "size": 13679,
+      "mode": 420
+    },
+    {
+      "path": "dist/coverage.js",
+      "size": 2774,
+      "mode": 420
+    },
+    {
+      "path": "dist/css-directional.js",
+      "size": 3824,
+      "mode": 420
+    },
+    {
+      "path": "dist/css-icons.js",
+      "size": 3788,
+      "mode": 420
+    },
+    {
+      "path": "dist/css-spacing.js",
+      "size": 4479,
+      "mode": 420
+    },
+    {
+      "path": "dist/css.js",
+      "size": 3142,
+      "mode": 420
+    },
+    {
+      "path": "dist/dashboard-client.js",
+      "size": 112664,
+      "mode": 420
+    },
+    {
+      "path": "dist/dashboard-contextual-preview.js",
+      "size": 20995,
+      "mode": 420
+    },
+    {
+      "path": "dist/dashboard-data.js",
+      "size": 6652,
+      "mode": 420
+    },
+    {
+      "path": "dist/dashboard-embedded-preview.js",
+      "size": 37950,
+      "mode": 420
+    },
+    {
+      "path": "dist/dashboard-html.js",
+      "size": 20072,
+      "mode": 420
+    },
+    {
+      "path": "dist/dashboard-review-details.js",
+      "size": 29259,
+      "mode": 420
+    },
+    {
+      "path": "dist/dashboard-review-workflow.js",
+      "size": 26860,
+      "mode": 420
+    },
+    {
+      "path": "dist/directional-properties.js",
+      "size": 4019,
+      "mode": 420
+    },
+    {
+      "path": "dist/discovery.js",
+      "size": 3284,
+      "mode": 420
+    },
+    {
+      "path": "dist/eligibility.js",
+      "size": 2127,
+      "mode": 420
+    },
+    {
+      "path": "dist/evidence-store.js",
+      "size": 8003,
+      "mode": 420
+    },
+    {
+      "path": "dist/example-preview-mappings.js",
+      "size": 9528,
+      "mode": 420
+    },
+    {
+      "path": "dist/html.js",
+      "size": 1743,
+      "mode": 420
+    },
+    {
+      "path": "dist/manual-change-store.js",
+      "size": 2041,
+      "mode": 420
+    },
+    {
+      "path": "dist/migration-lifecycle.js",
+      "size": 1273,
+      "mode": 420
+    },
+    {
+      "path": "dist/model.js",
+      "size": 734,
+      "mode": 420
+    },
+    {
+      "path": "dist/original-preview-runtime.js",
+      "size": 3558,
+      "mode": 420
+    },
+    {
+      "path": "dist/output-path.js",
+      "size": 3537,
+      "mode": 420
+    },
+    {
+      "path": "dist/policy-audit.js",
+      "size": 7982,
+      "mode": 420
+    },
+    {
+      "path": "dist/policy-validation.js",
+      "size": 8715,
+      "mode": 420
+    },
+    {
+      "path": "dist/policy.js",
+      "size": 1845,
+      "mode": 420
+    },
+    {
+      "path": "dist/presentation-adapter.js",
+      "size": 2180,
+      "mode": 420
+    },
+    {
+      "path": "dist/preview-cli.js",
+      "size": 977,
+      "mode": 420
+    },
+    {
+      "path": "dist/preview-companion.js",
+      "size": 49180,
+      "mode": 420
+    },
+    {
+      "path": "dist/preview-configuration.js",
+      "size": 8618,
+      "mode": 420
+    },
+    {
+      "path": "dist/preview-manifest.js",
+      "size": 1109,
+      "mode": 420
+    },
+    {
+      "path": "dist/preview-runtime.js",
+      "size": 7985,
+      "mode": 420
+    },
+    {
+      "path": "dist/project-configuration.js",
+      "size": 2925,
+      "mode": 420
+    },
+    {
+      "path": "dist/project-root.js",
+      "size": 513,
+      "mode": 420
+    },
+    {
+      "path": "dist/react-inline.js",
+      "size": 4638,
+      "mode": 420
+    },
+    {
+      "path": "dist/report-publisher.js",
+      "size": 5348,
+      "mode": 420
+    },
+    {
+      "path": "dist/report.js",
+      "size": 2345,
+      "mode": 420
+    },
+    {
+      "path": "dist/review-approval.js",
+      "size": 452,
+      "mode": 420
+    },
+    {
+      "path": "dist/review-session.js",
+      "size": 19826,
+      "mode": 420
+    },
+    {
+      "path": "dist/review-store.js",
+      "size": 9712,
+      "mode": 420
+    },
+    {
+      "path": "dist/review-workflow.js",
+      "size": 34912,
+      "mode": 420
+    },
+    {
+      "path": "dist/rules.js",
+      "size": 26478,
+      "mode": 420
+    },
+    {
+      "path": "dist/runtime-direction.js",
+      "size": 20448,
+      "mode": 420
+    },
+    {
+      "path": "dist/runtime-process.js",
+      "size": 1809,
+      "mode": 420
+    },
+    {
+      "path": "dist/scan-history.js",
+      "size": 2149,
+      "mode": 420
+    },
+    {
+      "path": "dist/scan-manifest-store.js",
+      "size": 1710,
+      "mode": 420
+    },
+    {
+      "path": "dist/scan.js",
+      "size": 6050,
+      "mode": 420
+    },
+    {
+      "path": "dist/serialization.js",
+      "size": 11,
+      "mode": 420
+    },
+    {
+      "path": "dist/source-context.js",
+      "size": 7340,
+      "mode": 420
+    },
+    {
+      "path": "dist/source-snippets.js",
+      "size": 8270,
+      "mode": 420
+    },
+    {
+      "path": "dist/standalone-cli.js",
+      "size": 5611,
+      "mode": 420
+    },
+    {
+      "path": "dist/structured-markdown.js",
+      "size": 5890,
+      "mode": 420
+    },
+    {
+      "path": "dist/tailwind.js",
+      "size": 1335,
+      "mode": 420
+    },
+    {
+      "path": "dist/transformations.js",
+      "size": 2297,
+      "mode": 420
+    },
+    {
+      "path": "dist/typescript.js",
+      "size": 12686,
+      "mode": 420
+    },
+    {
+      "path": "dist/validation.js",
+      "size": 4483,
+      "mode": 420
+    },
+    {
+      "path": "dist/workflow-validation.js",
+      "size": 4645,
+      "mode": 420
+    },
+    {
+      "path": "package.json",
+      "size": 1040,
+      "mode": 420
+    }
+  ],
+  "entryCount": 67,
+  "bundled": [],
+  "sha256": "d745064bf773e3283065e4be21d0f1513cfbffebc628ddf1880de11f4160ce42"
+}

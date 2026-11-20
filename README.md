@@ -1,181 +1,107 @@
-# RTL Migration Analyzer
+# RTL Analyzer
 
-RTL Migration Analyzer is a conservative, read-only analysis and review tool for finding RTL migration risks in React, TypeScript, CSS, HTML, Emotion, and Material UI codebases.
+Find direction-dependent styles, inspect suggested fixes, and review changes for RTL and LTR interfaces.
 
-The project is published by FoushWare. This repository also contains the fictional Atlas invoicing demo application used as an Analyzer fixture and browser-test target. Atlas is supporting demonstration material; it is not the Analyzer product.
+[View on npm](https://www.npmjs.com/package/rtl-analyzer) · [Quick start](#quick-start) · [Review modes](#review-modes) · [Example](#example) · [Developer testing guide](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md)
 
-## Interactive architecture explorer
+## Quick start
 
-Explore the [RTL Analyzer interactive architecture map](https://foushware.github.io/rtl-analyzer/architecture/) to navigate scanner modules, package boundaries, code relationships, and guided execution flows. The map is a standalone static Floorplan export hosted on GitHub Pages; it does not require a running Floorplan server.
+Requires **Node.js 22.12 or later**. Run from your frontend project's root:
 
-The map documents the standalone CLI package as merged and locally packable, **not yet published to npm**. See the [architecture map publication notes](docs/architecture/README.md) for its source revision and refresh process.
+```sh
+npx rtl-analyzer
+```
 
-## Capabilities
+Or install as a development dependency:
 
-The Analyzer provides:
+```sh
+npm install --save-dev rtl-analyzer
+npx --no-install rtl-analyzer
+```
 
-- Static RTL risk detection with schema-v2 JSON and Markdown reports.
-- A self-contained dashboard for browsing files, findings, evidence, severity, and coverage status.
-- A local review companion for durable review records, evidence, lifecycle state, and progress.
-- Candidate preview runtimes for reviewing proposed changes in disposable project copies.
-- Controlled Apply and Rollback workflows with source identity, digest, path, and trusted-root checks.
-- Portable Playwright regression fixtures that isolate project files, dashboards, state stores, backups, and service processes.
+The default command scans the current directory, writes reports to an external temporary directory and requests your default browser. It does not start the live review services. For a scan of a specific directory or command help:
 
-The scanner is intentionally conservative. A finding is analysis evidence for human review, not proof of a visual defect or authorization to change source code.
+```sh
+npx rtl-analyzer scan ./src --format json
+npx rtl-analyzer --help
+npx rtl-analyzer preview --help
+```
 
-### Confirmed syntax coverage
+Read-only recursive scans need no configuration. **Live Fix Studio review requires configuration**: explicit scan/copy scope and validation scripts in `rtl-project.config.json`, source/selector/route bindings in `rtl-preview.config.json`, your project's installed dependencies, and Chromium. The current runtime adapter supports Vite-compatible development scripts. Follow the [developer testing guide](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md) to generate a source-enabled dashboard, serve it and start the companion with `npx --no-install rtl-analyzer preview`.
 
-These results describe tested syntax patterns, not complete framework compatibility:
+## What you can review
 
-| Area | Status | Confirmed scope |
+| In Fix Studio | What it helps you understand |
+| --- | --- |
+| Findings list | Which direction-dependent patterns need attention |
+| Highlighted source | Where a finding appears in your code |
+| Details | Why the pattern may affect RTL behavior |
+| Before / After | What the suggested fix changes |
+| Component Review | How the change fits the component's intended behavior |
+| Decision | Whether to accept the proposed change |
+
+## Review modes
+
+| Mode | Workflow | Choose it when… |
 | --- | --- | --- |
-| React inline styles | Verified | Tested JSX/TSX object styles such as `marginLeft`, `marginRight`, `paddingLeft`, `paddingRight`, and `textAlign`. |
-| Emotion `styled` | Verified | Static tagged templates imported from `@emotion/styled`. |
-| Emotion `css` prop | Verified | Tagged templates from `@emotion/react` and static object expressions. |
-| MUI `sx` | Partial | Tested MUI components and supported aliases such as `ml` and `pr`; broader wrappers and semantics remain conservative. |
-| MUI `styled` | Verified | Static tagged templates imported from `@mui/material/styles`. |
-| Vanilla CSS and HTML | Verified | Physical CSS declarations and tested HTML direction attributes. |
-| CSS Modules | Verified | Physical declarations in discovered `.module.css` files. |
-| Tailwind utilities | Partial | Static class strings recognize `ml-*`, `mr-*`, `pl-*`, `pr-*`, `left-*`, `right-*`, `border-l-*`, `border-r-*`, `text-left`, `text-right`, and identifiable `rtl:`/`ltr:` variants. Dynamic composition and framework semantics are not evaluated. |
-| Bootstrap 4 directional utilities | Partial | Static class strings recognize Bootstrap 4 `float-left/right`, responsive `float-{sm,md,lg,xl}-left/right`, `text-{sm,md,lg,xl}-left/right`, and `border-left/right[-0]`. Shared physical classes such as `ml-*` remain framework-neutral; Bootstrap version and runtime semantics are not inferred. |
-| SCSS/Sass | Unsupported with diagnostic | Files are not parsed; directional-looking source produces a `SOURCE_COVERAGE` diagnostic. |
+| Prepare all, then review | Prepare supported suggestions in an isolated candidate, then inspect them together. | You want to review the proposals together. |
+| Review one by one | Prepare and inspect a selected suggestion in isolation. | You want to examine each proposal individually. |
 
-Next.js App Router and Pages Router directories are discoverable as ordinary source layouts, but directory discovery does not certify Next.js framework behavior.
+Both modes start **Pending**. Preparation leaves your source unchanged. Explicitly accept the proposals you want, run **Validate changes** on that accepted set, then use the separate **Apply accepted changes to source** action. Receipt-backed rollback restores applied changes when the source still matches the receipt. The persisted batch-mode identifier remains `apply-first`.
 
-See the [scanner documentation](tools/rtl-scanner/README.md), [architecture](docs/rtl-analyzer-v3/ARCHITECTURE.md), [data contracts](docs/rtl-analyzer-v3/DATA-CONTRACTS.md), and [acceptance checklist](docs/rtl-analyzer-v3/ACCEPTANCE-CHECKLIST.md).
+## Example
 
-## Requirements
+A card uses physical left and right spacing:
 
-- Node.js 22.12 or newer
-- npm 10 or newer
-- Python 3 for the portable dashboard HTTP server
-- Chromium for Playwright browser tests
-
-The portable regression uses loopback ports 4200, 4318/4319, and 4320. It creates disposable temporary directories and does not require developer-specific fixture paths, pre-existing dashboards, or pre-existing state stores.
-
-## Installation
-
-From the repository root:
-
-```sh
-npm ci
+```css
+.card {
+  margin-left: 16px;
+  padding-right: 24px;
+  text-align: left;
+}
 ```
 
-Install the Playwright Chromium browser used by the regression suite:
+A suggested change uses logical properties:
 
-```sh
-npx playwright install chromium --no-shell
+```css
+.card {
+  margin-inline-start: 16px;
+  padding-inline-end: 24px;
+  text-align: start;
+}
 ```
 
-## Scanner CLI
+In horizontal writing mode (`horizontal-tb`), inline-start maps to the left in LTR and to the right in RTL. Use this change when the spacing should follow the text direction; keep physical positioning when the design requires a fixed side.
 
-Build and typecheck the scanner:
+## A typical review
 
-```sh
-npm run rtl:scan:typecheck
-npm run rtl:scan:build
-```
+1. Configure the project and scan it with source snippets enabled.
+2. Start the dashboard server and companion, then choose a review mode.
+3. Inspect a finding, its highlighted source and the mapped component.
+4. Compare the original code with the suggestion in RTL and LTR.
+5. Accept, reject or defer the proposal according to the component's intent.
+6. Validate the accepted set, then separately apply it to source.
+7. Verify the affected interface in both RTL and LTR.
 
-Run a read-only scan:
+If source or accepted decisions change during review, freshness checks can invalidate suggestions or validation. Failed or unavailable required evidence blocks source Apply.
 
-```sh
-node dist/tools/rtl-scanner/cli.js --format json
-node dist/tools/rtl-scanner/cli.js --format markdown
-```
+## What a scan does—and what still needs checking
 
-The CLI also supports `markdown-structured` and `dashboard`. To publish a dashboard and its companion report artifacts into an output directory:
+| The tool helps with | You still need to check |
+| --- | --- |
+| Finding direction-dependent code patterns | Whether the pattern is actually a bug |
+| Suggesting direction-aware alternatives | Whether the change matches the design |
+| Showing source context and proposed changes | The rendered component in RTL and LTR |
+| Identifying potentially stale suggestions | The latest source before applying a change |
 
-```sh
-node dist/tools/rtl-scanner/cli.js \
-  --format dashboard \
-  --root . \
-  --output-dir ./rtl-report
-```
+Static HTML/CSS, CSS Modules, React inline styles, Emotion and MUI patterns are analyzed conservatively. Recognized utility classes and bounded SCSS declarations are detection-only; dynamic or ambiguous syntax may remain unsupported. A scan reports potential issues. It does not prove that a page renders correctly or replace browser testing.
 
-The dashboard output is self-contained. Source snippets are opt-in and should be treated as potentially sensitive data.
+Report publication and protected source operations use a trusted POSIX filesystem profile on macOS/Linux. Windows protected operations are unsupported. Safari, other package managers and an existing real-world project's acceptance remain unverified; no general framework compatibility is certified. Project scripts must be trusted. See the [setup and limitations](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md) and [release evidence](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/releases/rtl-analyzer-0.3.0.md).
 
-## Dashboard and Companion
+## Demo
 
-The scanner can generate a static `rtl-report-dashboard.html`. The local Companion serves review APIs for records, evidence, decisions, lifecycle, progress, and audit data:
+A video walkthrough and released-product screenshots have not been published yet.
 
-```sh
-npm run rtl:preview
-```
+## Development
 
-The Companion defaults to loopback port 4318 and stores review data under the local user data directory unless explicit `RTL_*` store paths are supplied. Release tests always provide disposable paths.
-
-## Candidate Preview, Apply, and Rollback
-
-Candidate Preview starts an isolated runtime for a proposed change. The review workflow validates the candidate before it can be approved. Apply and Rollback are guarded by:
-
-- repository-relative source paths and trusted-root validation;
-- source and policy digests;
-- review identity and approval state;
-- stale-source detection;
-- disposable backup and audit storage;
-- symlink and path-traversal protections.
-
-The workflow is designed for explicit human review. The Analyzer does not silently rewrite application source files, and its E2E tests operate only on disposable copies of the invoicing fixture.
-
-## Verification
-
-Run the scanner tests:
-
-```sh
-npm run rtl:scan:test
-```
-
-Run the complete portable Analyzer regression:
-
-```sh
-npm run test:e2e:regression
-```
-
-Verified portable E2E baseline (macOS, 2026-11-11): the canonical command runs three groups—`playwright.apply-rollback.config.ts` (1 test), `playwright.phase5.config.ts` (2 tests), and `playwright.manual-regression.config.ts` (20 tests)—for 23 tests total, all passed and none skipped. The historical “23” report therefore describes the aggregate command; the “20” report described only the final manual-regression group. No test configuration was changed to reconcile the counts.
-
-That script runs each suite with its isolated Playwright configuration:
-
-- Apply/Rollback disposable fixture: `playwright.apply-rollback.config.ts`;
-- deterministic Phase 5 dashboard fixture: `playwright.phase5.config.ts`;
-- security and lifecycle suites: `playwright.manual-regression.config.ts`.
-
-The verified output is 23 passed tests, 0 failed, and 0 skipped: 1 Apply/Rollback test, 2 Phase 5 tests, and 20 security/lifecycle tests.
-
-General repository checks are also available:
-
-```sh
-npm run lint
-npm run typecheck
-npm run build
-npm test
-```
-
-## Atlas invoicing demo
-
-The bundled Atlas app is a fictional React/Nx/Vite demonstration project used by the portable fixtures. It can be run independently:
-
-```sh
-npm run dev
-```
-
-This starts the invoicing demo at `http://localhost:4200`. The demo's historical RTL migration material and screenshot gallery are separate from the Analyzer release surface.
-
-## Known limitations
-
-- Static analysis cannot prove the complete computed CSS cascade, runtime ownership graph, browser rendering result, font-dependent collisions, or all dynamic direction behavior.
-- MUI `styled` object syntax is not currently analyzed; use a static tagged template for the verified pattern.
-- Tailwind support is limited to literal static class strings and the listed physical utilities; responsive/state prefixes and arbitrary values are recorded when the final utility is statically identifiable, while dynamic `clsx`/`classnames`/template expressions are not guessed.
-- Bootstrap support is limited to the listed Bootstrap 4 physical utility forms. Bootstrap 5 logical utilities such as `ms-*`, `me-*`, `ps-*`, and `pe-*`, custom classes, project configuration, and dynamic class composition are not interpreted.
-- SCSS/Sass is intentionally unsupported and produces a coverage diagnostic rather than parsed findings.
-- Framework names and directories do not imply framework-specific rule support.
-- Findings require human interpretation and approval.
-- The scanner does not provide a general-purpose automated RTL codemod.
-- Compatibility experiments under `tools/rtl-scanner/tests/experiments/` require separate external setup and are not part of the normal clean-checkout regression.
-- Legacy Atlas phase configurations are not part of the portable release regression and may contain historical machine-specific paths.
-- Generated `dist/`, Playwright reports, test results, dashboards, screenshots, and state stores are reproducible artifacts and are not release source files.
-
-For detailed scope, policy, coverage, and security qualifications, see the [Analyzer documentation index](docs/rtl-analyzer-v3/README.md) and [scanner README](tools/rtl-scanner/README.md).
-
-## License
-
-RTL Migration Analyzer is released under the [MIT License](LICENSE).
+The public package bundles the pinned implementation at build time. Consumers install `rtl-analyzer`; the internal `@atlas/rtl-scanner` package is private. Clone with submodules and follow the [build, pack and verification commands](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md#build-pack-and-verify). The package is licensed under [MIT](https://github.com/FoushWare/rtl-analyzer/blob/main/packages/rtl-analyzer/LICENSE).

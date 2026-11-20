@@ -1,6 +1,8 @@
 # rtl-analyzer 0.3.0 release candidate
 
-Verified 2026-11-19. **Preparation complete; publication is not authorized.** Existing public package `rtl-analyzer@0.2.0` comes from release source `253912c85dfadda09abb42361b9a9776dc9916eb`. Recommended next version is **0.3.0** (registry lookup returned E404 for that version). npm ownership lookup succeeds for `foushware-dev`; this does not test the release workflow's OIDC authorization. No credentials or tokens were printed.
+Historical preparation snapshot, verified 2026-11-19. **At that date, preparation was complete and publication was not authorized.** Existing public package `rtl-analyzer@0.2.0` comes from release source `253912c85dfadda09abb42361b9a9776dc9916eb`. Recommended next version is **0.3.0** (registry lookup returned E404 for that version). npm ownership lookup succeeds for `foushware-dev`; this does not test the release workflow's OIDC authorization. No credentials or tokens were printed.
+
+The user authorized finalization and publication on 2026-11-20, accepting existing lint debt and deferred broader acceptance. The [2026-11-20 publication record](rtl-analyzer-0.3.0-publication-2026-11-20.md) supersedes current status, final README/artifact hashes and next actions below; this snapshot remains historical evidence.
 
 ## Architecture and compatibility
 
