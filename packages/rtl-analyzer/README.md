@@ -1,83 +1,107 @@
-# RTL Analyzer CLI
+# RTL Analyzer
 
-RTL Analyzer performs read-only RTL risk scans and can emit JSON, Markdown, structured Markdown, or a self-contained dashboard HTML report.
+Find direction-dependent styles, inspect suggested fixes, and review changes for RTL and LTR interfaces.
+
+[View on npm](https://www.npmjs.com/package/rtl-analyzer) · [Quick start](#quick-start) · [Review modes](#review-modes) · [Example](#example) · [Developer testing guide](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md)
 
 ## Quick start
 
-No global installation is required:
+Requires **Node.js 22.12 or later**. Run from your frontend project's root:
 
-```bash
+```sh
 npx rtl-analyzer
 ```
 
-With no arguments, RTL Analyzer recursively scans the current working directory, writes JSON, Markdown, structured Markdown, and HTML dashboard files to a unique temporary directory outside the project, then opens the dashboard in your default browser. When the dashboard is successfully generated, the CLI prints its path. If the browser cannot be opened, use that printed path instead.
+Or install as a development dependency:
 
-On the first run, npm may ask for confirmation before installing the package. Confirm the prompt, or use `npx --yes rtl-analyzer` in scripts and other non-interactive environments.
+```sh
+npm install --save-dev rtl-analyzer
+npx --no-install rtl-analyzer
+```
 
-Use `--help` to see the available options:
+The default command scans the current directory, writes reports to an external temporary directory and requests your default browser. It does not start the live review services. For a scan of a specific directory or command help:
 
-```bash
+```sh
+npx rtl-analyzer scan ./src --format json
 npx rtl-analyzer --help
-npx rtl-analyzer --version
+npx rtl-analyzer preview --help
 ```
 
-For explicit scans, preserve control over the root, format, and output directory:
+Read-only recursive scans need no configuration. **Live Fix Studio review requires configuration**: explicit scan/copy scope and validation scripts in `rtl-project.config.json`, source/selector/route bindings in `rtl-preview.config.json`, your project's installed dependencies, and Chromium. The current runtime adapter supports Vite-compatible development scripts. Follow the [developer testing guide](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md) to generate a source-enabled dashboard, serve it and start the companion with `npx --no-install rtl-analyzer preview`.
 
-```bash
-npx rtl-analyzer scan . --format json
-npx rtl-analyzer scan ./src --format markdown --output-dir ./rtl-report
-npx rtl-analyzer scan . --format dashboard --output-dir ./rtl-report
-```
+## What you can review
 
-Options include `--root <path>`, `--format <format>`, `--output-dir <path>`, `--fail-on-findings`, and `--embed-source-snippets` (dashboard output only). Explicit scans do not open a browser automatically.
+| In Fix Studio | What it helps you understand |
+| --- | --- |
+| Findings list | Which direction-dependent patterns need attention |
+| Highlighted source | Where a finding appears in your code |
+| Details | Why the pattern may affect RTL behavior |
+| Before / After | What the suggested fix changes |
+| Component Review | How the change fits the component's intended behavior |
+| Decision | Whether to accept the proposed change |
 
-## Developer build and pack
+## Review modes
 
-From a fresh checkout, install the repository dependencies, then build and pack the standalone package:
-
-```bash
-npm ci
-npm run build --prefix packages/rtl-analyzer
-cd packages/rtl-analyzer
-npm pack --dry-run
-npm pack
-```
-
-The package `prepack` hook rebuilds `dist/` automatically, so packing cannot silently use a missing or stale CLI build. The tarball contains only the compiled scanner/reporting runtime, this README, and the MIT license.
-
-## Confirmed syntax coverage
-
-The standalone CLI supports the following tested patterns. These are syntax-level results, not claims of complete framework compatibility:
-
-| Area | Status | Tested scope |
+| Mode | Workflow | Choose it when… |
 | --- | --- | --- |
-| React inline JSX/TSX styles | Verified | Static object properties including physical margins, padding, and text alignment. |
-| Emotion `styled` templates | Verified | Static tagged templates imported from `@emotion/styled`. |
-| Emotion `css` prop | Verified | `@emotion/react` tagged templates and static object expressions. |
-| MUI `sx` | Partial | Supported MUI imports and aliases such as `ml` and `pr`; wrapper semantics remain conservative. |
-| MUI `styled` templates | Verified | Static tagged templates imported from `@mui/material/styles`. |
-| Vanilla CSS/HTML | Verified | Tested physical declarations and HTML direction attributes. |
-| CSS Modules | Verified | Physical declarations in discovered `.module.css` files. |
-| Tailwind utilities | Partial | Static class strings recognize `ml-*`, `mr-*`, `pl-*`, `pr-*`, `left-*`, `right-*`, `border-l-*`, `border-r-*`, `text-left`, `text-right`, and identifiable `rtl:`/`ltr:` variants. Dynamic composition is not evaluated. |
-| Bootstrap 4 directional utilities | Partial | Static class strings recognize Bootstrap 4 `float-left/right`, responsive `float-{sm,md,lg,xl}-left/right`, `text-{sm,md,lg,xl}-left/right`, and `border-left/right[-0]`. Shared physical classes such as `ml-*` remain framework-neutral; Bootstrap version and runtime semantics are not inferred. |
-| SCSS/Sass | Unsupported with diagnostic | Files are skipped and reported through `SOURCE_COVERAGE`. |
+| Prepare all, then review | Prepare supported suggestions in an isolated candidate, then inspect them together. | You want to review the proposals together. |
+| Review one by one | Prepare and inspect a selected suggestion in isolation. | You want to examine each proposal individually. |
 
-MUI `styled` object syntax is unsupported. Tailwind responsive/state prefixes and arbitrary values are covered only when the final utility is statically identifiable; dynamic `clsx`, `classnames`, and template expressions are intentionally not guessed. Next.js `app/`, `src/app/`, `pages/`, and `src/pages/` layouts can be discovered as ordinary files, but this does not certify Next.js-specific behavior.
+Both modes start **Pending**. Preparation leaves your source unchanged. Explicitly accept the proposals you want, run **Validate changes** on that accepted set, then use the separate **Apply accepted changes to source** action. Receipt-backed rollback restores applied changes when the source still matches the receipt. The persisted batch-mode identifier remains `apply-first`.
 
-Bootstrap support is limited to the listed Bootstrap 4 physical utility forms. Bootstrap 5 logical utilities such as `ms-*`, `me-*`, `ps-*`, and `pe-*`, custom classes, project configuration, and dynamic class composition are not interpreted.
+## Example
 
-To verify the tarball in an independent disposable project:
+A card uses physical left and right spacing:
 
-```bash
-npm run rtl:cli:package:smoke
+```css
+.card {
+  margin-left: 16px;
+  padding-right: 24px;
+  text-align: left;
+}
 ```
 
-The smoke test installs with `npm install --ignore-scripts`, checks `--help` and `--version`, scans a disposable project in JSON, Markdown, and Dashboard formats, and checks that installed files contain no source-checkout paths.
+A suggested change uses logical properties:
 
-```bash
-npm install rtl-analyzer
-rtl-analyzer --help
-rtl-analyzer scan . --format json
+```css
+.card {
+  margin-inline-start: 16px;
+  padding-inline-end: 24px;
+  text-align: start;
+}
 ```
 
-Candidate Preview and Apply/Rollback are not included in this standalone CLI milestone.
+In horizontal writing mode (`horizontal-tb`), inline-start maps to the left in LTR and to the right in RTL. Use this change when the spacing should follow the text direction; keep physical positioning when the design requires a fixed side.
+
+## A typical review
+
+1. Configure the project and scan it with source snippets enabled.
+2. Start the dashboard server and companion, then choose a review mode.
+3. Inspect a finding, its highlighted source and the mapped component.
+4. Compare the original code with the suggestion in RTL and LTR.
+5. Accept, reject or defer the proposal according to the component's intent.
+6. Validate the accepted set, then separately apply it to source.
+7. Verify the affected interface in both RTL and LTR.
+
+If source or accepted decisions change during review, freshness checks can invalidate suggestions or validation. Failed or unavailable required evidence blocks source Apply.
+
+## What a scan does—and what still needs checking
+
+| The tool helps with | You still need to check |
+| --- | --- |
+| Finding direction-dependent code patterns | Whether the pattern is actually a bug |
+| Suggesting direction-aware alternatives | Whether the change matches the design |
+| Showing source context and proposed changes | The rendered component in RTL and LTR |
+| Identifying potentially stale suggestions | The latest source before applying a change |
+
+Static HTML/CSS, CSS Modules, React inline styles, Emotion and MUI patterns are analyzed conservatively. Recognized utility classes and bounded SCSS declarations are detection-only; dynamic or ambiguous syntax may remain unsupported. A scan reports potential issues. It does not prove that a page renders correctly or replace browser testing.
+
+Report publication and protected source operations use a trusted POSIX filesystem profile on macOS/Linux. Windows protected operations are unsupported. Safari, other package managers and an existing real-world project's acceptance remain unverified; no general framework compatibility is certified. Project scripts must be trusted. See the [setup and limitations](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md) and [release evidence](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/releases/rtl-analyzer-0.3.0.md).
+
+## Demo
+
+A video walkthrough and released-product screenshots have not been published yet.
+
+## Development
+
+The public package bundles the pinned implementation at build time. Consumers install `rtl-analyzer`; the internal `@atlas/rtl-scanner` package is private. Clone with submodules and follow the [build, pack and verification commands](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md#build-pack-and-verify). The package is licensed under [MIT](https://github.com/FoushWare/rtl-analyzer/blob/main/packages/rtl-analyzer/LICENSE).

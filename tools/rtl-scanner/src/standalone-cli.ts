@@ -15,7 +15,7 @@ async function version(): Promise<string> {
 }
 
 function help(): string {
-  return `RTL Analyzer — conservative RTL risk scanning\n\nUsage:\n  rtl-analyzer                    Scan the current directory and open a dashboard\n  rtl-analyzer scan [path] [options]\n  rtl-analyzer --help\n  rtl-analyzer --version\n\nOptions:\n  --root <path>                 Scan this project root\n  --format <format>             json, markdown, markdown-structured, or dashboard\n  --output-dir <path>           Write report artifacts to this directory\n  --fail-on-findings            Exit 1 when actionable findings exist\n  --embed-source-snippets       Embed bounded source snippets in dashboard output\n`;
+  return `RTL Analyzer — conservative RTL risk scanning\n\nUsage:\n  rtl-analyzer                    Scan the current directory and open a dashboard\n  rtl-analyzer scan [path] [options]\n  rtl-analyzer preview [--help]\n  rtl-analyzer --help\n  rtl-analyzer --version\n\nOptions:\n  --root <path>                 Scan this project root\n  --format <format>             json, markdown, markdown-structured, or dashboard\n  --output-dir <path>           Write report artifacts to this directory\n  --fail-on-findings            Exit 1 when actionable findings exist\n  --embed-source-snippets       Embed bounded source snippets in dashboard output\n`;
 }
 
 const io: CliIO = {
@@ -93,6 +93,19 @@ export async function main(argv: string[], output: CliIO = io): Promise<number> 
   }
   if (argv[0] === '--version' || argv[0] === '-v') {
     output.writeStdout(`${await version()}\n`);
+    return 0;
+  }
+  if (argv[0] === 'preview') {
+    // The preview CLI consumes process argv and stays lazy for read-only scans.
+    if (argv.slice(1).some(arg => !['--help', '-h'].includes(arg)) || argv.length > 2) {
+      output.writeStderr('Unknown option. Use rtl-analyzer preview --help.');
+      return 2;
+    }
+    if (argv.length === 2) {
+      output.writeStdout('Usage: RTL_PROJECT_ROOT=/absolute/project rtl-preview (or rtl-analyzer preview)\nServe dashboard reports on http://127.0.0.1:4320. See README for project, preview, Chromium and state prerequisites.\n');
+      return 0;
+    }
+    await import('./preview-companion.js');
     return 0;
   }
   if (argv[0] !== 'scan') {

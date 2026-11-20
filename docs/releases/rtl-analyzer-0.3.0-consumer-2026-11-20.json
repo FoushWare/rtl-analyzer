@@ -1,0 +1,340 @@
+{
+  "workspace": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-We9r0f",
+  "tarball": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-analyzer-release-smoke-mJi5EH/rtl-analyzer-0.3.0.tgz",
+  "tarballSha256": "d745064bf773e3283065e4be21d0f1513cfbffebc628ddf1880de11f4160ce42",
+  "entry": "rtl-analyzer (wrapper)",
+  "node": "v24.6.0",
+  "commands": [
+    {
+      "command": "npm",
+      "args": [
+        "install",
+        "--save-dev",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-analyzer-release-smoke-mJi5EH/rtl-analyzer-0.3.0.tgz"
+      ],
+      "exit": 0,
+      "log": "command-0.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "--help"
+      ],
+      "exit": 0,
+      "log": "command-1.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "--version"
+      ],
+      "exit": 0,
+      "log": "command-2.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "preview",
+        "--help"
+      ],
+      "exit": 0,
+      "log": "command-3.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "preview",
+        "--unknown"
+      ],
+      "exit": 2,
+      "log": "command-4.log"
+    },
+    {
+      "command": "npm",
+      "args": [
+        "ls",
+        "--depth=0",
+        "--json"
+      ],
+      "exit": 0,
+      "log": "command-5.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer"
+      ],
+      "exit": 0,
+      "log": "command-6.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "scan",
+        "--root",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-We9r0f/project",
+        "--format",
+        "markdown"
+      ],
+      "exit": 0,
+      "log": "command-7.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "scan",
+        "--root",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-We9r0f/project",
+        "--format",
+        "markdown-structured"
+      ],
+      "exit": 0,
+      "log": "command-8.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "scan",
+        "--root",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-We9r0f/project",
+        "--format",
+        "json"
+      ],
+      "exit": 0,
+      "log": "command-9.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "scan",
+        "--root",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-We9r0f/project",
+        "--format",
+        "json",
+        "--fail-on-findings"
+      ],
+      "exit": 1,
+      "log": "command-10.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "rtl-analyzer",
+        "scan",
+        "--root",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-We9r0f/project",
+        "--format",
+        "dashboard",
+        "--embed-source-snippets",
+        "--output-dir",
+        "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-package-consumer-We9r0f/reports"
+      ],
+      "exit": 0,
+      "log": "command-11.log"
+    },
+    {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "playwright",
+        "install",
+        "chromium"
+      ],
+      "exit": 0,
+      "log": "command-12.log"
+    }
+  ],
+  "modes": [
+    {
+      "mode": "one-by-one",
+      "workflowId": "4c87d18b-ef75-448b-94dc-a70f53212783",
+      "pendingPatches": 0,
+      "checks": [
+        {
+          "name": "typecheck",
+          "state": "Passed"
+        },
+        {
+          "name": "build",
+          "state": "Passed"
+        },
+        {
+          "name": "test",
+          "state": "Passed"
+        },
+        {
+          "name": "scanner",
+          "state": "Passed"
+        },
+        {
+          "name": "runtime-consumer:people-ltr",
+          "state": "Passed"
+        },
+        {
+          "name": "runtime-consumer:people-rtl",
+          "state": "Passed"
+        }
+      ],
+      "receipts": 1,
+      "appliedHashes": {
+        "index.html": "09204d6e97568355118f447ed9d94e14c40cf371ad295071a5fb0d9e23a00771",
+        "src/main.tsx": "68c58baa5e92c13a770879bad4dc715110b1d6d076480095a9e8537031229e31",
+        "src/people.d.ts": "6b1095cf62e57b477c4375ef37ecc4133162354eafe94497630d646ba7d2640b",
+        "src/people.js": "9edd607e34ffed2e531dc98f0eb47a86222bce27294ab61696a75d3fb6211968",
+        "src/reading.css": "57c0c5e5cbd1481d07e8a4058fac12b59012c5aa65d1451af552c8076099ff2c"
+      },
+      "rollback": "all scanned hashes restored; fresh Pending / Not run",
+      "rollbackHashes": {
+        "index.html": "09204d6e97568355118f447ed9d94e14c40cf371ad295071a5fb0d9e23a00771",
+        "src/main.tsx": "68c58baa5e92c13a770879bad4dc715110b1d6d076480095a9e8537031229e31",
+        "src/people.d.ts": "6b1095cf62e57b477c4375ef37ecc4133162354eafe94497630d646ba7d2640b",
+        "src/people.js": "9edd607e34ffed2e531dc98f0eb47a86222bce27294ab61696a75d3fb6211968",
+        "src/reading.css": "7476bfab6725db6703a02e3788323355aecfab320900d0939af6e2986291e4d3"
+      }
+    },
+    {
+      "mode": "apply-first",
+      "workflowId": "bbd5b2eb-f702-4feb-97f9-35abec4d4c58",
+      "pendingPatches": 4,
+      "checks": [
+        {
+          "name": "typecheck",
+          "state": "Passed"
+        },
+        {
+          "name": "build",
+          "state": "Passed"
+        },
+        {
+          "name": "test",
+          "state": "Passed"
+        },
+        {
+          "name": "scanner",
+          "state": "Passed"
+        },
+        {
+          "name": "runtime-consumer:people-ltr",
+          "state": "Passed"
+        },
+        {
+          "name": "runtime-consumer:people-rtl",
+          "state": "Passed"
+        }
+      ],
+      "receipts": 1,
+      "appliedHashes": {
+        "index.html": "09204d6e97568355118f447ed9d94e14c40cf371ad295071a5fb0d9e23a00771",
+        "src/main.tsx": "68c58baa5e92c13a770879bad4dc715110b1d6d076480095a9e8537031229e31",
+        "src/people.d.ts": "6b1095cf62e57b477c4375ef37ecc4133162354eafe94497630d646ba7d2640b",
+        "src/people.js": "9edd607e34ffed2e531dc98f0eb47a86222bce27294ab61696a75d3fb6211968",
+        "src/reading.css": "57c0c5e5cbd1481d07e8a4058fac12b59012c5aa65d1451af552c8076099ff2c"
+      },
+      "rollback": "all scanned hashes restored; fresh Pending / Not run",
+      "rollbackHashes": {
+        "index.html": "09204d6e97568355118f447ed9d94e14c40cf371ad295071a5fb0d9e23a00771",
+        "src/main.tsx": "68c58baa5e92c13a770879bad4dc715110b1d6d076480095a9e8537031229e31",
+        "src/people.d.ts": "6b1095cf62e57b477c4375ef37ecc4133162354eafe94497630d646ba7d2640b",
+        "src/people.js": "9edd607e34ffed2e531dc98f0eb47a86222bce27294ab61696a75d3fb6211968",
+        "src/reading.css": "7476bfab6725db6703a02e3788323355aecfab320900d0939af6e2986291e4d3"
+      }
+    }
+  ],
+  "version": "0.3.0",
+  "implementation": {
+    "repository": "https://github.com/FoushWare/enterprise-rtl-migration-lab",
+    "commit": "0a10d65bf3bf7a7aa7a9fa287263bde9639ab1db"
+  },
+  "installed": {
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.1.0",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.1.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.1.0",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.1.0.tgz",
+      "overridden": false
+    },
+    "rtl-analyzer": {
+      "version": "0.3.0",
+      "resolved": "file:/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-analyzer-release-smoke-mJi5EH/rtl-analyzer-0.3.0.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "6.4.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-6.4.5.tgz",
+      "overridden": false
+    }
+  },
+  "defaultDashboard": "/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-analyzer-dashboard-FEh2H5/rtl-report-dashboard.html",
+  "scan": {
+    "files": 5,
+    "findings": 6,
+    "diagnostics": 0,
+    "complete": true
+  },
+  "reports": [
+    {
+      "path": "rtl-report.json",
+      "bytes": 12487
+    },
+    {
+      "path": "rtl-report.md",
+      "bytes": 5453
+    },
+    {
+      "path": "rtl-report-structured.md",
+      "bytes": 7286
+    },
+    {
+      "path": "rtl-report-dashboard.html",
+      "bytes": 257914
+    }
+  ],
+  "deniedWrites": 6,
+  "originalHashes": {
+    "index.html": "09204d6e97568355118f447ed9d94e14c40cf371ad295071a5fb0d9e23a00771",
+    "src/main.tsx": "68c58baa5e92c13a770879bad4dc715110b1d6d076480095a9e8537031229e31",
+    "src/people.d.ts": "6b1095cf62e57b477c4375ef37ecc4133162354eafe94497630d646ba7d2640b",
+    "src/people.js": "9edd607e34ffed2e531dc98f0eb47a86222bce27294ab61696a75d3fb6211968",
+    "src/reading.css": "7476bfab6725db6703a02e3788323355aecfab320900d0939af6e2986291e4d3"
+  },
+  "status": "Passed"
+}

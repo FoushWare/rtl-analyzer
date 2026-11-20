@@ -1,16 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "types": ["node"],
-    "outDir": "dist",
-    "rootDir": "../../tools/rtl-scanner/src"
+    "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext",
+    "strict": true, "esModuleInterop": true, "skipLibCheck": true,
+    "types": ["node"], "outDir": "dist"
   },
-  "include": [
-    "../../tools/rtl-scanner/src/standalone-cli.ts"
-  ]
+  "include": [".build-source-*/*.ts"]
 }
