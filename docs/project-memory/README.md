@@ -8,6 +8,8 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Documents
 
+- [Dashboard usability verification](../verification/dashboard-usability-2026-11-20.md) — verified 2026-11-20: final installed local package, browser review/Apply/rollback results, screenshots and running manual environment; human acceptance pending.
+
 - [Architecture](ARCHITECTURE.md) — implementation boundaries and transactions.
 - [Milestones](MILESTONES.md) — M1 through M4D.2b historical timeline and readiness.
 - [Security](SECURITY.md) — trust, identity, authorization, and recovery.
