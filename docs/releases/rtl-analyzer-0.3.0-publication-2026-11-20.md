@@ -4,11 +4,11 @@ Verified **2026-11-20**. The user explicitly authorized finalizing and publishin
 
 ## Reviewed scope
 
-Release checkout `/Users/a.fouad/rtl-analyzer-0.3.0-prep`, branch `codex/rtl-analyzer-0.3.0-prep`; no source changes to the lab during finalization. Public package `rtl-analyzer` stays **0.3.0**. Its implementation submodule remains pinned to [`0a10d65bf3bf7a7aa7a9fa287263bde9639ab1db`](https://github.com/FoushWare/enterprise-rtl-migration-lab/commit/0a10d65bf3bf7a7aa7a9fa287263bde9639ab1db), descending from preserved checkpoint `8ea82bfbcba1e46bc229121210e0fec79e8cf08b`. The internal `@atlas/rtl-scanner` manifest remains private.
+Release checkout `/Users/a.fouad/rtl-analyzer-0.3.0-prep`, branch `codex/rtl-analyzer-0.3.0-prep`; application/runtime source unchanged; the test-only fixture correction below was necessary for Linux CI. Public package `rtl-analyzer` stays **0.3.0**. Its initial implementation submodule was pinned to [`0a10d65bf3bf7a7aa7a9fa287263bde9639ab1db`](https://github.com/FoushWare/enterprise-rtl-migration-lab/commit/0a10d65bf3bf7a7aa7a9fa287263bde9639ab1db), descending from preserved checkpoint `8ea82bfbcba1e46bc229121210e0fec79e8cf08b`. The internal `@atlas/rtl-scanner` manifest remains private.
 
 The supplied `RTL_ANALYZER_README(1).md` product text is integrated into concise root and npm READMEs. Batch mode is corrected to **Prepare all, then review**; isolated Pending preparation, explicit acceptance, accepted-only validation and separate source Apply are stated accurately. Scan-only versus configured review, Node requirement, horizontal writing-mode qualification and limitations are explicit. Detailed verified setup is retained in the [developer testing guide](../guides/developer-testing.md). Unrelated copied page/account data was excluded; no screenshot/video was fabricated. [Release notes](rtl-analyzer-0.3.0-release-notes.md) describe final behavior.
 
-## Final local artifact and gates
+## Pre-CI local artifact and gates (superseded by the fixture correction below)
 
 Host: macOS arm64, Node **v22.21.1**, npm **10.9.4**. Evidence root: `/private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-publish-20261120-j4gx4n2t`. This final artifact supersedes the November 19 README-dependent tarball.
 
@@ -35,3 +35,13 @@ Publication is pending ordinary PR CI/review and merge. Only `.github/workflows/
 The retained Windows CI leg must be reported honestly; historical Windows milestones do not certify this implementation. Protected source/report operations use the trusted POSIX filesystem profile and Windows protected operations are unsupported. Linux full runtime acceptance awaits current CI. Safari, other package managers, general framework compatibility, an existing real-world consumer and Ahmed's manual acceptance remain unverified. Historical Before runtime is unavailable after Apply, test-change coverage is Unknown, and trusted project scripts/single-process coordination remain assumptions.
 
 Historical asset/memory links remain unresolved; no historical files were regenerated. Release repository has no memory validator script. Lab validation and current publication evidence will be recorded in its affected memory entries only.
+
+## CI fixture correction
+
+The [initial PR CI](https://github.com/FoushWare/rtl-analyzer/actions/runs/44673696803) failed on Ubuntu: 32/397 scanner tests attempted to create fixtures under macOS-only `/private/tmp`. Windows also failed (73/397), including unsupported POSIX/path semantics. Neither result is presented as a pass. The source correction uses `realpathSync(tmpdir())` for real temporary directories in four scanner test files, preserving every assertion and production guard. No application/runtime source changed and no test was skipped.
+
+Final implementation pin: [`8d3946a40b024a042cf315aa33cfcb560e69dc75`](https://github.com/FoushWare/enterprise-rtl-migration-lab/commit/8d3946a40b024a042cf315aa33cfcb560e69dc75), a test-only descendant of `0a10d65b` on `codex/rtl-analyzer-0.3.0-ci-fixtures`. Local strict typecheck and all 397 scanner tests pass after this correction. Final package/consumer evidence follows; earlier November 20 artifact entries above remain the original pre-CI results.
+
+Final corrected artifact: [pack manifest](rtl-analyzer-0.3.0-final-pack-2026-11-20.json), **67 files, 171,699 compressed / 653,804 unpacked bytes**, SHA-256 `19c575c0468b93de150c6e7e8db039231a4a22550bfb355565b23652a20dbfb8`, SHA-1 `b86f96da4c38d280c10dc370e98e7a310d6311fd`, integrity `sha512-+dUfRsji8JmCQd0VODS+PZ3CulTZQo0hBHcJ5DmMTrQ90wwXZUhjvCUY5nHjCz4pQ9HFc4jrSQw5bYYG6UASTg==`. Archive comparison proves all runtime/README/license bytes match the pre-CI artifact; only package metadata's implementation commit changes. Actual allowlist and sensitive-pattern inspection pass again.
+
+The actual `npm run rtl:cli:package:smoke` exits 0 on this corrected artifact. [Final installed consumer evidence](rtl-analyzer-0.3.0-final-consumer-2026-11-20.json) records both complete modes and the same six checks, accepted-only Apply, receipt counts, five-file exact rollback, six denied writes and no browser page errors. The independent prepack and smoke pack are byte-identical. Current PR CI must be rechecked at the new head before merge.
