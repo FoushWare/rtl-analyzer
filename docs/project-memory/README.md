@@ -8,6 +8,8 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Documents
 
+- [Preview mappings and sidebar decisions](../verification/preview-status-2026-11-21.md) — verified 2026-11-21: independent JSX targets, intentional unmapped state, persisted indicators, final installed package/browser/Apply/rollback evidence and running URLs; human acceptance pending.
+
 - [Dashboard usability verification](../verification/dashboard-usability-2026-11-20.md) — verified 2026-11-20: final installed local package, browser review/Apply/rollback results, screenshots and running manual environment; human acceptance pending.
 
 - [Architecture](ARCHITECTURE.md) — implementation boundaries and transactions.
