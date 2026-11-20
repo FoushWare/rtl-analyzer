@@ -4,7 +4,7 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Current status
 
-**Verified 2026-11-20.** Finalization/publication of existing public `rtl-analyzer` **0.3.0** is authorized, with existing lint debt and deferred broader acceptance explicitly accepted. The [dated publication record](../releases/rtl-analyzer-0.3.0-publication-2026-11-20.md) owns current status, final artifact, gates and postpublication verification; the [November 19 preparation record](../releases/rtl-analyzer-0.3.0.md) remains historical. Build/runtime use the pinned lab implementation submodule plus the existing standalone router. Ahmed manual acceptance **[ ]** remains pending. Prior M4D Windows milestones below do not certify this candidate.
+**Verified 2026-11-20.** Public `rtl-analyzer` **0.3.0** is published and registry-verified; GitHub tag, npm `gitHead` and signed provenance match merge commit `b4c19d3857dd961b5d9e72fe0d36f47f5999cd7f`. The [publication record](../releases/rtl-analyzer-0.3.0-publication-2026-11-20.md) owns final artifacts, OIDC run, fresh registry install, full both-mode consumer and signature verification. Existing lint debt and deferred broader acceptance are explicitly accepted. Windows CI remains failing/unsupported for protected operations, and **Ahmed manual acceptance [ ]** remains pending. The [November 19 preparation record](../releases/rtl-analyzer-0.3.0.md) remains historical. Prior M4D Windows milestones below do not certify this release.
 
 ## Documents
 
