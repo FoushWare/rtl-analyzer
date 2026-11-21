@@ -29,6 +29,8 @@ npx rtl-analyzer preview --help
 
 Read-only recursive scans need no configuration. **Live Fix Studio review requires configuration**: explicit scan/copy scope and validation scripts in `rtl-project.config.json`, source/selector/route bindings in `rtl-preview.config.json`, your project's installed dependencies, and Chromium. The current runtime adapter supports Vite-compatible development scripts. Follow the [developer testing guide](https://github.com/FoushWare/rtl-analyzer/blob/main/docs/guides/developer-testing.md) to generate a source-enabled dashboard, serve it and start the companion with `npx --no-install rtl-analyzer preview`.
 
+See the [CSS proposal setup guide](docs/guides/css-proposal-setup.md) for spacing proposals, project-declared intent, and refreshing stylesheet digests.
+
 ## What you can review
 
 | In Fix Studio | What it helps you understand |

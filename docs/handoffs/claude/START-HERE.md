@@ -1,0 +1,21 @@
+# Start here in Claude Code
+
+Open `/Users/a.fouad/rtl-analyzer-0.3.0-prep`. RTL Analyzer scans external projects for directional UI risks, generates supported CSS proposals, and lets reviewers inspect isolated Before/After candidates before approving, validating or applying them. Receipts protect rollback.
+
+**Source.** The public [wrapper branch](https://github.com/FoushWare/rtl-analyzer/tree/codex/runtime-direction-wrapper) owns distribution and CLI entry. Its `implementation/` submodule points to the [Analyzer source branch](https://github.com/FoushWare/enterprise-rtl-migration-lab/tree/codex/runtime-direction-implementation) at `67c774823622f4ef8061f9fc5372978ad0e95022`. Edit generic scanner, preview, dashboard and workflow code there. The sanitized Foundations source checkpoint is under [examples/foundations-lab](../../../examples/foundations-lab/README.md). The live local Northstar fixture and evidence remain under `/Users/a.fouad/rtl-analyzer-dashboard-run`.
+
+**Verified delivery.** The installed public wrapper is `rtl-analyzer@0.3.0`, built via normal prepack from wrapper commit `d6e4c61343b53499a896aa15e33ff18d56b9dc84` and the pin above. The exact local tarball SHA-256 is `ddad9d24c450baa1afbff7f1cb1843c7b4afa3cf68baae49465abb090a3a053d`. The registry also labels its current release `0.3.0`; use the local hash to identify the acceptance build. Dashboard WebKit 27.2 verified ten Originals and eight real Afters. Both modes, themes, reload and persisted approval, accepted-only Apply, conflict protection and exact rollback passed. Companion runtime validation uses Chromium. Native Safari and Ahmed’s human acceptance remain pending.
+
+**Reading order.** [Workspace rules](../../../AGENTS.md) → [inventory](../../verification/rtl-analyzer-project-inventory-2026-11-22.md) → [WebKit verification](../../verification/northstar-webkit-acceptance-2026-11-22.md) → [CSS setup and stale digests](../../guides/css-proposal-setup.md). Use [Reproduce](REPRODUCE.md) for exact startup, prepack, isolated install, tests and safe stop commands. Use the [media index](MEDIA.md) for local evidence and [handoff](../../verification/claude-handoff-2026-11-22.md) for the detailed status. The [local pending walkthrough](http://127.0.0.1:4320/rtl-report-dashboard.html) is bound to the original Northstar fixture.
+
+**Next decisions and work, in order**
+
+1. **Human decision:** Ahmed reviews the eight cases, including Safari if available, and chooses whether Tab should reach mobile toolbar controls or navigation first. The physical-right status dot is intentional. A fresh WebKit check confirmed Next navigation shows Afters for the badge, bubble and shadow. A live Safari session discrepancy remains unverified if it recurs.
+2. **Capability gaps:** Spacing can generate an eligible proposal from source and ownership. The seven other proposals use explicit project intent and a current stylesheet digest. Arbitrary manual HTML/CSS candidate staging, coordinated reorder and broader geometry families need separate scope. An explicit mapping and a catalogue entry do not guarantee a candidate.
+3. **Examples:** Retest the sanitized canonical checkpoint from a clean clone and consolidate the example entry on main when authorized. The older examples worktree and iCloud specimens remain separate. Preserve intentional defects and keep examples out of npm.
+4. **Release preparation:** Write a concise visual npm README with actual approved screenshots of both modes. Check the live registry and GitHub before choosing a version. Preserve the established remote pin → prepack → isolated-install workflow. No release is authorized by this handoff.
+5. **Later examples:** Work on one at a time using the [authoring skill](https://github.com/FoushWare/agent-skills/tree/master/domains/rtl-analyzer/skills/author-realistic-rtl-projects) and [122-case catalogue](../../rtl-analyzer-v3/rtl-ui-catalog.json). Keep the protected login/API project deferred.
+
+**First message for Claude**
+
+> Open this checkout and read `docs/handoffs/claude/START-HERE.md` and its workspace rules. Verify the wrapper and submodule branches, status, remote SHAs and pin without changing them. Summarize what is verified, the actual running walkthrough, and the remaining decisions and local work. Wait for my next task. Do not modify source, publish, merge, tag or deploy.

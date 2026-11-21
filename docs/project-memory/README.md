@@ -8,6 +8,10 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Documents
 
+- [Northstar WebKit acceptance](../verification/northstar-webkit-acceptance-2026-11-22.md) — verified 2026-11-22: exact installed wrapper, eight WebKit candidate previews, both review workflows, rollback conflict protection, and a running pending walkthrough. Links to setup, inventory, and Claude handoff.
+
+- [Northstar configured CSS proposals](../verification/northstar-configured-previews-2026-11-22.md) — verified 2026-11-22: live component restoration, project-declared proposal intents, pinned wrapper installation, independent project coverage, and accepted-only Apply with exact rollback in both modes. Human walkthrough pending.
+
 - [Foundations per-finding acceptance inventory](../verification/foundations-finding-inventory-2026-11-21.md) — verified 2026-11-21: symmetric padding false positive removed, 10 actionable findings, manual-only rendering, runtime information exclusion, pinned-source package and Safari/Chromium evidence.
 
 - [Foundations spacing acceptance repair](../verification/foundations-spacing-2026-11-21.md) — verified 2026-11-21: pinned-source package, scoped runtime direction checks, both-mode Apply/exact rollback, matching reports and pending local walkthrough; release preparation pending.

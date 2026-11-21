@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "generatedStyleOwner": "unknown",
+  "ownership": {},
+  "approvals": [],
+  "exceptions": [],
+  "issueBindings": [],
+  "dynamicExceptions": [],
+  "roles": [],
+  "ownerOverrides": [
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.physical-start",
+      "owner": "custom-css",
+      "reason": "Foundations locally authors this standalone CSS rule. Ownership is established for review only; no semantic approval or automatic Apply authorization is granted."
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.edge-bar",
+      "owner": "custom-css",
+      "reason": "Notice accent follows reading start."
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.double-row",
+      "owner": "custom-css",
+      "reason": "Review devices precedes Security settings in reading and keyboard order."
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.transform-broken",
+      "owner": "custom-css",
+      "reason": "Account drawer hides beyond its inline-start edge and settles at zero."
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.transform-logical",
+      "owner": "custom-css",
+      "reason": "Trusted devices drawer hides beyond its inline-start edge and settles at zero."
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.position-box .badge",
+      "owner": "custom-css",
+      "reason": "Verified badge anchors to the beginning of its avatar."
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.corner-bubble",
+      "owner": "custom-css",
+      "reason": "The outgoing message corner follows block-end / inline-end."
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.shadow-drawer",
+      "owner": "custom-css",
+      "reason": "The drawer shadow falls inward toward the account content."
+    }
+  ],
+  "cssProposals": [
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.edge-bar",
+      "property": "border-left",
+      "value": "4px solid #e49b45",
+      "kind": "inline-edge",
+      "sourceDigest": "929268f34937ace22cf6a6ec1282290694a5b5dd00aa63c9d84e2378bcda6693"
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.double-row",
+      "property": "flex-direction",
+      "value": "row-reverse",
+      "kind": "dom-order",
+      "sourceDigest": "929268f34937ace22cf6a6ec1282290694a5b5dd00aa63c9d84e2378bcda6693"
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.transform-broken",
+      "property": "transform",
+      "value": "translateX(-100%)",
+      "kind": "mirror-offset",
+      "sourceDigest": "929268f34937ace22cf6a6ec1282290694a5b5dd00aa63c9d84e2378bcda6693"
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.transform-logical",
+      "property": "transform",
+      "value": "translateX(-100%)",
+      "kind": "mirror-offset",
+      "sourceDigest": "929268f34937ace22cf6a6ec1282290694a5b5dd00aa63c9d84e2378bcda6693"
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.position-box .badge",
+      "property": "left",
+      "value": "7px",
+      "kind": "inline-edge",
+      "sourceDigest": "929268f34937ace22cf6a6ec1282290694a5b5dd00aa63c9d84e2378bcda6693"
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.corner-bubble",
+      "property": "border-radius",
+      "value": "12px 12px 2px 12px",
+      "kind": "logical-corners",
+      "sourceDigest": "929268f34937ace22cf6a6ec1282290694a5b5dd00aa63c9d84e2378bcda6693"
+    },
+    {
+      "path": "src/lab.css",
+      "context": "stylesheet/.shadow-drawer",
+      "property": "box-shadow",
+      "value": "4px 0 9px #22334433",
+      "kind": "mirror-offset",
+      "sourceDigest": "929268f34937ace22cf6a6ec1282290694a5b5dd00aa63c9d84e2378bcda6693"
+    }
+  ]
+}

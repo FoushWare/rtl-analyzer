@@ -1,0 +1,4 @@
+node_modules/
+.rtl-preview/
+.rtl-vite-cache/
+dist/
