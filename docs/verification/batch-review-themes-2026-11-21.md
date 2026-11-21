@@ -100,3 +100,9 @@ node /private/var/folders/fq/64_hc1kd09g0ysrzs_gg6ylh0000gn/T/rtl-independent-on
 ```
 
 Human acceptance remains pending. No push, publish, tag, deployment or source edits to real consumer projects occurred.
+
+## Visual polish continuation
+
+The shared theme layer was refined after comparing the attached Safari captures: page and panel surfaces now have clearer separation, active navigation uses restrained raised-surface color with a narrow accent edge, the logo glow is reduced, focus remains a distinct keyboard ring, and hover/selected/disabled rows use the same semantic tokens. Batch review now uses a tighter header and statistics rhythm, lighter row dividers, a denser table, readable status hierarchy and a sticky action footer that stays visible without obscuring the table’s final row. Finding detail, code diff, Session details, dialogs, loaders and the theme menu inherit the same token hierarchy; embedded application previews remain untouched.
+
+These changes are implementation `c904da2e089a1418e24e41e744ba2cf50a5ae7d8`, wrapper pin `ba985ae`, and package-11 tarball SHA-256 `f61beb15e0eebe59529001ec99d15eca42467d7707f4885ecc4f09cea5fcee8d`. The supported `packages/rtl-analyzer` prepack produced 72 files. Package-11 browser verification: the two batch/theme scenarios passed (28.2 seconds) with screenshots `browser-11/.../theme-{studio,dracula,nord,solarized,github}.png`, `batch-review.png`, `mapped-padding-{LTR,RTL}.png`, and `zero-prepared.png`; the existing 10-test acceptance remains green on the prior package baseline. Scanner typecheck and 414-test suite remain green after the polish. A WebKit launch was attempted using the installed Playwright runtime, but the WebKit executable is not installed (`webkit-2370/pw_run.sh` missing); no Safari/WebKit pass is claimed.
