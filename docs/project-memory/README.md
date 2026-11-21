@@ -8,6 +8,8 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Documents
 
+- [Foundations spacing acceptance repair](../verification/foundations-spacing-2026-11-21.md) — verified 2026-11-21: pinned-source package, scoped runtime direction checks, both-mode Apply/exact rollback, matching reports and pending local walkthrough; release preparation pending.
+
 - [Batch review, operation loaders and color themes](../verification/batch-review-themes-2026-11-21.md) — verified 2026-11-21: server-verified multi-file batch preparation/selected approval, five dashboard themes, Session details placement, final installed package, 414 scanner tests and 10 browser tests; running independent walkthrough and ownership-safe stop instructions. Human acceptance pending.
 
 - [Guided-review operation UX acceptance](../verification/guided-review-acceptance-2026-11-21.md) — verified 2026-11-21: explicit entry, journaled validation/Apply, authoritative summary, protected remaining review and Deferred carry; final installed package, 412 scanner tests, eight browser tests and live ownership-verified walkthrough. Human acceptance pending.
