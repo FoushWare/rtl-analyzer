@@ -8,6 +8,8 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Documents
 
+- [Batch review, operation loaders and color themes](../verification/batch-review-themes-2026-11-21.md) — verified 2026-11-21: server-verified multi-file batch preparation/selected approval, five dashboard themes, Session details placement, final installed package, 414 scanner tests and 10 browser tests; running independent walkthrough and ownership-safe stop instructions. Human acceptance pending.
+
 - [Guided-review operation UX acceptance](../verification/guided-review-acceptance-2026-11-21.md) — verified 2026-11-21: explicit entry, journaled validation/Apply, authoritative summary, protected remaining review and Deferred carry; final installed package, 412 scanner tests, eight browser tests and live ownership-verified walkthrough. Human acceptance pending.
 
 - [Review-mode entry and restoration](../verification/review-mode-entry-2026-11-21.md) — verified 2026-11-21: both modes, saved-session chooser behavior, per-review draft restoration, both-mode cross-file navigation, final package/browser/Apply/rollback evidence and fresh manual tab; human acceptance pending.
