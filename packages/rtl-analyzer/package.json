@@ -1,6 +1,6 @@
 {
   "name": "rtl-analyzer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "RTL analysis with isolated review, accepted-only Apply and receipt-backed rollback",
   "repository": {
     "type": "git",
@@ -35,7 +35,7 @@
   },
   "rtlAnalyzerImplementation": {
     "repository": "https://github.com/FoushWare/enterprise-rtl-migration-lab",
-    "commit": "d55daba1e03a2761c69b383531978bbb11ba087f"
+    "commit": "aa8873ebaee0f0c3a1448462eaf83e21a90ab89c"
   },
   "license": "MIT"
 }
