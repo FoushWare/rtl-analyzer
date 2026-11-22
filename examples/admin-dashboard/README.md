@@ -1,65 +1,127 @@
-# Admin dashboard (example project 3)
+# Admin Dashboard
 
-React + Vite + CSS Modules orders dashboard (tables, a details dialog, tabs). This is a small first slice of the matrix scope TABLES / OVERLAYS / ACCESSIBILITY-006 (see `manifest.json`; many catalogue IDs are deferred). Expectations in the manifest were recorded before the first scan.
+React + Vite + CSS Modules (orders table, details dialog, tabs). Part of the [RTL Analyzer examples](../README.md); this page is all you need for this project.
 
-| ID | Target | Expected |
-|---|---|---|
-| ATD-FIX-01 | `.statusBadge` `margin-left` | supported candidate `margin-inline-start` |
-| ATD-FIX-02 | `.dialogTitle` `margin-right` (dialog route `?dialog=details`) | supported candidate `margin-inline-end` (needs the margin reset isolated in a separate rule; see below) |
-| ATD-REVIEW-01 | `.stickyId` `left: 0` (sticky) | finding, no candidate, manual review |
-| ATD-REVIEW-02 | `.amountCell` `text-align: right` | finding; manual review (ownership/intent); computed alignment is `right` |
-| ATD-OK-01 | `.orders th/td`, `.tableScroll` | no finding |
-| ATD-OK-02 | `.tabs`, `.tab`, `.toolbar` | no finding |
-| ATD-SUSPECT-01 | `.dialog` `box-shadow: 0 12px 32px #0004` | `RTL.GEOMETRY.ORDER`, manual, not actionable: **suspected scanner false positive** (zero horizontal offset) |
+## What it demonstrates
 
-`RTL.DOCUMENT.INITIAL` and `RTL.RUNTIME.DIRECTION_UNKNOWN` (`App.jsx`) are diagnostics, not case results.
+A dashboard with a table, sticky column, tabs and a details dialog. The scan reports 5 actionable findings plus 2 diagnostics. In batch mode 1 fix is prepared and 4 need manual review.
 
-## Run
+| Target | Declaration | Expected Analyzer outcome |
+| --- | --- | --- |
+| `.dialogTitle` | `margin-right: 24px` | supported candidate `margin-inline-end: 24px` |
+| `.statusBadge` | `margin-left` | previews, but **Validate is Unavailable** (see limitations) |
+| `.amountCell`, `.stickyId`, `.dialog` | alignment, sticky edge, dialog edge | manual review, no candidate |
+
+## Prerequisites
+
+- macOS or Linux shell (zsh/bash). The commands below were verified on macOS only; **Windows is unsupported** (protected report and source operations need a POSIX filesystem profile).
+- Node.js 22.12+, npm, Python 3, `rsync`, and `git`.
+- A clone of this repository. Set `REPO` in the first terminal to its path.
+- Internet access to install dependencies, `rtl-analyzer@0.4.0` and Chromium.
+
+Work in a **disposable copy**. Never scan or apply inside `examples/` itself. The copy lives at `/private/tmp/admin-dashboard` (use `/tmp/admin-dashboard` on Linux; unverified). The folder to open in VS Code is **`/private/tmp/admin-dashboard/project`**.
+
+## 1. Set up the disposable copy
+
+Each terminal needs the same path, so every block below begins by setting `RUN=/private/tmp/admin-dashboard` and changing into it. Run this once:
 
 ```sh
+# Terminal 1 - create the disposable copy, install, scan
+REPO="$HOME/rtl-analyzer"                # your clone of https://github.com/FoushWare/rtl-analyzer
+RUN=/private/tmp/admin-dashboard
+rm -rf "$RUN" && mkdir -p "$RUN/reports" "$RUN/state/backups"
+rsync -a --exclude node_modules --exclude dist --exclude .next --exclude .nx --exclude '*.tsbuildinfo' "$REPO/examples/admin-dashboard/" "$RUN/project/"
+cd "$RUN/project"
 npm install
-npm run build
-npm run dev        # http://127.0.0.1:4235/?direction=rtl  (dialog: &dialog=details)
-```
-
-## Scan and review (disposable copy)
-
-Use a built `rtl-analyzer` package (see [Reproduce](../../docs/handoffs/claude/REPRODUCE.md)) installed from a tarball; this example was verified with `rtl-analyzer@0.3.0` built from implementation `54648af`. Set `PACK` to that tarball and run from the repository root:
-
-```sh
-run=$(mktemp -d /private/tmp/rtl-admin.XXXXXX)
-mkdir -p "$run/reports" "$run/state/backups"
-cp -R examples/admin-dashboard "$run/project"
-cd "$run/project"
-npm install && npm run build && rm -rf dist
-npm install --no-save --package-lock=false "$PACK"
+npm run check
+rm -rf dist .next .nx
+npm install --no-save --package-lock=false rtl-analyzer@0.4.0
 npx --no-install playwright install chromium
-npx --no-install rtl-analyzer scan --root "$PWD" --format dashboard \
-  --output-dir "$run/reports" --embed-source-snippets
+npx rtl-analyzer@0.4.0 scan --root "$PWD" --format dashboard --output-dir "$RUN/reports" --embed-source-snippets > /dev/null
+git init -q && printf '.rtl-preview/\n.rtl-vite-cache/\n' >> .git/info/exclude && git add -A && git -c user.name=t -c user.email=t@t commit -qm baseline
 ```
 
-Start the Companion and dashboard (separate terminals; ports 4318 and 4320 are fixed by the Analyzer and must be free):
+Open the copy in VS Code (File → Open Folder → `/private/tmp/admin-dashboard/project`, or `code /private/tmp/admin-dashboard/project` if the `code` command is installed). Source Control stays empty until you apply a fix.
+
+## 2. Run the app
 
 ```sh
-cd "$run/project"
-export RTL_PROJECT_ROOT="$PWD" RTL_REVIEW_STORE_PATH="$run/state/review-records-v1.json" \
-  RTL_EVIDENCE_STORE_PATH="$run/state/review-evidence-v1.json" RTL_MANUAL_CHANGE_STORE_PATH="$run/state/manual-changes-v1.json" \
-  RTL_SCAN_MANIFEST_STORE_PATH="$run/state/scan-manifests-v1.json" RTL_AUDIT_STORE_PATH="$run/state/apply-audit-v1.json" \
-  RTL_APPLY_BACKUP_ROOT="$run/state/backups"
+# Terminal 2 - app (port 4235)
+RUN=/private/tmp/admin-dashboard
+cd "$RUN/project"
+npm run dev
+```
+
+Open <http://127.0.0.1:4235/?direction=rtl&dialog=details>.
+
+Press Ctrl-C to stop the app before the next step if you want a quiet machine; it uses a different port from Fix Studio (4236), so it can keep running.
+
+## 3. Open Fix Studio
+
+```sh
+# Terminal 3 - review companion (port 4318)
+RUN=/private/tmp/admin-dashboard
+cd "$RUN/project"
+export RTL_PROJECT_ROOT="$PWD" RTL_REVIEW_STORE_PATH="$RUN/state/review-records-v1.json" \
+  RTL_EVIDENCE_STORE_PATH="$RUN/state/review-evidence-v1.json" RTL_MANUAL_CHANGE_STORE_PATH="$RUN/state/manual-changes-v1.json" \
+  RTL_SCAN_MANIFEST_STORE_PATH="$RUN/state/scan-manifests-v1.json" RTL_AUDIT_STORE_PATH="$RUN/state/apply-audit-v1.json" \
+  RTL_APPLY_BACKUP_ROOT="$RUN/state/backups"
 npx --no-install rtl-analyzer preview
 ```
 
 ```sh
-python3 -m http.server 4320 --bind 127.0.0.1 --directory "$run/reports"
+# Terminal 4 - report server (port 4320)
+RUN=/private/tmp/admin-dashboard
+cd "$RUN/project"
+python3 -m http.server 4320 --bind 127.0.0.1 --directory "$RUN/reports"
 ```
 
-Open `http://127.0.0.1:4320/rtl-report-dashboard.html`, choose **Review one by one**, and use Next finding. Leave decisions pending. The Original app is served on `:4236`, candidates on `:4202`. The Analyzer writes `.rtl-preview/` and `.rtl-vite-cache/` in the project copy (gitignored here).
+Open <http://127.0.0.1:4320/rtl-report-dashboard.html>. Choose **Review one by one → Start manual review**, or **Prepare all, then review → Prepare all & review** for batch mode.
 
-## Verified behavior (one local run, 2026-11-22)
+Ports: 4318 (companion), 4320 (report), 4236 (original app for Fix Studio), 4202 and up (candidates).
 
-- Scan: 5 actionable findings plus 2 diagnostics (`RTL.DOCUMENT.INITIAL`, `RTL.RUNTIME.DIRECTION_UNKNOWN` in `App.jsx`). Both clean controls produced no finding. Project source hashes were identical before and after review.
-- `.statusBadge`: all three rows are intended targets; After shows "All 3 targets". RTL gap Original 0 px, After 8 px. The first After preview of every cold session failed with `Execution context was destroyed`; the Account Checkout troubleshooting workaround (open the candidate URL, then Retry preview) fixed it each time. `DIRECTION_EVIDENCE_AMBIGUOUS_TARGETS` appeared once in the first session and did not recur.
-- `.dialogTitle`: with `margin: 0` in the same rule, or `margin-block: 0` next to `margin-right`, the Analyzer reported manual review (`CSS_SPACING_CASCADE_DECLARATION_CONFLICT`). With the reset moved to `:where(.dialogHeader) > :where(h2) { margin: 0 }`, it offers `margin-inline-end: 24px` with a live After.
-- `.amountCell`: the table-cell rule uses `:where()` so `.amountCell` wins; computed alignment is `right`, amounts sit flush to the cell's right edge in LTR and RTL, and After says manual review (`CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW`).
-- `.stickyId`: manual review with `CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW`; Original renders in both directions. Not verified while scrolled horizontally.
-- Not exercised: Approve, Validate, Apply and rollback; human acceptance is pending.
+## 4. Start here
+
+- **Route / URL:** `http://127.0.0.1:4235/?direction=rtl&dialog=details` (details dialog open). Fix Studio uses routes `orders` and `details-dialog` on port 4236.
+- **Finding:** `RTL.CSS.PHYSICAL` on **`.dialogTitle`** in `src/Dashboard.module.css` (`margin-right: 24px`). Select the file in the Project Explorer on the left, then the finding; it uses the `details-dialog` route.
+
+What you should see:
+
+- The dialog title has `margin-right: 24px` as its gap to the close control. **Before** (LTR and RTL): `margin-right: 24px`, `margin-left: 0`.
+- **After** (`margin-inline-end: 24px`): LTR unchanged; in RTL the gap moves to the left (`margin-left: 24px`, `margin-right: 0`).
+- Direction is set from the URL, so compare the same page at `direction=ltr` and `direction=rtl` (`lang=en|ar` for the storefront).
+
+Then continue: **Preview ready** → **RTL** / **LTR** → **Approve proposed change** → **Validate changes** → **Apply 1 changes…** → **Apply to source**. Check the diff in VS Code Source Control (one file), then **Review actions → Rollback applied changes**. Source Control is empty again.
+
+## 5. Stop and reset
+
+**Stop:** press Ctrl-C in Terminal 3, Terminal 4 and any app terminal, and wait until each prompt returns (a few seconds; longer for the Nx workspace). Then confirm nothing is left. Do not force-kill the companion: a `kill -9` during shutdown can leave a Vite process behind (seen twice while testing); if the check lists a port, stop that process by the PID `lsof` shows.
+
+```sh
+# Stop check
+lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(42[0-9]{2}|4318|4320|4265|4275|4266|4276|4235|4236|4245|4246|4255|4256|4215|4216|4225|4226)\b' || echo "all ports free"
+```
+
+**Reset** (stop Terminals 3 and 4 first), then restart them:
+
+```sh
+# Reset
+RUN=/private/tmp/admin-dashboard
+rm -rf "$RUN/state" && mkdir -p "$RUN/state/backups"
+cd "$RUN/project" && git checkout -- . && git clean -fdq -e node_modules
+```
+
+To start completely over, rerun step 1 (it deletes and recreates the copy). Rollback is refused if you edit a file after applying; reset instead.
+
+## Limitations
+
+- **Windows is unsupported**, and the Windows CI leg fails. Safari, other browsers, other package managers and narrow viewports are unverified.
+- **Known limitation: the `.statusBadge` finding cannot be validated or applied.** It previews (RTL gap 0 px before, 8 px after), but Validate ends *Unavailable* with `DIRECTION_EVIDENCE_AMBIGUOUS_TARGETS` because three identical status badges in the table have no unique key. Its first After preview can also fail once; **Retry preview** recovers it. Do not use it as your start finding.
+- `.amountCell`, `.stickyId` and `.dialog` are manual review: Fix Studio shows Before and an explanation, no After.
+- Live review needs Chromium and trusted project scripts. Details: [advanced setup guide](../../docs/guides/developer-testing.md).
+
+## Verified
+
+Checked on 2026-11-22 (macOS arm64, Node 22.21.1, headless Chromium driven by Playwright). I ran the commands in the blocks above, unchanged apart from `REPO`, in a fresh `/private/tmp/admin-dashboard` copy against the published `rtl-analyzer@0.4.0`. Results: setup, check and scan succeeded; the details-dialog route and measurements matched. **One by one** on `.dialogTitle`: Preview ready (0 retries), Validate passed, Apply changed only `src/Dashboard.module.css`, Rollback restored every hash. **Batch:** 1 prepared, 4 manual; approve, Validate, Apply, Rollback passed. `all ports free`; Reset clean. The `.statusBadge` limitation was observed earlier on 2026-11-22 with the same 0.4.0 build (Validate Unavailable, `DIRECTION_EVIDENCE_AMBIGUOUS_TARGETS`) and was **not** rerun for this page. **Not verified:** the manual-review findings beyond reading them.
+
+Earlier notes from building this example are kept in [the verification history](../../docs/verification/examples-history/admin-dashboard.md); they predate 0.4.0.

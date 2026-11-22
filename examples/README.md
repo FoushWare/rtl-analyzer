@@ -1,10 +1,12 @@
 # Examples
 
-Source-only demo projects for RTL Analyzer. They are not part of the published npm package. Install dependencies per project; generated reports, builds and tarballs stay out of Git.
+Six standalone demo projects for [RTL Analyzer](../packages/rtl-analyzer/README.md). Each README is self-contained: set up a disposable copy, run the app, scan with `rtl-analyzer@0.4.0`, and open Fix Studio where supported. They are source-only and are not part of the npm package.
 
-- [foundations-lab](foundations-lab/README.md) — project 1, Northstar Account UI (direction, layout, spacing, transforms).
-- [account-checkout](account-checkout/README.md) — project 2, React + CSS Modules checkout (text, numbers, forms).
-- [admin-dashboard](admin-dashboard/README.md) — project 3, React + Vite + CSS Modules orders dashboard (tables, dialog, tabs).
-- [bilingual-storefront](bilingual-storefront/README.md) — project 4, Next.js + Tailwind storefront (navigation, icons); static scan works, live preview unsupported for Next.js in 0.3.0.
-- [interaction-playground](interaction-playground/README.md) — project 5, React + TypeScript keyboard and focus behavior (drawer, rating, slider, tabs); scanner finds CSS risks, not JS key handling.
-- [workspace-integration](workspace-integration/README.md) — project 6, Nx workspace with two Vite apps and a shared UI library (margin finding in the library previews in both apps; app-specific case; clean control).
+- [Foundations Lab](foundations-lab/README.md) — a Vite account page with spacing, edge, transform and drawer defects.
+- [Account Checkout](account-checkout/README.md) — a React checkout with two supported fixes and one review-only case.
+- [Admin Dashboard](admin-dashboard/README.md) — a React orders dashboard with a table, dialog and tabs; includes a known status-badge limitation.
+- [Bilingual Storefront](bilingual-storefront/README.md) — a Next.js and Tailwind storefront; static scan only, no live preview.
+- [Interaction Playground](interaction-playground/README.md) — drawer, rating and slider keyboard behavior; every finding is manual review.
+- [Workspace Integration](workspace-integration/README.md) — an Nx workspace with two apps and a shared library.
+
+Windows is unsupported. Earlier build notes are kept under [docs/verification/examples-history](../docs/verification/examples-history/).
