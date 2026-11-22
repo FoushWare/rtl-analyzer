@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "applications": {
+    "playground": {
+      "viteConfig": "vite.config.mjs",
+      "entry": "src/main.tsx",
+      "originalOrigin": "http://127.0.0.1:4256",
+      "readySelector": "#playground",
+      "dataAdapter": "none",
+      "startupScript": "dev",
+      "routes": [
+        { "id": "home", "path": "/", "ltr": "/?direction=ltr", "rtl": "/?direction=rtl" },
+        { "id": "drawer-open", "path": "/", "ltr": "/?direction=ltr&drawer=open", "rtl": "/?direction=rtl&drawer=open" }
+      ]
+    }
+  },
+  "mappings": [
+    { "source": "src/Interaction.module.css", "sourceSelector": ".star + .star", "targetSelector": ".star + .star", "routes": [{ "application": "playground", "route": "home" }] },
+    { "source": "src/Interaction.module.css", "sourceSelector": ".drawer", "targetSelector": ".drawer", "routes": [{ "application": "playground", "route": "drawer-open" }] },
+    { "source": "src/Interaction.module.css", "sourceSelector": ".sliderThumb", "targetSelector": ".sliderThumb", "routes": [{ "application": "playground", "route": "home" }] },
+    { "source": "src/Interaction.module.css", "sourceSelector": ".sliderFill", "targetSelector": ".sliderFill", "routes": [{ "application": "playground", "route": "home" }] }
+  ]
+}
