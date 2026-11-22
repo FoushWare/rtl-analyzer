@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "generatedStyleOwner": "unknown",
+  "ownership": {},
+  "approvals": [],
+  "exceptions": [],
+  "issueBindings": [],
+  "dynamicExceptions": [],
+  "roles": [],
+  "ownerOverrides": [
+    { "path": "app/storefront.css", "context": "stylesheet/.cart-count", "owner": "custom-css", "reason": "Cart count badge follows the Cart label in reading order." },
+    { "path": "app/storefront.css", "context": "stylesheet/.pager-arrow", "owner": "custom-css", "reason": "Arrow gap follows the Next label in reading order." },
+    { "path": "app/icons.css", "context": "stylesheet/.icon-forward", "owner": "custom-css", "reason": "Author-marked next/progression arrow; isolated graphic class." }
+  ],
+  "cssProposals": []
+}

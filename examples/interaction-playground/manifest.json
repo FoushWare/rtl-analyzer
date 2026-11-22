@@ -1,0 +1,260 @@
+{
+  "projectId": "interaction-playground",
+  "status": "draft",
+  "catalogVersion": "0.1.0",
+  "note": "Project 5 of the documented example program. Slice of matrix scope INTERACTION / ACCESSIBILITY-004/-006 (matrix variants en-ltr and ar-rtl; input: keyboard; viewport: desktop). Expectations were written BEFORE the first scan. Unselected catalogue IDs are deferred, not covered. The matrix defines no per-case findings or clean controls; those here are this slice's own.",
+  "selectedCatalogIds": [
+    "INTERACTION-010",
+    "INTERACTION-006",
+    "INTERACTION-002",
+    "ACCESSIBILITY-004",
+    "ACCESSIBILITY-006"
+  ],
+  "deferredCatalogIds": "INTERACTION-001,003-005,007-009,011-012 (carousel, progress, timeline, calendar, chat, charts, maps, drag-drop, media); ACCESSIBILITY-001-003,005,007-009",
+  "expectedFocusOrder": {
+    "page": "Tab order is DOM order in both directions: Open menu button, Language link, active tab (roving, one stop), active star (roving, one stop), custom slider thumb, active toolbar button (roving), native range. Header flex mirrors in RTL, so the order stays reading order (right to left). Closed drawer is inert: no stop.",
+    "drawerOpen": "Focus moves to the first link (Overview / نظرة عامة); Tab cycles link, link, link, Close and wraps; Shift+Tab reverses; Escape closes and returns focus to Open menu."
+  },
+  "cases": [
+    {
+      "id": "IPG-FIX-01",
+      "catalogIds": [
+        "INTERACTION-010"
+      ],
+      "assignment": "Interaction.module.css .drawer (left: 0; transform: translateX(-100%) closed)",
+      "scenario": "Drawer slides in from the physical left edge",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "expectedDetection": "yes, uncertain: RTL.GEOMETRY.EDGE on left: 0; possibly a transform finding on translateX (unknown)",
+      "expectedTransformation": "no supported candidate expected (edge + transform animation); manual review expected",
+      "expectedBrowser": {
+        "ltr": "Opens from the left (start) edge; Escape closes; focus returns to Open menu.",
+        "rtl": "Intended: opens from the right (start) edge. Expected observed DEFECT: still opens from the left edge. Keyboard (focus move, Tab trap, Escape) is direction-independent and works."
+      },
+      "support": {
+        "scan": true,
+        "livePreview": true,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false
+    },
+    {
+      "id": "IPG-FIX-02",
+      "catalogIds": [
+        "INTERACTION-006"
+      ],
+      "assignment": "Interaction.module.css .star + .star (margin-left: 6px); Rating.tsx onKeyDown",
+      "scenario": "Physical gap between stars; ArrowRight always increases the value",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "expectedDetection": "yes, uncertain: RTL.CSS.PHYSICAL (compound sibling selector support unknown); the key handler is JS and is NOT expected to be detected",
+      "expectedTransformation": "yes, uncertain: margin-inline-start: 6px candidate with live After",
+      "expectedBrowser": {
+        "ltr": "Stars left to right; ArrowRight 3 to 4 moves focus visually right; gap 6 px.",
+        "rtl": "Stars right to left (flex mirrors). Expected DEFECTS: gap is 0 px on the wrong side; ArrowRight 3 to 4 moves focus visually LEFT (intended: ArrowLeft increases). The key defect stays after any CSS fix."
+      },
+      "support": {
+        "scan": true,
+        "livePreview": true,
+        "transformation": true
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false
+    },
+    {
+      "id": "IPG-REVIEW-01",
+      "catalogIds": [
+        "INTERACTION-002"
+      ],
+      "assignment": "Interaction.module.css .sliderFill (left: 0), .sliderThumb (margin-left: -12px); Slider.tsx inline style left: N%",
+      "scenario": "Custom slider anchored to the physical left; ArrowRight increases",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "expectedDetection": "yes, uncertain: physical edge finding(s) in CSS; inline style left in TSX unknown",
+      "expectedTransformation": "no or partial: manual review expected for left; margin-left may offer a candidate",
+      "expectedBrowser": {
+        "ltr": "Fill grows from the left; ArrowRight 30 to 40 moves thumb right.",
+        "rtl": "Intended: fill starts at the right, ArrowLeft increases. Expected DEFECT: fill and thumb still start at the left, ArrowRight increases."
+      },
+      "support": {
+        "scan": true,
+        "livePreview": true,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false
+    },
+    {
+      "id": "IPG-KEY-01",
+      "catalogIds": [
+        "ACCESSIBILITY-004",
+        "ACCESSIBILITY-006"
+      ],
+      "assignment": "Tabs.tsx onKeyDown (ArrowRight = next DOM tab); CSS is logical",
+      "scenario": "Roving-focus tab list not direction-aware",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "expectedDetection": "no: a JavaScript behaviour; expected scanner miss (the CSS is logical)",
+      "expectedTransformation": "no",
+      "expectedBrowser": {
+        "ltr": "ArrowRight moves focus Overview to Billing (visually right).",
+        "rtl": "Tabs render right to left. Expected DEFECT: ArrowRight moves focus from Overview (rightmost) to Billing, which is visually LEFT of it. Intended: ArrowLeft = next."
+      },
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false
+    },
+    {
+      "id": "IPG-OK-01",
+      "catalogIds": [
+        "ACCESSIBILITY-004"
+      ],
+      "assignment": "Toolbar.tsx + .toolbar/.toolButton CSS; native <input type=range>",
+      "scenario": "Clean control: logical CSS, computed-direction key handler, native range",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "expectedDetection": "no",
+      "expectedTransformation": "no",
+      "expectedBrowser": {
+        "ltr": "ArrowRight moves focus visually right; native range ArrowRight increases.",
+        "rtl": "ArrowRight moves focus visually right (handler reads computed direction). Native range: track mirrored by the browser; key direction uncertain (prediction: ArrowLeft increases), record what Chromium does."
+      },
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false
+    }
+  ],
+  "expectedActionable": [
+    "IPG-FIX-01",
+    "IPG-FIX-02",
+    "IPG-REVIEW-01"
+  ],
+  "expectedDiagnostics": [
+    "RTL.DOCUMENT.INITIAL (Info, index.html): possible",
+    "RTL.RUNTIME.DIRECTION_UNKNOWN (Minor, src/App.tsx): possible, as in account-checkout and admin-dashboard"
+  ],
+  "expectedMisses": [
+    "IPG-KEY-01 and the Rating/Slider key handlers (JavaScript behaviour)"
+  ],
+  "recordedBeforeFirstScan": "2026-11-22: all expectations above written before the first scan of this example.",
+  "results": {
+    "scanDate": "2026-11-22",
+    "analyzer": "rtl-analyzer@0.3.0 from implementation 54648af (SHA-256 94d001988755f06297d7a52088484fd441875035767238b8846b4336ffb0b07a)",
+    "detected": "IPG-FIX-01, IPG-FIX-02, IPG-REVIEW-01 (all manual, no candidate)",
+    "missed": "IPG-KEY-01 and the key handlers of IPG-FIX-02 / IPG-REVIEW-01 (expected)",
+    "controlsClean": [
+      "IPG-OK-01"
+    ],
+    "humanAcceptance": "pending (all review decisions left pending)",
+    "transformationApplied": "none; Approve/Validate/Apply/rollback not exercised"
+  },
+  "attempt1": {
+    "date": "2026-11-22",
+    "analyzer": "rtl-analyzer@0.3.0 from implementation 54648af (SHA-256 94d00198...)",
+    "scan": "10 files; 9 findings = 7 actionable + 2 diagnostics-class (RTL.DOCUMENT.INITIAL, RTL.RUNTIME.DIRECTION_UNKNOWN); 2 blocking DYNAMIC_VALUE diagnostics (Slider.tsx width and left inline style); complete: false.",
+    "actionable": [
+      "RTL.GEOMETRY.EDGE Interaction.module.css:11 left:0 (.drawer)",
+      "RTL.GEOMETRY.ORDER :11 box-shadow 0 0 24px (.drawer; zero-offset, suspected false positive as in admin-dashboard)",
+      "RTL.GEOMETRY.ORDER :11 transform: translateX(-100%) (.drawer)",
+      "RTL.CSS.PHYSICAL :19 margin-left: 6px (.star + .star)",
+      "RTL.GEOMETRY.EDGE :25 left:0 (.sliderFill)",
+      "RTL.CSS.PHYSICAL :26 margin-left:-12px (.sliderThumb)",
+      "RTL.GEOMETRY.EDGE Slider.tsx:24 left: `${value}%` (inline)"
+    ],
+    "candidates": "none: all 7 manual review, no supported candidate patch",
+    "preview": "Every Original failed: CONTEXT_SCAN_INCOMPLETE (the incomplete scan blocks live context). After: Preview unavailable / manual review required.",
+    "hashes": "identical before/after (19 files)"
+  },
+  "attempt2Expectations": {
+    "recordedBeforeRescan": "2026-11-22, after attempt 1 and before the second scan",
+    "changes": [
+      "Slider.tsx: the dynamic inline left/width become one CSS custom property (--value on the track) consumed by CSS, to remove the blocking DYNAMIC_VALUE diagnostics and the incomplete-scan flag",
+      "rtl-scanner.config.json: ownerOverride for .star + .star (gap follows reading order) to test whether a candidate appears"
+    ],
+    "expect": [
+      "complete: true and no DYNAMIC_VALUE diagnostics (uncertain: the custom property may itself be reported)",
+      "Slider.tsx inline-left finding disappears; .sliderThumb left: var(--value) and .sliderFill width: var(--value) are likely reported as findings or diagnostics (uncertain)",
+      "Original previews can start; the .star + .star finding may offer margin-inline-start: 6px (uncertain: compound sibling selector) and may show a live After in RTL",
+      "drawer, slider edge and transform findings stay manual with no candidate",
+      "box-shadow RTL.GEOMETRY.ORDER stays (suspected false positive)"
+    ]
+  },
+  "attempt2Results": {
+    "scan": "Still complete: false. DYNAMIC_VALUE (Slider.tsx:22) moved from `left`/`width` to the inline custom property `--value`. The 2 slider findings from TSX became 1 CSS finding `.sliderThumb left: var(--value)` (RTL.GEOMETRY.EDGE); `.sliderFill width: var(--value)` was not reported. The `.star + .star` ownerOverride was accepted (owner custom-css) but the finding stayed manual with no candidate and no supported patch. Findings: 7 actionable, unchanged otherwise.",
+    "conclusion": "Any dynamic inline style value (including a custom property) marks the scan incomplete, which blocks live Original previews. A compound sibling selector `.star + .star` gets no candidate even with an owner override."
+  },
+  "attempt3Expectations": {
+    "recordedBeforeRescan": "2026-11-22, after attempt 2 and before the third scan",
+    "changes": [
+      "Slider.tsx: --value is set imperatively with ref.style.setProperty in a layout effect, so no inline style expression remains in JSX"
+    ],
+    "expect": [
+      "complete: true; no DYNAMIC_VALUE diagnostics (RUNTIME_DIRECTION_UNKNOWN stays as a diagnostic)",
+      "Same 7 manual findings; the slider TSX/inline evidence is already gone; no candidates (as in attempt 2)",
+      "Original previews may start for mapped selectors (.drawer on the drawer-open route, .star + .star, .sliderThumb, .sliderFill); After remains 'manual review required'",
+      "If previews still fail, the cause is recorded as is"
+    ]
+  },
+  "attempt3Results": {
+    "scan": "complete: true; 10 files; 7 actionable (all manual, none with a candidate) plus RTL.DOCUMENT.INITIAL and RTL.RUNTIME.DIRECTION_UNKNOWN; no DYNAMIC_VALUE diagnostics.",
+    "reasonCodes": {
+      "drawer left:0": "CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW",
+      "drawer transform translateX(-100%)": "UNSUPPORTED_TRANSFORMATION_FAMILY",
+      "drawer box-shadow 0 0 24px": "RTL.GEOMETRY.ORDER, manual, suspected false positive (zero horizontal offset, as ATD-SUSPECT-01)",
+      "star + star margin-left": "CSS_SPACING_SIMPLE_CLASS_SELECTOR_REQUIRED (even with an owner override)",
+      "sliderFill left:0": "CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW",
+      "sliderThumb left: var(--value)": "CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW",
+      "sliderThumb margin-left:-12px": "CSS_SPACING_OWNER_REQUIRES_REVIEW"
+    },
+    "preview": "Original rendered for all 7 (LTR/RTL toggle checked on the star finding in RTL: 4 verified targets); After: Preview unavailable, manual review required for all 7; Approve disabled.",
+    "hashes": "identical before/after (19 files)",
+    "reviewRecords": "none written; all decisions pending"
+  },
+  "browserResults": {
+    "date": "2026-11-22",
+    "browser": "Built-in Browser pane (Chromium), 1024 px, real key events",
+    "focusOrder": "Matched expectation in LTR and RTL: Open menu, Language, active tab, active star, slider, active toolbar button, native range. Drawer: focus to first link, Tab cycles 4 stops and wraps, Shift+Tab reverses, Escape closes, focus returns to Open menu.",
+    "ltr": "All five cases behaved as expected (ArrowRight moves/increases visually right; gap 6 px; drawer 0..292).",
+    "rtl": {
+      "IPG-FIX-01": "drawer still opens from the LEFT edge (x 0..292): defect shown; keyboard behavior correct",
+      "IPG-FIX-02": "gap 0 px; ArrowRight 3 to 4 moved focus visually left (x 862 to 824): both defects shown",
+      "IPG-REVIEW-01": "track, fill and thumb still start at the left; ArrowRight increases: defect shown",
+      "IPG-KEY-01": "ArrowRight moved focus from Overview (x 871) to Billing (x 796), visually left: defect shown",
+      "IPG-OK-01": "toolbar: ArrowLeft from the first (rightmost) button moved to the middle one (x 895 to 825), ArrowRight wrapped: correct; native range: ArrowRight 30 to 29, ArrowLeft increases (matches prediction)"
+    }
+  }
+}

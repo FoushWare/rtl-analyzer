@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "applications": {
+    "storefront": {
+      "viteConfig": "apps/storefront/vite.config.mjs",
+      "entry": "apps/storefront/src/main.tsx",
+      "originalOrigin": "http://127.0.0.1:4266",
+      "readySelector": "#storefront",
+      "dataAdapter": "none",
+      "startupScript": "dev:storefront",
+      "routes": [{ "id": "home", "path": "/", "ltr": "/?direction=ltr", "rtl": "/?direction=rtl" }]
+    },
+    "admin": {
+      "viteConfig": "apps/admin/vite.config.mjs",
+      "entry": "apps/admin/src/main.tsx",
+      "originalOrigin": "http://127.0.0.1:4276",
+      "readySelector": "#admin",
+      "dataAdapter": "none",
+      "startupScript": "dev:admin",
+      "routes": [{ "id": "home", "path": "/", "ltr": "/?direction=ltr", "rtl": "/?direction=rtl" }]
+    }
+  },
+  "mappings": [
+    { "source": "libs/ui/src/StatusBadge.module.css", "sourceSelector": ".badge", "targetSelector": ".badge",
+      "routes": [{ "application": "storefront", "route": "home" }, { "application": "admin", "route": "home" }] },
+    { "source": "apps/admin/src/Admin.module.css", "sourceSelector": ".refundNote", "targetSelector": ".refundNote",
+      "routes": [{ "application": "admin", "route": "home" }] }
+  ]
+}

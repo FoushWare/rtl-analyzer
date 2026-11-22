@@ -1,0 +1,25 @@
+{
+  "name": "storefront",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/storefront/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/storefront",
+        "command": "node ../../node_modules/vite/bin/vite.js"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/storefront"
+      ],
+      "options": {
+        "cwd": "apps/storefront",
+        "command": "node ../../node_modules/vite/bin/vite.js build"
+      }
+    }
+  }
+}

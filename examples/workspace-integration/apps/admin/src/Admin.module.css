@@ -1,0 +1,7 @@
+.page { max-width: 640px; margin-inline: auto; padding: 24px; font-family: system-ui, sans-serif; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.title { margin: 0; }
+.langLink { color: #2f6f4f; }
+.order { display: flex; align-items: center; margin-block: 16px 8px; }
+.refund { display: flex; align-items: center; margin-block: 0 16px; }
+.refundNote { margin-left: 12px; color: #6b5200; }

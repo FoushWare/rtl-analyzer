@@ -1,0 +1,8 @@
+{
+  "name": "rtl-analyzer-foundations-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {"start": "python3 -m http.server 4173 --bind 127.0.0.1", "dev": "vite --host 127.0.0.1 --port 4215", "check": "node --check src/app.js"},
+  "devDependencies": {"vite": "^6.4.5"}
+}

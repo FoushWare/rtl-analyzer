@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "scanRoots": ["apps", "libs"],
+  "copyPaths": ["apps", "libs", "package.json", "nx.json", "tsconfig.json", "rtl-project.config.json", "rtl-preview.config.json", "rtl-scanner.config.json", "manifest.json", "package-lock.json"],
+  "packageManager": "npm",
+  "validation": { "typecheck": ["run", "typecheck"], "build": ["run", "build"], "test": ["run", "check"] }
+}

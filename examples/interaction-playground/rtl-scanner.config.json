@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "generatedStyleOwner": "unknown",
+  "ownership": {},
+  "approvals": [],
+  "exceptions": [],
+  "issueBindings": [],
+  "dynamicExceptions": [],
+  "roles": [],
+  "ownerOverrides": [
+    {
+      "path": "src/Interaction.module.css",
+      "context": "stylesheet/.star + .star",
+      "owner": "custom-css",
+      "reason": "Gap between stars follows reading order."
+    }
+  ],
+  "cssProposals": []
+}

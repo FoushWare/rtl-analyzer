@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "scanRoots": [
+    "src",
+    "index.html"
+  ],
+  "copyPaths": [
+    "src",
+    "index.html",
+    "package.json",
+    "vite.config.mjs",
+    "rtl-project.config.json",
+    "rtl-preview.config.json",
+    "manifest.json",
+    "package-lock.json"
+  ],
+  "packageManager": "npm",
+  "validation": {
+    "typecheck": [
+      "run",
+      "check"
+    ],
+    "build": [
+      "run",
+      "check"
+    ],
+    "test": [
+      "run",
+      "check"
+    ]
+  }
+}

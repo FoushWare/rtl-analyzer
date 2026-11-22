@@ -1,0 +1,33 @@
+# RTL Analyzer project inventory
+
+Scope: public wrapper, pinned Analyzer implementation, Foundations and independent verification fixtures. Verified 2026-11-22. Historical production and demo assets remain indexed in the iCloud workspace's Project Memory.
+
+| Project or artifact | Path / identity | Role |
+|---|---|---|
+| Public RTL Analyzer wrapper | `/Users/a.fouad/rtl-analyzer-0.3.0-prep`, wrapper baseline `d6e4c61343b53499a896aa15e33ff18d56b9dc84` | Authoritative public packaging and CLI entry. Normal prepack uses the pinned implementation Git objects. |
+| Analyzer implementation | Wrapper repo's `implementation/` submodule, baseline pin `67c774823622f4ef8061f9fc5372978ad0e95022` | Generic scanner, proposals, dashboard, browser bridge, validation, Apply and rollback. |
+| Current Foundations | `/Users/a.fouad/rtl-analyzer-dashboard-run/acceptance-repair/pending/project`, `rtl-analyzer-foundations-lab@1.0.0` | Realistic Northstar Account UI. `src/lab.css`, `index.html`, `src/app.js` and the three configuration files own the fixture. Internal manifest records intended direction behavior. |
+| Independent consumer | `rtl-tarball-consumer`, React/Vite `/people`, `src/reading.css` | Installed-wrapper browser and transaction regression with no Northstar bindings. Exact root is in `northstar-preview/consumer-smoke.json`. |
+| Independent Dispatch Desk | `isolated-dispatch-desk`, Vite `/console`, `client/dispatch.css` | Additional transformation and missing-binding verification. Exact root is in `northstar-preview/independent-extra-results.json`. |
+| Historical iCloud specimen | `/Users/a.fouad/iCloud Drive (Archive)/Documents/Youtube/css-migrations-rtl/projects/foundations-lab` | Older gallery and private scanner audit. See the [reconciliation record](foundations-public-wrapper-reconciliation-2026-11-21.md) for distinct provenance. |
+| Walkthrough workspace | `/Users/a.fouad/rtl-analyzer-dashboard-run` | `environment.json` identifies the local supervisor, installed binary, report and active project. `acceptance-repair/northstar-preview` and `acceptance-repair/webkit-acceptance` hold browser and transaction evidence. |
+
+## Claude transition checkpoint
+
+Open `/Users/a.fouad/rtl-analyzer-0.3.0-prep` in Claude Code. The source to edit for scanner, candidate, dashboard or workflow behavior is its `implementation/` submodule. Edit wrapper distribution code in the wrapper. Edit the public Foundations baseline under `examples/foundations-lab/`.
+
+| Checkout | Remote and branch | Full HEAD at discovery | Relationship and outstanding local work |
+|---|---|---|---|
+| `/Users/a.fouad/rtl-analyzer-0.3.0-prep` | [FoushWare/rtl-analyzer](https://github.com/FoushWare/rtl-analyzer/tree/codex/runtime-direction-wrapper), `codex/runtime-direction-wrapper` | `d6e4c61343b53499a896aa15e33ff18d56b9dc84` (accepted archive build base) | Linked worktree of `/Users/a.fouad/rtl-analyzer-release`. Setup, inventory and verification docs were local and are included in the transition commit, along with the sanitized example source. Read the branch tip for the transition commit SHA. |
+| `/Users/a.fouad/rtl-analyzer-0.3.0-prep/implementation` | [FoushWare/enterprise-rtl-migration-lab](https://github.com/FoushWare/enterprise-rtl-migration-lab/tree/codex/runtime-direction-implementation), `codex/runtime-direction-implementation` | `67c774823622f4ef8061f9fc5372978ad0e95022` | Wrapper submodule. Clean. The remote branch resolves to the exact pin. |
+| `/Users/a.fouad/Projects/rtl-analyzer` | `FoushWare/rtl-analyzer`, local `feat/default-source-preview` | `253912c85dfadda09abb42361b9a9776dc9916eb` | Separate clone and parent of the examples worktree. Staged and unstaged renderer/CLI/test/README edits, plus untracked test, dependencies and dist. Preserved as separate work. |
+| `/Users/a.fouad/Projects/rtl-analyzer-examples` | `FoushWare/rtl-analyzer`, local `codex/foundations-lab-examples` | `3667a0f9b073cb88291e3945f2560060369dc9f4` | Linked to the Projects clone. Local older Foundations and planning docs, modified handoff, untracked feedback/brief and local artifacts. The checked 122-case catalogue was copied into the transition branch. The older fixture and remaining local notes stay in place. |
+| `/Users/a.fouad/iCloud Drive (Archive)/Documents/Youtube/css-migrations-rtl` | `FoushWare/enterprise-rtl-migration-lab`, `codex/rtl-analyzer-release-prep-20261119` | `67b4f437141f942cbe658f17d93ae86fa1dfe243` | Historical personal lab and media workspace. Local mapping fix/test overlaps the authoritative implementation; the older audit, memory changes, docs, specimens and video assets remain here. |
+| `/Users/a.fouad/Projects/agent-skills` | [FoushWare/agent-skills](https://github.com/FoushWare/agent-skills/tree/master), `master` | `acd9a13f81d6ac4ac861542c7a8e99317b299369` | Clean separate repository. Remote SHA matches. Skill: `domains/rtl-analyzer/skills/author-realistic-rtl-projects/SKILL.md`. |
+| `/Users/a.fouad/rtl-analyzer-dashboard-run` | No Git remote or HEAD | N/A | Machine-local supervisor, historical and current reports, exact installed archive, runtime roots, test scripts and local session state. Running Companion health points at the real Northstar project in `acceptance-repair/pending/project`. Keep this separate from Git source. |
+
+The transition branch includes a source-only checkpoint at the planned canonical destination `examples/foundations-lab/`. Visible identity/contact text was replaced with synthetic values before copying to Git. The original CSS and its policy digest are unchanged. Release/main consolidation and a full clean-clone browser walkthrough of that sanitized snapshot remain pending. Older copies and local evidence were preserved. The npm file allowlist remains package-only.
+
+The registry `latest` dist-tag was verified as `0.3.0`; upstream `main` was `3667a0f9b073cb88291e3945f2560060369dc9f4` when checked. The local accepted `0.3.0` archive is a later build with the same version string. Resolve its identity by SHA and pin. Wrapper publishing triggers on a published release event. The implementation branch push triggers ordinary CI. No tag, merge, release or deploy was requested or done.
+
+Transition verification: normal prepack reproduced the accepted archive SHA-256 and 73-file inventory. The archive contains no example, catalogue or media files. On a new disposable source copy, `npm ci`, isolated installation of that archive, the example's `npm run check`, and a dashboard scan passed. The sanitized fixture scan was complete with 12 findings and seven explicit CSS proposal intents. This verifies portable setup through the scan. The full browser acceptance still refers to the earlier real Northstar fixture.

@@ -1,0 +1,837 @@
+{
+  "projectId": "foundations-lab",
+  "projectRevision": "working-tree-2026-11-20",
+  "catalogVersion": "0.1.0",
+  "cases": [
+    {
+      "id": "DIRECTION-001",
+      "slug": "page-direction",
+      "component": "page-direction",
+      "title": "اتجاه الصفحة",
+      "scenario": "صفحة حساب بالعربية والإنجليزية",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Root dir=ltr; content begins at the left.",
+        "rtl": "Root dir=rtl; content begins at the right."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "DIRECTION-002",
+      "slug": "local-direction",
+      "component": "local-direction",
+      "title": "اتجاه محلي",
+      "scenario": "<pre dir=\"ltr\">const total = 42;</pre>",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Code remains LTR.",
+        "rtl": "Code remains LTR inside an RTL page."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "DIRECTION-003",
+      "slug": "auto-direction",
+      "component": "auto-direction",
+      "title": "اتجاه تلقائي",
+      "scenario": "<p dir=\"auto\">مرحبا Alex</p>",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Base direction follows first strong character.",
+        "rtl": "Base direction follows first strong character."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "DIRECTION-004",
+      "slug": "row-order",
+      "component": "row-order",
+      "title": "ترتيب الصف",
+      "scenario": "Avatar + name + action",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Reading-start order follows approved LTR layout.",
+        "rtl": "Reading-start order follows approved RTL layout."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "DIRECTION-005",
+      "slug": "double-reversal",
+      "component": "double-reversal",
+      "title": "انعكاس مزدوج",
+      "scenario": "direction:rtl; flex-direction:row-reverse",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Record actual DOM and visual order.",
+        "rtl": "Detect unintended double reversal; do not assume row-reverse is wrong."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "observed-rule-emitted",
+        "verified": true,
+        "ruleId": "RTL.GEOMETRY.ORDER",
+        "evidence": "src/lab.css selector .double-row: flex-direction:row-reverse; finding emitted; semantic defect not adjudicated.",
+        "report": "/tmp/foundations-lab-report.json",
+        "limitations": "Scan is incomplete because runtime document direction is unresolved; finding does not establish UI defect or accepted fix."
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "DIRECTION-006",
+      "slug": "grid-order",
+      "component": "grid-order",
+      "title": "ترتيب Grid",
+      "scenario": "Three product cards",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Cards follow intended LTR reading order.",
+        "rtl": "Cards follow intended RTL reading order."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "DIRECTION-007",
+      "slug": "keyboard-order",
+      "component": "keyboard-order",
+      "title": "ترتيب الكيبورد",
+      "scenario": "Three visually reordered buttons",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Tab sequence remains logical.",
+        "rtl": "Tab sequence remains logical relative to visual layout."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "DIRECTION-008",
+      "slug": "language-switch",
+      "component": "language-switch",
+      "title": "تبديل اللغة",
+      "scenario": "English ↔ العربية",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Switch updates locale and intended direction without losing form data.",
+        "rtl": "Same contract in reverse; overlays update too."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "DIRECTION-009",
+      "slug": "nested-direction",
+      "component": "nested-direction",
+      "title": "اتجاهات متداخلة",
+      "scenario": "RTL article with LTR widget",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Widget has explicit scoped direction.",
+        "rtl": "Widget does not change its RTL parent."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-001",
+      "slug": "margin",
+      "component": "margin",
+      "title": "المسافة الخارجية",
+      "scenario": "margin-left:18px",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Reading-start spacing is on left.",
+        "rtl": "Reading-start spacing is on right when intent is confirmed."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "observed-rule-emitted",
+        "verified": true,
+        "ruleId": "RTL.CSS.PHYSICAL",
+        "evidence": "src/lab.css selector .physical-start: margin-left:auto; finding emitted.",
+        "report": "/tmp/foundations-lab-report.json",
+        "limitations": "Scan is incomplete because runtime document direction is unresolved; finding does not establish UI defect or accepted fix."
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-002",
+      "slug": "padding",
+      "component": "padding",
+      "title": "المسافة الداخلية",
+      "scenario": "Button with leading icon",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Text/icon padding remains balanced.",
+        "rtl": "Logical leading padding follows RTL."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-003",
+      "slug": "alignment",
+      "component": "alignment",
+      "title": "محاذاة النص",
+      "scenario": "text-align:left → start",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Reading-start text aligns left.",
+        "rtl": "Reading-start text aligns right."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-004",
+      "slug": "border",
+      "component": "border",
+      "title": "حد البداية",
+      "scenario": "Alert with border-left",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Accent occupies intended start edge.",
+        "rtl": "Accent moves to start edge if semantic intent requires it."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "observed-rule-emitted",
+        "verified": true,
+        "ruleId": "RTL.CSS.PHYSICAL",
+        "evidence": "src/lab.css selector .edge-bar: border-left; finding emitted; control reset also appears as physical syntax.",
+        "report": "/tmp/foundations-lab-report.json",
+        "limitations": "Scan is incomplete because runtime document direction is unresolved; finding does not establish UI defect or accepted fix."
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-005",
+      "slug": "corners",
+      "component": "corners",
+      "title": "الزوايا",
+      "scenario": "Chat bubble asymmetric corners",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Corners follow sender and bubble design.",
+        "rtl": "Corners follow sender semantics, not blind mirroring."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-006",
+      "slug": "absolute",
+      "component": "absolute",
+      "title": "التموضع المطلق",
+      "scenario": "Badge inset-inline-start:0",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Badge sits at intended left start.",
+        "rtl": "Badge sits at intended right start."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "observed-rule-emitted",
+        "verified": true,
+        "ruleId": "RTL.GEOMETRY.EDGE",
+        "evidence": "src/lab.css selectors .position-box .badge and .position-box.logical .badge: left declarations emitted.",
+        "report": "/tmp/foundations-lab-report.json",
+        "limitations": "Scan is incomplete because runtime document direction is unresolved; finding does not establish UI defect or accepted fix."
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-007",
+      "slug": "physical-side",
+      "component": "physical-side",
+      "title": "جانب ثابت مقصود",
+      "scenario": "Right-side marker on anatomical diagram",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Physical right is retained.",
+        "rtl": "Physical right is retained; no automatic change."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "observed-rule-emitted",
+        "verified": true,
+        "ruleId": "RTL.GEOMETRY.EDGE",
+        "evidence": "src/lab.css selector .fixed-right: right:8px; finding emitted despite explicit physical-side intent in case description.",
+        "report": "/tmp/foundations-lab-report.json",
+        "limitations": "Scan is incomplete because runtime document direction is unresolved; finding does not establish UI defect or accepted fix."
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-008",
+      "slug": "shadow",
+      "component": "shadow",
+      "title": "الظل",
+      "scenario": "Side drawer shadow",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Shadow separates drawer from content.",
+        "rtl": "Shadow follows actual drawer placement."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-009",
+      "slug": "transform",
+      "component": "transform",
+      "title": "الإزاحة",
+      "scenario": "translateX used for drawer",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Drawer finishes inside viewport.",
+        "rtl": "Translation follows intended drawer side."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "observed-rule-emitted",
+        "verified": true,
+        "ruleId": "RTL.GEOMETRY.ORDER",
+        "evidence": "src/lab.css transform declarations emitted; logical placement does not make transform sign direction-aware.",
+        "report": "/tmp/foundations-lab-report.json",
+        "limitations": "Scan is incomplete because runtime document direction is unresolved; finding does not establish UI defect or accepted fix."
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "LAYOUT-010",
+      "slug": "background",
+      "component": "background",
+      "title": "الخلفية",
+      "scenario": "Decoration at reading-start",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Decoration occupies intended start.",
+        "rtl": "Move only if decoration is direction-dependent."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "ACCESSIBILITY-001",
+      "slug": "mobile",
+      "component": "mobile",
+      "title": "الموبايل",
+      "scenario": "Narrow viewport",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Content reflows, controls have names, state and focus; no mouse-only dependencies.",
+        "rtl": "Equivalent accessibility and responsive behavior with RTL ordering."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "ACCESSIBILITY-002",
+      "slug": "zoom",
+      "component": "zoom",
+      "title": "التكبير",
+      "scenario": "Browser zoom and enlarged text",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Content reflows, controls have names, state and focus; no mouse-only dependencies.",
+        "rtl": "Equivalent accessibility and responsive behavior with RTL ordering."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "ACCESSIBILITY-003",
+      "slug": "long-label",
+      "component": "long-label",
+      "title": "ترجمة طويلة",
+      "scenario": "Long Arabic button label",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Content reflows, controls have names, state and focus; no mouse-only dependencies.",
+        "rtl": "Equivalent accessibility and responsive behavior with RTL ordering."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "ACCESSIBILITY-004",
+      "slug": "focus",
+      "component": "focus",
+      "title": "الفوكس",
+      "scenario": "Keyboard-only task completion",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Content reflows, controls have names, state and focus; no mouse-only dependencies.",
+        "rtl": "Equivalent accessibility and responsive behavior with RTL ordering."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "ACCESSIBILITY-008",
+      "slug": "reduced-motion",
+      "component": "reduced-motion",
+      "title": "تقليل الحركة",
+      "scenario": "Drawer with reduced-motion preference",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Content reflows, controls have names, state and focus; no mouse-only dependencies.",
+        "rtl": "Equivalent accessibility and responsive behavior with RTL ordering."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    },
+    {
+      "id": "ACCESSIBILITY-009",
+      "slug": "touch",
+      "component": "touch",
+      "title": "اللمس",
+      "scenario": "Help normally shown on hover",
+      "variants": [
+        "en-ltr",
+        "ar-rtl",
+        "mixed-ltr",
+        "mixed-rtl"
+      ],
+      "expectedUI": {
+        "ltr": "Content reflows, controls have names, state and focus; no mouse-only dependencies.",
+        "rtl": "Equivalent accessibility and responsive behavior with RTL ordering."
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetection": {
+        "status": "unknown",
+        "verified": false
+      },
+      "transformation": {
+        "status": "unknown",
+        "verified": false
+      },
+      "humanAcceptance": "pending-user-feedback",
+      "brokenExample": "Specimen behavior is labeled in UI; compare against paired semantic control.",
+      "negativeControl": "Paired correct behavior; inspect both under the same direction and viewport."
+    }
+  ],
+  "northstarPreviewCases": [
+    {
+      "selector": ".edge-bar",
+      "expectedLTR": "Accent on left.",
+      "expectedRTL": "Accent on right.",
+      "originalDefect": "Accent stays left."
+    },
+    {
+      "selector": ".double-row",
+      "expectedLTR": "Review devices first from the left.",
+      "expectedRTL": "Review devices first from the right.",
+      "originalDefect": "row-reverse puts the first focused control at reading end."
+    },
+    {
+      "selector": ".transform-broken",
+      "expectedLTR": "Account drawer slides from left.",
+      "expectedRTL": "Account drawer slides from right.",
+      "originalDefect": "Closed offset remains left despite right anchor."
+    },
+    {
+      "selector": ".transform-logical",
+      "expectedLTR": "Devices drawer slides from left.",
+      "expectedRTL": "Devices drawer slides from right.",
+      "originalDefect": "Logical anchoring alone does not mirror the closed offset."
+    },
+    {
+      "selector": ".fixed-right",
+      "expectedLTR": "Indicator at the physical upper right.",
+      "expectedRTL": "Indicator stays at the physical upper right.",
+      "originalDefect": "Physical side is intentional; there is no defect to patch."
+    },
+    {
+      "selector": ".position-box .badge",
+      "expectedLTR": "Badge at lower left of avatar.",
+      "expectedRTL": "Badge at lower right of avatar.",
+      "originalDefect": "Badge remains at lower left."
+    },
+    {
+      "selector": ".corner-bubble",
+      "expectedLTR": "Small corner at bottom right.",
+      "expectedRTL": "Small corner at bottom left.",
+      "originalDefect": "Small corner remains at bottom right."
+    },
+    {
+      "selector": ".shadow-drawer",
+      "expectedLTR": "Shadow falls right, into the page.",
+      "expectedRTL": "Shadow falls left, into the page.",
+      "originalDefect": "Shadow falls right in both directions."
+    },
+    {
+      "selector": ".topbar nav",
+      "expectedLTR": "Navigation wraps below the toolbar at mobile widths.",
+      "expectedRTL": "Same except reading flow starts on the right.",
+      "originalDefect": "CSS visual order and keyboard order differ; intended focus order still needs review."
+    }
+  ]
+}

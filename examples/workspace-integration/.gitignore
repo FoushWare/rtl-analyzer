@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.nx/
+reports/
+state/
+*.tgz
+.rtl-preview/
+.rtl-vite-cache/

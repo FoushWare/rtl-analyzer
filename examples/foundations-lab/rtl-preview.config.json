@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "applications": {
+    "foundations": {
+      "viteConfig": "vite.config.mjs",
+      "entry": "src/app.js",
+      "originalOrigin": "http://127.0.0.1:4216",
+      "readySelector": "#overview",
+      "dataAdapter": "none",
+      "startupScript": "dev",
+      "routes": [
+        {
+          "id": "foundations",
+          "path": "/",
+          "ltr": "/?direction=ltr",
+          "rtl": "/?direction=rtl"
+        },
+        {
+          "id": "account-drawer",
+          "path": "/",
+          "ltr": "/?direction=ltr&drawer=account-drawer",
+          "rtl": "/?direction=rtl&drawer=account-drawer"
+        },
+        {
+          "id": "devices-drawer",
+          "path": "/",
+          "ltr": "/?direction=ltr&drawer=devices-drawer",
+          "rtl": "/?direction=rtl&drawer=devices-drawer"
+        }
+      ]
+    }
+  },
+  "mappings": [
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".physical-start",
+      "targetSelector": ".physical-start",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "foundations"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".topbar",
+      "targetSelector": ".topbar",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "foundations"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".topbar nav",
+      "context": "stylesheet/@media (max-width:760px)/.topbar nav",
+      "targetSelector": ".topbar nav",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "foundations"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".edge-bar",
+      "targetSelector": ".edge-bar",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "foundations"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".double-row",
+      "targetSelector": ".double-row",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "foundations"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".transform-broken",
+      "targetSelector": ".transform-broken",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "account-drawer"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".transform-logical",
+      "targetSelector": ".transform-logical",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "devices-drawer"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".fixed-right",
+      "targetSelector": ".fixed-right",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "foundations"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".position-box .badge",
+      "targetSelector": ".position-box .badge",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "foundations"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".corner-bubble",
+      "targetSelector": ".corner-bubble",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "foundations"
+        }
+      ]
+    },
+    {
+      "source": "src/lab.css",
+      "sourceSelector": ".shadow-drawer",
+      "targetSelector": ".shadow-drawer",
+      "routes": [
+        {
+          "application": "foundations",
+          "route": "account-drawer"
+        }
+      ]
+    }
+  ]
+}

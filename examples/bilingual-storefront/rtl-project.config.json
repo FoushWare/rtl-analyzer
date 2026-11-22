@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "scanRoots": ["app", "components", "lib", "middleware.ts"],
+  "copyPaths": ["app", "components", "lib", "middleware.ts", "package.json", "package-lock.json", "next.config.mjs", "postcss.config.mjs", "tailwind.config.ts", "tsconfig.json", "rtl-project.config.json", "rtl-preview.config.json", "rtl-scanner.config.json", "manifest.json"],
+  "packageManager": "npm",
+  "validation": { "typecheck": ["run", "check"], "build": ["run", "build"], "test": ["run", "check"] }
+}

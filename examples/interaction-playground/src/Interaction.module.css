@@ -1,0 +1,39 @@
+.page { font: 16px/1.5 system-ui, sans-serif; color: #1a1d24; min-height: 100vh; background: #f6f7f9; }
+.header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: #fff; border-block-end: 1px solid #d9dce3; }
+.title { margin: 0; font-size: 20px; flex: 1; }
+.button, .langLink { padding: 6px 12px; border: 1px solid #5b6577; border-radius: 6px; background: #fff; color: #1a1d24; font: inherit; text-decoration: none; cursor: pointer; }
+.main { display: grid; gap: 16px; padding: 20px; max-inline-size: 640px; }
+.card { background: #fff; border: 1px solid #d9dce3; border-radius: 8px; padding: 16px; }
+.card h2 { margin: 0 0 12px; font-size: 14px; color: #5b6577; text-transform: uppercase; }
+:where(button, a, [role="slider"]):focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+
+/* IPG-FIX-01: drawer anchored left, slid with translateX */
+.drawer { position: fixed; top: 0; left: 0; z-index: 20; width: 260px; height: 100%; padding: 16px; background: #fff; box-shadow: 0 0 24px #0003; transform: translateX(-100%); transition: transform 0.2s; display: flex; flex-direction: column; gap: 12px; }
+.drawerOpen { transform: translateX(0); }
+.drawerLink { display: block; padding: 8px 0; color: #1a1d24; }
+@media (prefers-reduced-motion: reduce) { .drawer { transition: none; } }
+
+/* IPG-FIX-02: rating, physical gap between stars */
+.rating { display: flex; }
+.star { padding: 0; border: 0; background: none; font-size: 32px; line-height: 1; color: #b8bcc7; cursor: pointer; }
+.star + .star { margin-left: 6px; }
+.starOn { color: #d97706; }
+.valueText { display: block; margin-block-start: 8px; color: #5b6577; }
+
+/* IPG-REVIEW-01: custom slider, physical left */
+.sliderTrack { position: relative; height: 8px; margin: 16px 12px; border-radius: 4px; background: #d9dce3; }
+.sliderFill { position: absolute; top: 0; left: 0; width: var(--value); height: 100%; border-radius: 4px; background: #1d4ed8; }
+.sliderThumb { position: absolute; top: -8px; left: var(--value); width: 24px; height: 24px; margin-left: -12px; border-radius: 50%; background: #fff; border: 2px solid #1d4ed8; box-sizing: border-box; }
+
+/* IPG-KEY-01: tabs (logical CSS; defect is in the key handler) */
+.tabs { display: flex; gap: 4px; border-block-end: 1px solid #d9dce3; }
+.tab { padding: 8px 14px; border: 0; border-block-end: 3px solid transparent; background: none; font: inherit; cursor: pointer; }
+.tabActive { border-block-end-color: #1d4ed8; font-weight: 600; }
+.panel { padding-block-start: 12px; }
+
+/* IPG-OK-01: clean control */
+.toolbar { display: flex; gap: 4px; padding-inline-start: 4px; }
+.toolButton { padding: 6px 12px; border: 1px solid #5b6577; border-radius: 6px; background: #fff; font: inherit; cursor: pointer; }
+.toolButtonOn { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.nativeLabel { display: block; margin-block-start: 16px; }
+.native { display: block; inline-size: 100%; margin-block-start: 6px; }
