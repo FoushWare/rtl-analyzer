@@ -148,5 +148,30 @@
       "WSI-OK-01"
     ],
     "humanAcceptance": "pending"
+  },
+  "secondPass": {
+    "date": "2026-11-22",
+    "setupChanges": [
+      "apps/*/project.json: dev/build run plain vite from cwd apps/<app> (no hardcoded --config/--port)",
+      "nx.json: useDaemonProcess false",
+      "apps/*/vite.config.mjs: optimizeDeps.include react, react/jsx-runtime, react/jsx-dev-runtime, react-dom/client"
+    ],
+    "results": {
+      "1a candidate state reproduced both orders": "PASS",
+      "1b why admin preview showed both edits": "PASS: one workflow/session/candidateRoot; prepare-preview applies the opened entry and it stays applied (review-workflow.ts)",
+      "1c labeled code Before/After accurate": "PASS",
+      "1d live After shows only selected finding": "FAIL (Analyzer behavior): cumulative composition of all opened findings",
+      "2a shared-only approve/validate/apply changes only shared file": "PASS",
+      "2b both apps reflect shared fix; admin pending": "PASS",
+      "2c rollback restores hashes (shared)": "PASS",
+      "2d admin-only approve/validate/apply/rollback": "PASS",
+      "3a duplicate vite flags": "PASS (fixed)",
+      "3b nx daemon after shutdown": "PASS on a run without Apply/rollback",
+      "3c first-preview reload error": "PASS: cause react/jsx-dev-runtime late optimization; fixed by optimizeDeps.include; 0 errors in 4 candidate preparations",
+      "3d analyzer reports both consumers": "FAIL by design: applications is path-based (apps/ only); previews via explicit mappings",
+      "3e source hashes unchanged and baseline decisions pending": "PASS",
+      "3f no process left after apply+rollback and companion SIGINT": "FAIL (Analyzer, not isolated): orphaned candidate runtime in 2 of 2 runs"
+    },
+    "baseline": "No review state is stored in the example; all decisions are pending in the baseline."
   }
 }
