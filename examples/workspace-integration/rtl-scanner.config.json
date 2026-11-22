@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "generatedStyleOwner": "unknown",
+  "ownership": {},
+  "approvals": [],
+  "exceptions": [],
+  "issueBindings": [],
+  "dynamicExceptions": [],
+  "roles": [],
+  "ownerOverrides": [
+    {
+      "path": "libs/ui/src/StatusBadge.module.css",
+      "context": "stylesheet/.badge",
+      "owner": "custom-css",
+      "reason": "Badge follows the label in reading order."
+    },
+    {
+      "path": "apps/admin/src/Admin.module.css",
+      "context": "stylesheet/.refundNote",
+      "owner": "custom-css",
+      "reason": "Note follows the label in reading order."
+    }
+  ],
+  "cssProposals": []
+}

@@ -1,0 +1,9 @@
+.card {
+  margin-block-end: 12px;
+  padding-block: 12px;
+  padding-inline: 16px;
+  border-inline-start: 4px solid #2f6f4f;
+  background: #f6f8f7;
+}
+.cardTitle { margin: 0 0 4px; font-size: 1rem; }
+.cardBody { margin: 0; }

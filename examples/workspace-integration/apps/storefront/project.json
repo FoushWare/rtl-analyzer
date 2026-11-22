@@ -1,0 +1,10 @@
+{
+  "name": "storefront",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/storefront/src",
+  "targets": {
+    "dev": { "executor": "nx:run-commands", "options": { "command": "node node_modules/vite/bin/vite.js --config apps/storefront/vite.config.mjs --host 127.0.0.1 --port 4265 --strictPort" } },
+    "build": { "executor": "nx:run-commands", "outputs": ["{workspaceRoot}/dist/apps/storefront"], "options": { "command": "node node_modules/vite/bin/vite.js build --config apps/storefront/vite.config.mjs" } }
+  }
+}

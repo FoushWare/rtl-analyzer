@@ -1,0 +1,21 @@
+{
+  "name": "rtl-example-workspace-integration",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:storefront": "nx run storefront:dev --",
+    "dev:admin": "nx run admin:dev --",
+    "build": "nx run-many -t build",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build"
+  },
+  "dependencies": { "react": "19.1.0", "react-dom": "19.1.0" },
+  "devDependencies": {
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "nx": "23.3.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.4.5"
+  }
+}

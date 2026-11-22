@@ -1,0 +1,7 @@
+.page { max-width: 640px; margin-inline: auto; padding: 24px; font-family: system-ui, sans-serif; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.title { margin: 0; }
+.langLink { color: #2f6f4f; }
+.promo { margin-block: 16px; padding-inline-start: 12px; border-inline-start: 3px solid #c47f17; }
+.product { display: flex; align-items: center; margin-block: 12px 4px; }
+.price { margin-block: 0 16px; font-weight: 600; }

@@ -1,0 +1,152 @@
+{
+  "projectId": "workspace-integration",
+  "status": "draft",
+  "catalogVersion": "0.1.0",
+  "note": "Project 6 of the documented example program. The project matrix (docs/rtl-analyzer-v3/rtl-ui-catalog.json) defines no workspace-specific cases, so this slice reuses LAYOUT-001 (margin) in a multi-app Nx workspace with a shared library; the workspace shape, shared/app-specific/control split and all outcomes are this slice's own. Variants en-ltr and ar-rtl, desktop viewport, pointer input. Expectations were written BEFORE the first install, build or scan.",
+  "selectedCatalogIds": [
+    "LAYOUT-001"
+  ],
+  "deferredCatalogIds": "all other catalogue IDs",
+  "recordedBeforeFirstScan": "2026-11-22",
+  "workspace": {
+    "apps": [
+      "storefront (dev 4265, preview origin 4266)",
+      "admin (dev 4275, preview origin 4276)"
+    ],
+    "library": "libs/ui (@ws/ui, source-consumed through a Vite alias and tsconfig paths)",
+    "tooling": "npm, nx 23.3.0 (nx:run-commands targets only, no Nx Vite plugin), Vite 6, React 19, CSS Modules with generateScopedName [local]"
+  },
+  "cases": [
+    {
+      "id": "WSI-SHARED-01",
+      "catalogIds": [
+        "LAYOUT-001"
+      ],
+      "assignment": "libs/ui/src/StatusBadge.module.css .badge { margin-left: 8px }",
+      "renderedBy": [
+        "storefront (#product)",
+        "admin (#order)"
+      ],
+      "scenario": "Shared badge, physical margin between the heading text and the badge",
+      "expectedBrowser": {
+        "ltr": "Badge sits 8 px to the right of the heading text (computed margin-left 8px, margin-right 0).",
+        "rtl": "Intended: 8 px gap on the left of the badge (after the Arabic text). Expected DEFECT: computed margin-left 8px, margin-right 0, so the badge touches the Arabic text on its right side (0 px gap) and has 8 px of dead space on its left. Same defect in BOTH apps."
+      },
+      "expectedDetection": "RTL.CSS.PHYSICAL on libs/ui/src/StatusBadge.module.css (path under libs/, not under an app). One finding, not two (the file is scanned once).",
+      "expectedTransformation": "Supported candidate margin-inline-start: 8px (simple class selector). Preview targets: .badge in both storefront and admin (mapping lists both routes); After expected to fix both apps."
+    },
+    {
+      "id": "WSI-APP-01",
+      "catalogIds": [
+        "LAYOUT-001"
+      ],
+      "assignment": "apps/admin/src/Admin.module.css .refundNote { margin-right: 12px }",
+      "renderedBy": [
+        "admin (#refund) only"
+      ],
+      "scenario": "Admin-only note after bold text",
+      "expectedBrowser": {
+        "ltr": "12 px gap on the right of the bold refund label.",
+        "rtl": "Intended: 12 px on the end side (left in RTL). Expected DEFECT: gap stays on the right (margin-right 12px, margin-left 0), so the note touches the label."
+      },
+      "expectedDetection": "RTL.CSS.PHYSICAL on apps/admin/src/Admin.module.css only; nothing on the storefront for this case.",
+      "expectedTransformation": "Supported candidate margin-inline-end: 12px; preview in admin only (storefront has no such element)."
+    },
+    {
+      "id": "WSI-OK-01",
+      "catalogIds": [
+        "LAYOUT-001"
+      ],
+      "assignment": "libs/ui/src/InfoCard.module.css (logical padding, border-inline-start, margin-block-end) and apps/storefront/src/Storefront.module.css (all logical or symmetric)",
+      "renderedBy": [
+        "storefront (shared card + promo)",
+        "admin (shared card)"
+      ],
+      "scenario": "Clean control: shared card and storefront promo use logical properties only",
+      "expectedBrowser": {
+        "ltr": "Card accent border on the left; promo bar on the left.",
+        "rtl": "Card accent border and promo bar on the right; no defect."
+      },
+      "expectedDetection": "No findings in InfoCard.module.css, Storefront.module.css, or Admin.module.css other than .refundNote.",
+      "expectedTransformation": "None."
+    }
+  ],
+  "expectedActionable": [
+    "WSI-SHARED-01 (1 finding, libs/ui)",
+    "WSI-APP-01 (1 finding, apps/admin)"
+  ],
+  "expectedFindingTotal": "2 actionable findings in 2 files",
+  "expectedDiagnostics": [
+    "RTL.DOCUMENT.INITIAL (Info) on each app index.html: possible",
+    "RTL.RUNTIME.DIRECTION_UNKNOWN (Minor) on each App.tsx: possible, as in earlier examples"
+  ],
+  "expectedScanCompleteness": "complete: true. Uncertain: whether discovery with scanRoots [apps, libs] also treats libs/ui/project.json specially.",
+  "expectedMisses": [
+    "none expected"
+  ],
+  "expectedPreview": {
+    "original": "Original renders for WSI-SHARED-01 in storefront and in admin, and for WSI-APP-01 in admin. Risk: startupScript 'dev:storefront' runs `npm run dev:storefront -- --config ... --port ...`, which goes through `nx run storefront:dev --`; Nx may not forward the extra flags to the run-commands command (my target hardcodes them, so a duplicate --port/--config is possible) or may not exit with the child's process group semantics. If Nx startup fails, record the exact error.",
+    "after": "After renders via a candidate of margin-inline-start: 8px in the shared library; the isolated candidate runtime must resolve @ws/ui and compile libs/ui from the candidate copy. Risk: shared-library path may not be inside the candidate project root mapping."
+  },
+  "expectedReview": "All decisions pending; source hashes unchanged before/after the review.",
+  "attempt1": {
+    "date": "2026-11-22",
+    "scan": "complete: true; 15 files scanned, 5 skipped (project.json x3, vite.config.mjs x2); 2 actionable RTL.CSS.PHYSICAL (libs/ui/src/StatusBadge.module.css:3 margin-left: 8px; apps/admin/src/Admin.module.css:7 margin-right: 12px) plus RTL.DOCUMENT.INITIAL x2 and RTL.RUNTIME.DIRECTION_UNKNOWN x2. Matches expectedActionable. Attribution: the admin finding has applications [\"admin\"]; the shared libs/ui finding has applications [] (no app attribution).",
+    "browser": "Both Nx dev servers started (npm run dev:storefront / dev:admin). WSI-SHARED-01 matched in both apps (LTR gap 8 px; RTL gap 0 px, margin-left 8px, margin-right 0). WSI-OK-01 matched (card border left in LTR, right in RTL; promo likewise). WSI-APP-01 did NOT match the recorded expectation: with margin-right: 12px on the note, LTR gap between label and note is 0 px and RTL gap is 12 px (the reverse of what was written). The fixture was wrong (a right margin on the trailing element is not a gap after the label).",
+    "action": "Fixture changed to margin-left: 12px (leading gap, the intended physical-side defect) and attempt2Expectations written before the rescan."
+  },
+  "attempt2Expectations": {
+    "recordedBeforeRescan": "2026-11-22",
+    "changes": [
+      "apps/admin/src/Admin.module.css .refundNote: margin-right: 12px to margin-left: 12px"
+    ],
+    "expect": [
+      "same 2 actionable findings (admin line 7 now margin-left: 12px) and same 4 diagnostic-class entries; complete: true",
+      "WSI-APP-01 browser: LTR gap 12 px (correct); RTL gap 0 px (defect: the note touches the label)",
+      "candidate for WSI-APP-01: margin-inline-start: 12px in admin only",
+      "shared candidate for WSI-SHARED-01: margin-inline-start: 8px; libs/ui path; applications attribution of the shared finding stays empty (uncertain how Fix Studio finds targets)"
+    ]
+  },
+  "expectedBrowser_correction": "WSI-APP-01 expectedBrowser and expectedTransformation above describe the first (wrong) fixture; see attempt1 and attempt2Expectations for the corrected expectation (margin-left, candidate margin-inline-start).",
+  "attempt2Results": {
+    "scan": "complete: true; same 6 findings (2 actionable: libs/ui StatusBadge.module.css:3 margin-left: 8px with applications [], apps/admin Admin.module.css:7 margin-left: 12px with applications [\"admin\"]; 2 RTL.DOCUMENT.INITIAL; 2 RTL.RUNTIME.DIRECTION_UNKNOWN). Matches attempt2Expectations except the candidate expectation below.",
+    "fixStudio": "Both findings: After = Manual review required, CSS_SPACING_OWNER_REQUIRES_REVIEW, no supported candidate, approval unavailable. I omitted ownerOverrides (projects 3 and 5 declare them); my attempt2 expectation of candidates was wrong, not an Analyzer defect. Original rendered: admin finding: route /, admin, 1 verified target (Nx startup worked); shared finding: storefront and admin offered as apps, storefront Original shown, 1 verified target.",
+    "hashes": "identical before/after (29 files)",
+    "nxStartup": "Companion started both apps through `npm run dev:<app> -- --config .rtl-preview/vite.<app>.config.mts --host 127.0.0.1 --port 4266|4276 --strictPort` which became `nx run <app>:dev -- ...` and appended a second --config/--port after the flags hardcoded in project.json (vite then served the preview origin ports 4266/4276). Companion SIGINT stopped the npm/nx/vite process groups; a leftover nx daemon process was killed by hand."
+  },
+  "attempt3Expectations": {
+    "recordedBeforeRescan": "2026-11-22",
+    "changes": [
+      "rtl-scanner.config.json: ownerOverrides (custom-css) for libs/ui/src/StatusBadge.module.css stylesheet/.badge (\"Badge follows the label in reading order\") and apps/admin/src/Admin.module.css stylesheet/.refundNote (\"Note follows the label in reading order\")"
+    ],
+    "expect": [
+      "same scan output (6 findings, complete: true)",
+      "supported candidates: margin-inline-start: 8px for the shared .badge and margin-inline-start: 12px for admin .refundNote",
+      "shared .badge: RTL After renders in storefront and in admin (selector lists both); admin .refundNote After renders in admin only",
+      "After closes the RTL gap (computed margin-inline-start 8px/12px resolves to the left side in RTL)",
+      "uncertain: the isolated candidate runtime may not resolve @ws/ui or may fail for libs/ path; record exact error",
+      "Approve/Validate/Apply/rollback not exercised; all decisions stay pending"
+    ]
+  },
+  "attempt3Results": {
+    "scan": "complete: true; 6 findings as before; ownership of both CSS findings is now custom-css; shared libs/ui finding still has applications []; no candidate in the scan JSON (suggestion null: candidates appear in Fix Studio).",
+    "fixStudio": {
+      "admin_refundNote": "After = supported candidate margin-inline-start: 12px. Preview ready, Pending approval. Original origin 4276, candidate origin 4202. Measured: Original RTL gap 0 px (ml 12, mr 0); After RTL gap 12 px (mis 12, mr 12, ml 0). After LTR gap 12 px.",
+      "shared_badge": "After = supported candidate margin-inline-start: 8px; target path libs/ui/src/StatusBadge.module.css. App selector lists storefront and admin. First candidate preparation failed with \"Preview preparation failed: page.evaluate: Execution context was destroyed, most likely because of a navigation. Retry preview.\"; Retry preview succeeded (Preview ready, Pending approval). Storefront: Original 4266 RTL gap 0 px, After 4203 RTL gap 8 px (ml 0, mr 8), After LTR gap 8 px. Admin: Original 4276 RTL gap 0 px, After 4202 RTL gap 8 px; LTR 8 px.",
+      "observation": "The admin candidate origin 4202 showed BOTH changes (badge margin-right 8 px and refundNote margin-right 12 px) after both findings had been viewed. Whether this is cumulative composition or a reused runtime was not determined."
+    },
+    "nx": "Nx startup worked for both apps and for Fix Studio (Companion ran `npm run dev:<app> -- <flags>` to `nx run <app>:dev -- <flags>`); no startup failure occurred. Flags are duplicated (hardcoded in project.json plus appended by the Analyzer); Vite used the last occurrence.",
+    "hashes": "identical before/after (29 files; hash-of-list 9ad81d5cbaea46ab90df313e70ff044e949b14d66a461b6a8ca4696db97931bb); copy src matches the checked-in example",
+    "review": "Both decisions remained Pending; no review record was written (state directory held only backups/). Approve, Validate, Apply and rollback not exercised."
+  },
+  "results": {
+    "scanDate": "2026-11-22",
+    "analyzer": "rtl-analyzer@0.3.0 from implementation 54648af70b4a2439da64fcfa654745cdf51de08b (SHA-256 94d001988755f06297d7a52088484fd441875035767238b8846b4336ffb0b07a)",
+    "detected": "WSI-SHARED-01, WSI-APP-01",
+    "missed": "none",
+    "controlsClean": [
+      "WSI-OK-01"
+    ],
+    "humanAcceptance": "pending"
+  }
+}
