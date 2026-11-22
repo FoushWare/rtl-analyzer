@@ -8,12 +8,16 @@ body { margin: 0; background: #f4f6f8; color: #1d2733; }
 .summaryTitle { margin: 0; font-size: 1.5rem; }
 .editLink { margin-left: 24px; padding: 4px 12px; border-radius: 999px; background: #dbe7ff; color: #174ea6; text-decoration: none; }
 
-/* ATC-REVIEW-01: left alignment of a hint; intent needs a human decision. */
+/* ATC-FIX-02: left-aligned helper text; supported text-align conversion. */
 .coupon { display: grid; gap: 8px; margin-block-start: 24px; }
 .field, .cardNumber { padding: 10px 12px; border: 1px solid #9aa7b4; border-radius: 6px; font: inherit; }
 .couponHint { margin: 0; font-size: 0.875rem; color: #55636f; text-align: left; }
 
+/* ATC-REVIEW-01: badge pinned with physical right. Whether it is a fixed brand/trust position or
+   follows inline-end is a product decision; no project intent or ownership is declared. */
+.secureBadge { position: absolute; right: 12px; top: 12px; padding: 2px 10px; border-radius: 999px; background: #e3f4e8; color: #1c6b3a; font-size: 0.75rem; }
+
 /* ATC-OK-01: already logical; no physical direction anywhere. */
-.payment { display: grid; gap: 8px; margin-block-start: 24px; padding-block: 16px; padding-inline: 16px; background: #fff; border-radius: 8px; }
+.payment { position: relative; display: grid; gap: 8px; margin-block-start: 24px; padding-block: 16px; padding-inline: 16px; background: #fff; border-radius: 8px; }
 .cardNumber { text-align: start; letter-spacing: 0.04em; }
 .totalRow { display: flex; justify-content: space-between; margin-block-start: 12px; padding-inline-start: 4px; text-align: start; }

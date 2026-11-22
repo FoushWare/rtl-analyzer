@@ -9,12 +9,48 @@
       "dataAdapter": "none",
       "startupScript": "dev",
       "routes": [
-        { "id": "checkout", "path": "/", "ltr": "/?direction=ltr", "rtl": "/?direction=rtl" }
+        {
+          "id": "checkout",
+          "path": "/",
+          "ltr": "/?direction=ltr",
+          "rtl": "/?direction=rtl"
+        }
       ]
     }
   },
   "mappings": [
-    { "source": "src/Checkout.module.css", "sourceSelector": ".editLink", "targetSelector": ".editLink", "routes": [{ "application": "checkout", "route": "checkout" }] },
-    { "source": "src/Checkout.module.css", "sourceSelector": ".couponHint", "targetSelector": ".couponHint", "routes": [{ "application": "checkout", "route": "checkout" }] }
+    {
+      "source": "src/Checkout.module.css",
+      "sourceSelector": ".editLink",
+      "targetSelector": ".editLink",
+      "routes": [
+        {
+          "application": "checkout",
+          "route": "checkout"
+        }
+      ]
+    },
+    {
+      "source": "src/Checkout.module.css",
+      "sourceSelector": ".couponHint",
+      "targetSelector": ".couponHint",
+      "routes": [
+        {
+          "application": "checkout",
+          "route": "checkout"
+        }
+      ]
+    },
+    {
+      "source": "src/Checkout.module.css",
+      "sourceSelector": ".secureBadge",
+      "targetSelector": ".secureBadge",
+      "routes": [
+        {
+          "application": "checkout",
+          "route": "checkout"
+        }
+      ]
+    }
   ]
 }
