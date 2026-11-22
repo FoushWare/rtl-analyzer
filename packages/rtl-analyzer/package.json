@@ -35,7 +35,7 @@
   },
   "rtlAnalyzerImplementation": {
     "repository": "https://github.com/FoushWare/enterprise-rtl-migration-lab",
-    "commit": "54648af70b4a2439da64fcfa654745cdf51de08b"
+    "commit": "d55daba1e03a2761c69b383531978bbb11ba087f"
   },
   "license": "MIT"
 }

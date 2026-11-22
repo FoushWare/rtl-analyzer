@@ -8,6 +8,8 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Documents
 
+- [Workspace Integration fixes](../../examples/workspace-integration/README.md#third-pass-analyzer-fixes-2026-11-22) — verified 2026-11-22: one-by-one Live After limited to the selected finding, candidate runtimes released after Apply/Rollback and on repeated shutdown signals; local implementation commit `d55daba` (wrapper pin updated, not pushed). Human acceptance pending.
+
 - [Northstar WebKit acceptance](../verification/northstar-webkit-acceptance-2026-11-22.md) — verified 2026-11-22: exact installed wrapper, eight WebKit candidate previews, both review workflows, rollback conflict protection, and a running pending walkthrough. Links to setup, inventory, and Claude handoff.
 
 - [Northstar configured CSS proposals](../verification/northstar-configured-previews-2026-11-22.md) — verified 2026-11-22: live component restoration, project-declared proposal intents, pinned wrapper installation, independent project coverage, and accepted-only Apply with exact rollback in both modes. Human walkthrough pending.

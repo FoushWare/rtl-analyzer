@@ -187,10 +187,46 @@ Apply rescans, so after Apply the dashboard listed only the remaining finding. R
 
 ## Analyzer observations (not blocking, Analyzer code unchanged)
 
-1. **Cumulative live After** (repro: start Review one by one, open admin finding, then shared; inspect the session `candidateRoot` or the admin After origin). The After pane for finding N includes finding M's edit.
-2. **Leaked candidate runtime after Apply and Rollback** (2 of 2 runs, none in runs without Apply). Repro: Review one by one, approve one finding, Validate, Apply, then Rollback (Review actions), wait for the page to reload, stop the Companion with SIGINT. Left behind: the `npm run dev:<app>` process group (npm, `nx run`, vite, esbuild) of the post-rollback review's candidate `rtl-review-*` root, holding a candidate port until killed with `kill -TERM -<pgid>`. Not isolated further (it could depend on the new review's auto-preview starting just before shutdown).
+1. **Cumulative live After** (fixed in the third pass below; repro: start Review one by one, open admin finding, then shared; inspect the session `candidateRoot` or the admin After origin). The After pane for finding N includes finding M's edit.
+2. **Leaked candidate runtime after Apply and Rollback** (fixed in the third pass below; 2 of 2 runs, none in runs without Apply). Repro: Review one by one, approve one finding, Validate, Apply, then Rollback (Review actions), wait for the page to reload, stop the Companion with SIGINT. Left behind: the `npm run dev:<app>` process group (npm, `nx run`, vite, esbuild) of the post-rollback review's candidate `rtl-review-*` root, holding a candidate port until killed with `kill -TERM -<pgid>`. Not isolated further (it could depend on the new review's auto-preview starting just before shutdown).
 3. `$TMPDIR/rtl-review-*` candidate roots are not removed (about 20 present after the session).
 4. A shared-library finding has `applications: []`.
+
+## Third pass: Analyzer fixes (2026-11-22)
+
+The two Analyzer issues above were reproduced on disposable copies with the old pinned archive (`94d00198...b07a`, `54648af`) and fixed generically in the implementation. New archive: sha256 `e9e446587a8bdd0108d2a46dd56d8c83cc4cc3b80df2fb4fd407ad06a371288d`, implementation `d55daba1e03a2761c69b383531978bbb11ba087f` (local commit, wrapper pin updated). Every test below used a fresh copy and that archive, installed with `npm install --no-save`. Helper scripts were scratch files, not committed.
+
+| # | Check | Old archive | New archive |
+|---|---|---|---|
+| 1 | Candidate holds only the selected finding, order admin to shared to admin | cumulative | **PASS** |
+| 2 | Same, order shared to admin to shared; shared fix shown in storefront and admin candidates (admin note stays unfixed) | cumulative | **PASS** |
+| 3 | Switching back and forth in the UI always reaches "Preview ready" | n/a | **PASS** (after the client fix below) |
+| 4 | Accepted entry stays accepted while another finding is previewed; validation survives the preview | validation lost | **PASS** |
+| 5 | Shared only: approve, Validate, explicit Apply dialog lists one file, only `libs/ui/src/StatusBadge.module.css` changes, both apps show the fix, admin stays Pending | n/a | **PASS** (UI) |
+| 6 | Hash-exact rollback (30 of 30 files), audit `ROLLED_BACK` | n/a | **PASS** (UI) |
+| 7 | Admin only: same, only `apps/admin/src/Admin.module.css` changes, badges unchanged, shared Pending, rollback hash-exact | n/a | **PASS** (UI) |
+| 8 | Candidate runtime processes and ports released right after Apply and after Rollback | 6 processes kept | **PASS** (0 processes, ports 4202/4203 free) |
+| 9 | Companion shutdown releases everything (6 runs: 3 API, 2 UI, plus non-Nx), including two SIGINTs 0.02 s apart (what `npx` produces) | leaked npm/nx/vite/esbuild and port 4204 | **PASS** (0 leftover processes, no held ports) |
+| 10 | Persisted state after shutdown: sessions marked `stopped`, receipts and workflows kept for protected rollback | n/a | **PASS** |
+| 11 | Non-Nx regression (`examples/admin-dashboard`, plain Vite): both findings previewed, one accepted, Validate, Apply, rollback, shutdown | cumulative candidate, Apply refused after a preview, 2 processes left | **PASS** (Apply writes `src/Dashboard.module.css` only, rollback hash-exact, 0 processes) |
+| 12 | Scanner unit tests and typecheck | not rerun as a whole | **PASS** (423 tests, 38 files, `tsc` clean; 4 new tests, 3 of them fail on the old code) |
+
+**Fix 1 (`review-workflow.ts`, `contextual-preview.ts`, `dashboard-review-workflow.ts`).** One-by-one gets a `previewFocus`: `prepare-preview` takes every other pending finding out of the candidate, so the candidate contains only the selected finding (plus nothing else; accepted entries keep their approval but are not shown in another finding's After). Validate clears the focus and recomposes from accepted entries only; Apply restores that composition before its hash checks; a preview no longer discards a passing validation. Batch (`apply-first`) composition is untouched (covered by unit tests, not exercised in a browser). `change(action:'apply')` keeps its cumulative API behavior. Two follow-on bugs were found by running it: `contextual-preview.ts` had its own copy of the composition check (`STALE_CANDIDATE_SOURCE` while another finding was accepted), and the dashboard cached a `prepared` attempt under a key that now recurs, so revisiting a finding showed "Preview preparation failed" until Retry.
+
+**Fix 2 (`preview-companion.ts`, `review-session.ts`, `original-preview-runtime.ts`, `review-workflow.ts`).** Root cause: `process.once('SIGINT')` removed the handler after the first signal. `npx` forwards Ctrl-C, so the Companion gets two; the second killed it while it was stopping the second of two live sessions, orphaning that runtime's npm/nx/vite process group. Shutdown is now idempotent (`process.on`, also SIGHUP), stops all owned runtimes in parallel, always persists, and signals every owned process group again from a synchronous `exit` hook. Apply and Rollback stop that workflow's candidate runtime straight away; sessions, candidate roots and receipts remain.
+
+**Repro of the leak on the old archive:** scan a copy, start the Companion, run the scripted flow (open both findings, accept, Validate, Apply, Rollback, resume, open a finding), then `kill -INT <companion pid>` twice 0.02 s apart. Two signals 0.3 s apart did not leak on the old archive (a single signal was not tested on it).
+
+### Remaining gaps
+
+- Human acceptance pending. Chromium only; desktop width; one Nx workspace and one plain Vite project.
+- Batch review (`Prepare all, then review`) is unchanged and was not run in a browser; it still previews all prepared findings together by design.
+- Each focus switch restarts the candidate runtime (about 2 to 5 s) because the candidate files change.
+- A SIGKILL of the Companion itself still orphans runtimes (no exit hook runs).
+- `$TMPDIR/rtl-review-*` candidate roots are never deleted.
+- `admin-dashboard` `.statusBadge` returns `DIRECTION_EVIDENCE_AMBIGUOUS_TARGETS` through the API on both archives (not investigated); its first-load reload error is documented in that example.
+- The `window.confirm` in Rollback is declined silently by the browser pane; I auto-accepted it in disposable copies.
+- Earlier examples keep the archive they were actually run with (`54648af`).
 
 ## Gaps
 

@@ -173,5 +173,15 @@
       "3f no process left after apply+rollback and companion SIGINT": "FAIL (Analyzer, not isolated): orphaned candidate runtime in 2 of 2 runs"
     },
     "baseline": "No review state is stored in the example; all decisions are pending in the baseline."
+  },
+  "thirdPass": {
+    "date": "2026-11-22",
+    "analyzer": "rtl-analyzer@0.3.0 archive sha256 e9e446587a8bdd0108d2a46dd56d8c83cc4cc3b80df2fb4fd407ad06a371288d, implementation d55daba1e03a2761c69b383531978bbb11ba087f",
+    "fixed": [
+      "one-by-one Live After limited to the selected finding (previewFocus)",
+      "candidate runtimes released after Apply/Rollback and on repeated shutdown signals"
+    ],
+    "results": "see README third pass: 12 checks, all PASS on the new archive; both issues reproduced on the old archive",
+    "humanAcceptance": "pending"
   }
 }
