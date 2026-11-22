@@ -1,129 +1,129 @@
-# Bilingual storefront (example project 4)
+# Bilingual Storefront
 
-Next.js 15 (App Router) + TypeScript + Tailwind 3 storefront in English (LTR) and Arabic (RTL). A small slice of the matrix scope NAVIGATION / ICONS (selected and deferred IDs are in `manifest.json`). It has one direction-following icon (the "next" arrow), several direction-neutral controls, a bilingual header, breadcrumb, pagination and a mobile drawer. Expectations were written to `manifest.json` and the table below **before the first scan**.
+Next.js 15 (App Router) + TypeScript + Tailwind 3. Part of the [RTL Analyzer examples](../README.md); this page is all you need for this project.
 
-**Headline result:** the static scan works and finds what we expected (plus one extra finding), but **Analyzer 0.3.0 cannot run its live Original/After preview for Next.js**. Every Original and After pane failed, so no After was verified visually. See [Preview failure](#preview-failure-nextjs).
+## What it demonstrates
 
-## Run
+An English (LTR) and Arabic (RTL) storefront with a header, breadcrumb, pagination, icons and a mobile drawer. The scan reports 8 findings (3 CSS, 1 icon, 3 utility-class, 1 bidi isolation) plus 2 diagnostics. **Static scan only: live Fix Studio preview is unsupported for Next.js.**
+
+| Target | Declaration | Expected Analyzer outcome |
+| --- | --- | --- |
+| `.cart-count`, `.pager-arrow` | `margin-left` | finding; live preview unsupported |
+| `.icon-forward` | marked `rtl-icon: progression-right` | `RTL.ICON.PROGRESSION` finding |
+| `.drawer` | `left: 0` | finding, manual |
+| `ml-6`, `text-left` (Tailwind) | utility classes | detection only, no candidate |
+| `.icon-back` (unmarked), breadcrumb, neutral icons | — | no finding (expected) |
+
+## Prerequisites
+
+- macOS or Linux shell (zsh/bash). The commands below were verified on macOS only; **Windows is unsupported** (protected report and source operations need a POSIX filesystem profile).
+- Node.js 22.12+, npm, Python 3, `rsync`, and `git`.
+- A clone of this repository. Set `REPO` in the first terminal to its path.
+- Internet access to install dependencies, `rtl-analyzer@0.4.0` and Chromium.
+
+Work in a **disposable copy**. Never scan or apply inside `examples/` itself. The copy lives at `/private/tmp/bilingual-storefront` (use `/tmp/bilingual-storefront` on Linux; unverified). The folder to open in VS Code is **`/private/tmp/bilingual-storefront/project`**.
+
+## 1. Set up the disposable copy
+
+Each terminal needs the same path, so every block below begins by setting `RUN=/private/tmp/bilingual-storefront` and changing into it. Run this once:
 
 ```sh
+# Terminal 1 - create the disposable copy, install, scan
+REPO="$HOME/rtl-analyzer"                # your clone of https://github.com/FoushWare/rtl-analyzer
+RUN=/private/tmp/bilingual-storefront
+rm -rf "$RUN" && mkdir -p "$RUN/reports" "$RUN/state/backups"
+rsync -a --exclude node_modules --exclude dist --exclude .next --exclude .nx --exclude '*.tsbuildinfo' "$REPO/examples/bilingual-storefront/" "$RUN/project/"
+cd "$RUN/project"
 npm install
-npm run dev        # http://127.0.0.1:4245/?lang=en  (Arabic: ?lang=ar)
-npm run build && npm run check
-```
-
-Routes: `/?lang=en|ar`, `&drawer=open` (mobile menu drawer, visible at any width once opened; the Menu button shows below 768 px), `&page=1|2`. The language link is a plain `<a>` on purpose: a client-side `<Link>` navigation keeps the root layout, so `<html dir>` would stay stale (this was a real bug found in browser verification and fixed before the final scan).
-
-## Cases and expectations (recorded before the first scan)
-
-| ID | Catalogue | Target | LTR / intended RTL | Expected Analyzer outcome |
-|---|---|---|---|---|
-| SBF-FIX-01 | NAVIGATION-012/001 | `.cart-count` `margin-left: 6px` | badge trails the Cart label with a gap | `RTL.CSS.PHYSICAL`; candidate `margin-inline-start` (**uncertain**: no prior Next.js evidence) |
-| SBF-FIX-02 | NAVIGATION-005, ICONS-002 | `.pager-arrow` `margin-left: 8px` | gap between "Next" and its arrow | as above |
-| SBF-ICON-01 | ICONS-002/003 | `.icon-forward`, marked `/* rtl-icon: progression-right */` | arrow means "next": must point left in RTL | `RTL.ICON.PROGRESSION`; candidate `:dir(rtl){scale:-1 1}` (**uncertain**, many gating conditions) |
-| SBF-REVIEW-01 | NAVIGATION-003 | `.drawer` `left: 0` | should open from the start edge (right in RTL) | finding, manual (**uncertain** whether a candidate is offered) |
-| SBF-TW-01 | NAVIGATION-001 | `ml-6` on two nav links | gap on the start side | finding; no candidate expected (**uncertain** classification) |
-| SBF-TW-02 | ICONS-004 | `text-left` on the product blurb | blurb aligns to start | finding; manual (**uncertain** classification) |
-| SBF-MISS-01 | ICONS-001 | `.icon-back`, no marker | Previous arrow should point right in RTL | **no finding** (marker opt-in; expected miss) |
-| SBF-OK-01 | NAVIGATION-004 | breadcrumb with `ps-`, `gap-`, `text-start`, `end-4` | correct | no finding |
-| SBF-OK-02 | ICONS-008 | search and plus icons (direction-neutral) | never mirrored | no finding; must not be mirrored |
-| SBF-OK-03 | ICONS-007 | down chevrons | stay down | no finding |
-
-Preview was also **uncertain** before the scan: `rtl-preview.config.json` declares the Next dev server through the Vite-shaped fields (`viteConfig: next.config.mjs`) because the documented adapter is Vite-compatible only.
-
-## Reproduce
-
-Needs Node 22.12+, npm, Python 3. Build the Analyzer tarball from the wrapper root (the pinned implementation is `54648af`):
-
-```sh
-git submodule status implementation        # expect 54648af70b4a2439da64fcfa654745cdf51de08b
-npm ci && npm --prefix implementation ci   # once
-mkdir -p /private/tmp/rtl-sf-pack
-npm pack --pack-destination /private/tmp/rtl-sf-pack ./packages/rtl-analyzer
-shasum -a 256 /private/tmp/rtl-sf-pack/rtl-analyzer-0.3.0.tgz
-tar -xOzf /private/tmp/rtl-sf-pack/rtl-analyzer-0.3.0.tgz package/package.json | grep '"commit"'
-```
-
-Verified run: sha256 `94d001988755f06297d7a52088484fd441875035767238b8846b4336ffb0b07a`, commit `54648af70b4a2439da64fcfa654745cdf51de08b`. A rebuild can give another archive hash; check the `commit` line. (An older `/private/tmp/rtl-wrapper-pack.*` archive on this Mac is pinned to `67c7748`; do not use it.)
-
-Scan a fresh disposable copy (never the checked-in example):
-
-```sh
-PACK=/private/tmp/rtl-sf-pack/rtl-analyzer-0.3.0.tgz
-run=$(mktemp -d /private/tmp/rtl-storefront.XXXXXX)
-mkdir -p "$run/reports" "$run/state/backups"
-rsync -a --exclude node_modules --exclude .next --exclude next-env.d.ts --exclude '*.tsbuildinfo' examples/bilingual-storefront/ "$run/project/"
-cd "$run/project"
-npm ci && npm run build && rm -rf .next next-env.d.ts tsconfig.tsbuildinfo
-npm install --no-save --package-lock=false "$PACK"
+npm run check
+rm -rf dist .next .nx
+npm install --no-save --package-lock=false rtl-analyzer@0.4.0
 npx --no-install playwright install chromium
-find . \( -path ./node_modules -o -path ./.next -o -path ./.rtl-preview -o -path ./.rtl-vite-cache \) -prune -o -type f ! -name next-env.d.ts ! -name '*.tsbuildinfo' -print | sort | xargs shasum -a 256 > "$run/hashes-before.txt"
-npx --no-install rtl-analyzer scan --root "$PWD" --format dashboard --output-dir "$run/reports" --embed-source-snippets
+npx rtl-analyzer@0.4.0 scan --root "$PWD" --format dashboard --output-dir "$RUN/reports" --embed-source-snippets > /dev/null
+git init -q && printf '.rtl-preview/\n.rtl-vite-cache/\n' >> .git/info/exclude && git add -A && git -c user.name=t -c user.email=t@t commit -qm baseline
 ```
 
-Companion and dashboard (separate terminals; ports 4318 and 4320 must be free):
+Open the copy in VS Code (File → Open Folder → `/private/tmp/bilingual-storefront/project`, or `code /private/tmp/bilingual-storefront/project` if the `code` command is installed). Source Control stays empty until you apply a fix.
+
+## 2. Run the app
 
 ```sh
-cd "$run/project"
-export RTL_PROJECT_ROOT="$PWD" RTL_REVIEW_STORE_PATH="$run/state/review-records-v1.json" \
-  RTL_EVIDENCE_STORE_PATH="$run/state/review-evidence-v1.json" RTL_MANUAL_CHANGE_STORE_PATH="$run/state/manual-changes-v1.json" \
-  RTL_SCAN_MANIFEST_STORE_PATH="$run/state/scan-manifests-v1.json" RTL_AUDIT_STORE_PATH="$run/state/apply-audit-v1.json" \
-  RTL_APPLY_BACKUP_ROOT="$run/state/backups"
+# Terminal 2 - app (port 4245)
+RUN=/private/tmp/bilingual-storefront
+cd "$RUN/project"
+npm run dev
+```
+
+Open <http://127.0.0.1:4245/?lang=ar>.
+
+Press Ctrl-C to stop the app before the next step if you want a quiet machine; it uses a different port from Fix Studio (4246), so it can keep running.
+
+## 3. Open Fix Studio
+
+Fix Studio’s **review** actions are unsupported for this Next.js project (see [Limitations](#limitations)). You can still open the report dashboard to read findings and source. Terminal 4 is enough:
+
+```sh
+# Terminal 4 - report server (port 4320)
+RUN=/private/tmp/bilingual-storefront
+cd "$RUN/project"
+python3 -m http.server 4320 --bind 127.0.0.1 --directory "$RUN/reports"
+```
+
+Open <http://127.0.0.1:4320/rtl-report-dashboard.html>. Optionally also start the companion (Terminal 3 below) to see the *Runtime unavailable* message.
+
+```sh
+# Terminal 3 - review companion (port 4318)
+RUN=/private/tmp/bilingual-storefront
+cd "$RUN/project"
+export RTL_PROJECT_ROOT="$PWD" RTL_REVIEW_STORE_PATH="$RUN/state/review-records-v1.json" \
+  RTL_EVIDENCE_STORE_PATH="$RUN/state/review-evidence-v1.json" RTL_MANUAL_CHANGE_STORE_PATH="$RUN/state/manual-changes-v1.json" \
+  RTL_SCAN_MANIFEST_STORE_PATH="$RUN/state/scan-manifests-v1.json" RTL_AUDIT_STORE_PATH="$RUN/state/apply-audit-v1.json" \
+  RTL_APPLY_BACKUP_ROOT="$RUN/state/backups"
 npx --no-install rtl-analyzer preview
 ```
 
+Ports: 4318 (companion), 4320 (report), 4246 (original app for Fix Studio), 4202 and up (candidates).
+
+## 4. Start here
+
+- **Route / URL:** `http://127.0.0.1:4245/?lang=ar` (RTL) and `?lang=en` (LTR). Also `&drawer=open`, `&page=1|2`.
+- **Finding:** `RTL.CSS.PHYSICAL` on **`.cart-count`** in `app/storefront.css` (`margin-left: 6px`). Select the file in the Project Explorer on the left, then the finding.
+
+What you should see:
+
+- Static page: the cart count badge trails the “Cart” label with a 6 px gap. **Before** (LTR and RTL): computed `margin-left: 6px`, `margin-right: 0`. In Arabic the badge therefore sits on the wrong side of the gap.
+- There is no verified **After**: the live After pane reports *Runtime unavailable*.
+- Direction is set from the URL, so compare the same page at `direction=ltr` and `direction=rtl` (`lang=en|ar` for the storefront).
+
+## 5. Stop and reset
+
+**Stop:** press Ctrl-C in Terminal 3, Terminal 4 and any app terminal, and wait until each prompt returns (a few seconds; longer for the Nx workspace). Then confirm nothing is left. Do not force-kill the companion: a `kill -9` during shutdown can leave a Vite process behind (seen twice while testing); if the check lists a port, stop that process by the PID `lsof` shows.
+
 ```sh
-python3 -m http.server 4320 --bind 127.0.0.1 --directory "$run/reports"
+# Stop check
+lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(42[0-9]{2}|4318|4320|4265|4275|4266|4276|4235|4236|4245|4246|4255|4256|4215|4216|4225|4226)\b' || echo "all ports free"
 ```
 
-Open `http://127.0.0.1:4320/rtl-report-dashboard.html`, choose **Review one by one**, **Start manual review**, and step through the four files. Leave every decision pending. The live app for direct browser checks is `npm run dev` in the disposable copy (`:4245`); stop it before using the Analyzer.
+**Reset** (stop Terminals 3 and 4 first), then restart them:
 
-After review, re-run the `find … > "$run/hashes-after.txt"` line and `diff` the two files.
+```sh
+# Reset
+RUN=/private/tmp/bilingual-storefront
+rm -rf "$RUN/state" && mkdir -p "$RUN/state/backups"
+cd "$RUN/project" && git checkout -- . && git clean -fdq -e node_modules
+```
 
-## Expected versus actual
+To start completely over, rerun step 1 (it deletes and recreates the copy). Rollback is refused if you edit a file after applying; reset instead.
 
-Scan: 13 files, **8 findings, 0 diagnostics** (`RTL.DOCUMENT.INITIAL` / `DIRECTION_UNKNOWN` were possible and did not appear). The same 8 findings appeared on two fresh copies (first scan, then again after the language-link fix).
+## Limitations
 
-| ID | Actual finding(s) | Verdict |
-|---|---|---|
-| SBF-FIX-01 | `RTL.CSS.PHYSICAL` `storefront.css:5`; supported candidate `margin-inline-start: 6px` | as expected (code diff); preview failed |
-| SBF-FIX-02 | `RTL.CSS.PHYSICAL` `storefront.css:17`; supported candidate `margin-inline-start: 8px` | as expected (code diff); preview failed |
-| SBF-ICON-01 | `RTL.ICON.PROGRESSION` `icons.css:5`; **no candidate**: manual, `CSS_ICON_OWNER_OR_INTENT_REVIEW`. Finding ownership is `unknown` although `rtl-scanner.config.json` has an owner override for `.icon-forward` | detection as expected; uncertain candidate did **not** appear (cause not investigated) |
-| SBF-REVIEW-01 | `RTL.GEOMETRY.EDGE` `storefront.css:26`; manual, `CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW` | as expected |
-| SBF-TW-01 | 2 x `RTL.UTILITY.PHYSICAL` `Header.tsx:17,18` (`ml-6`); manual, `UTILITY_COMPILER_VERSION_AND_VARIANT_REVIEW_REQUIRED` | as expected |
-| SBF-TW-02 | `RTL.UTILITY.PHYSICAL` `ProductCard.tsx:11` (`text-left`); manual | as expected |
-| SBF-MISS-01 | none | expected miss confirmed |
-| SBF-OK-01/02/03 | none | as expected |
-| *(unexpected)* | `RTL.BIDI.ISOLATION` `ProductCard.tsx:8` `{product.name}`; supported candidate `<bdi dir="auto">{product.name}</bdi>`, no preview binding | not in expectations; not judged a false positive (dynamic name, no `bdi`/`dir` ancestor) |
+- **Windows is unsupported**, and the Windows CI leg fails. Safari, other browsers, other package managers and narrow viewports are unverified.
+- **Next.js live preview is unsupported.** Starting a review shows *Preview preparation failed: Runtime unavailable*; Validate, Apply and Rollback cannot be exercised, and batch mode cannot prepare a candidate. Use this project for the static scan and for reading findings and source.
+- Tailwind utility findings are detection-only; `RTL.BIDI.ISOLATION` and the drawer are manual.
+- Live review needs Chromium and trusted project scripts. Details: [advanced setup guide](../../docs/guides/developer-testing.md).
 
-Missed findings relative to the intended defects: the **Previous arrow** (SBF-MISS-01, by design: no marker) and, in practice, the **mirroring candidate for the marked Next arrow** (SBF-ICON-01). No clear false positives.
+## Verified
 
-### Preview failure (Next.js)
+Checked on 2026-11-22 (macOS arm64, Node 22.21.1, headless Chromium driven by Playwright). I ran the commands in the blocks above, unchanged apart from `REPO`, in a fresh `/private/tmp/bilingual-storefront` copy against the published `rtl-analyzer@0.4.0`. Results: setup, `npm run check` and the scan succeeded; the app responded at `?lang=en` and `?lang=ar` and the `.cart-count` margins above were measured there. The companion and report server started and the dashboard lists the findings. Starting a review on `.cart-count` failed with *Preview preparation failed: Runtime unavailable* as documented, so Validate, Apply, Rollback and batch were **not** exercised (unsupported). `all ports free`; Reset clean. **Not verified:** the other seven findings in the dashboard UI.
 
-Observed on every finding that has a preview binding (`.cart-count`, `.pager-arrow`, `.drawer`, `.icon-forward`): Original shows `Runtime unavailable … ORIGINAL_PREVIEW_STARTUP_FAILED`; After shows `Preview preparation failed` (supported candidates) or `Preview unavailable` (manual). **Retry preview** failed the same way. Findings with no binding (`ml-6`, `text-left`, `{product.name}`) say "no exact source-to-element binding". Cause, reproduced by hand in the disposable copy: the Analyzer runs `npm run dev -- --config <vite config> --host 127.0.0.1 --port N --strictPort`, which Next.js rejects with `error: unknown option '--config'`, and it needs a Vite-served `/__rtl_preview_identity` endpoint. Next.js is therefore **not supported by the 0.3.0 live preview**. The Analyzer was not changed. The scan, candidate code diffs and manual reasons work.
-
-**Setup workaround:** none found within scope (a Vite harness would no longer be this Next.js app). Original behaviour was verified directly against the running app instead (next section). The only fixture workaround was the plain-anchor language link described under Run.
-
-## Browser verification of the app (built-in Browser pane, 1024 px wide unless stated)
-
-| Check | LTR (`?lang=en`) | RTL (`?lang=ar`) | Intended |
-|---|---|---|---|
-| `<html lang dir>` after clicking the language link | `en` / `ltr` | `ar` / `rtl` | ok |
-| Nav order (Home, Products, Account) | left to right | right to left | ok |
-| `ml-6` nav gap (SBF-TW-01) | gap after Home | Home and Products touch; gap on the wrong side | **defect shown** |
-| Cart badge vs label (SBF-FIX-01) | 6 px gap | 0 px (badge touches label) | **defect shown** |
-| Pager order | Previous 1 2 Next | Next 2 1 Previous (mirrored order) | ok |
-| Next arrow gap (SBF-FIX-02) | 8 px | 0 px | **defect shown** |
-| Forward arrows (6: breadcrumb x2, card CTA x3, Next) | point right | **still point right** (no transform) | should point left; **defect shown** |
-| Previous arrow (SBF-MISS-01) | points left | **still points left** | should point right; **defect shown** |
-| Search, plus, down chevrons | unchanged | unchanged, not mirrored | ok (controls) |
-| Product blurb alignment (SBF-TW-02) | `left` | **`left`** while text is Arabic | should be `right`; **defect shown** |
-| Drawer at 390 px (SBF-REVIEW-01) | x 0 to 256 | x 0 to 256 (left edge) | should be the right edge; **defect shown** |
-
-The fixed plus button (`end-4`) was not visually confirmed: the Next.js dev indicator sat over it at the bottom corner. After-state behaviour of the proposed fixes was **not** verified because the preview cannot run.
-
-## Review state and hashes
-
-Review One by One was opened on the final copy and all four files and all 8 findings were opened; no Approve/Reject/Defer/Needs review was chosen, so **all 8 decisions remain pending for Ahmed**; no review record was written. The disposable copy's 24 source files (excluding `node_modules`, `.next`, `.rtl-preview`, `.rtl-vite-cache`, `next-env.d.ts`, `*.tsbuildinfo`) had **identical SHA-256 lists before the scan and after review** (hash-of-list `8c0f3f8c1af25608b33362c580eca30ea75a9ba8111ccc933805e68382a35c3d`). At scan time the disposable copy's source files matched the example's (`manifest.json` and this README were edited afterwards and are not in the scan roots). Not exercised: Approve, Validate, Apply, rollback, "Prepare all, then review", Safari, Windows, human acceptance.
-
-Scan roots: `app/`, `components/`, `lib/`, `middleware.ts`. `npm run check` (`tsc --noEmit`) and `npm run build` passed on the fixed source. `npm install` reports audit advisories for the pinned Next version (not addressed here).
+Earlier notes from building this example are kept in [the verification history](../../docs/verification/examples-history/bilingual-storefront.md); they predate 0.4.0.
