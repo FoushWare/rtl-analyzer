@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "generatedStyleOwner": "unknown",
+  "ownership": {},
+  "approvals": [],
+  "exceptions": [],
+  "issueBindings": [],
+  "dynamicExceptions": [],
+  "roles": [],
+  "ownerOverrides": [
+    { "path": "src/Checkout.module.css", "context": "stylesheet/.editLink", "owner": "custom-css", "reason": "Order edit link follows the reading direction beside the title." },
+    { "path": "src/Checkout.module.css", "context": "stylesheet/.couponHint", "owner": "custom-css", "reason": "Locally authored hint; alignment intent requires human review." }
+  ],
+  "cssProposals": []
+}

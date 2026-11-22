@@ -1,0 +1,47 @@
+{
+  "projectId": "account-checkout",
+  "status": "draft",
+  "catalogVersion": "0.1.0",
+  "note": "Project 2 of the documented example program (TEXT, NUMBERS, FORMS). Small first slice; remaining catalogue IDs are deferred.",
+  "cases": [
+    {
+      "id": "ATC-FIX-01",
+      "catalogIds": ["FORMS-012"],
+      "assignment": "Checkout.module.css .editLink (header action beside order title)",
+      "scenario": "Physical margin-left separates the Edit link from the title",
+      "directionLocale": ["ltr", "rtl"],
+      "brokenExample": "margin-left: 24px",
+      "negativeControl": "ATC-OK-01",
+      "expectedDetection": "yes",
+      "expectedTransformation": "yes (margin-inline-start via source-generated spacing proposal)",
+      "support": { "scan": true, "livePreview": true, "transformation": true },
+      "fixtureImplemented": true, "uiBaselineReviewed": false, "analyzerDetectionVerified": false, "transformationVerified": false, "humanAcceptanceCompleted": false
+    },
+    {
+      "id": "ATC-REVIEW-01",
+      "catalogIds": ["TEXT-008"],
+      "assignment": "Checkout.module.css .couponHint (helper text under coupon field)",
+      "scenario": "text-align: left on helper text; intent needs a human decision",
+      "directionLocale": ["ltr", "rtl"],
+      "brokenExample": "text-align: left",
+      "negativeControl": "ATC-OK-01",
+      "expectedDetection": "yes",
+      "expectedTransformation": "no (manual review, no candidate)",
+      "support": { "scan": true, "livePreview": true, "transformation": false },
+      "fixtureImplemented": true, "uiBaselineReviewed": false, "analyzerDetectionVerified": false, "transformationVerified": false, "humanAcceptanceCompleted": false
+    },
+    {
+      "id": "ATC-OK-01",
+      "catalogIds": ["NUMBERS-001", "FORMS-006"],
+      "assignment": "Checkout.module.css .payment, .cardNumber, .totalRow",
+      "scenario": "Logical properties and an explicitly dir=ltr card number",
+      "directionLocale": ["ltr", "rtl"],
+      "brokenExample": "none",
+      "negativeControl": "self",
+      "expectedDetection": "no",
+      "expectedTransformation": "no",
+      "support": { "scan": true, "livePreview": false, "transformation": false },
+      "fixtureImplemented": true, "uiBaselineReviewed": false, "analyzerDetectionVerified": false, "transformationVerified": false, "humanAcceptanceCompleted": false
+    }
+  ]
+}

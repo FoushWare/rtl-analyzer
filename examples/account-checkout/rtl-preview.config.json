@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "applications": {
+    "checkout": {
+      "viteConfig": "vite.config.mjs",
+      "entry": "src/main.jsx",
+      "originalOrigin": "http://127.0.0.1:4226",
+      "readySelector": "#checkout",
+      "dataAdapter": "none",
+      "startupScript": "dev",
+      "routes": [
+        { "id": "checkout", "path": "/", "ltr": "/?direction=ltr", "rtl": "/?direction=rtl" }
+      ]
+    }
+  },
+  "mappings": [
+    { "source": "src/Checkout.module.css", "sourceSelector": ".editLink", "targetSelector": ".editLink", "routes": [{ "application": "checkout", "route": "checkout" }] },
+    { "source": "src/Checkout.module.css", "sourceSelector": ".couponHint", "targetSelector": ".couponHint", "routes": [{ "application": "checkout", "route": "checkout" }] }
+  ]
+}
