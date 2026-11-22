@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "generatedStyleOwner": "unknown",
+  "ownership": {},
+  "approvals": [],
+  "exceptions": [],
+  "issueBindings": [],
+  "dynamicExceptions": [],
+  "roles": [],
+  "ownerOverrides": [
+    { "path": "src/Dashboard.module.css", "context": "stylesheet/.statusBadge", "owner": "custom-css", "reason": "Status badge follows the customer name in reading order." },
+    { "path": "src/Dashboard.module.css", "context": "stylesheet/.dialogTitle", "owner": "custom-css", "reason": "Dialog title gap precedes the close control in reading order." }
+  ],
+  "cssProposals": []
+}

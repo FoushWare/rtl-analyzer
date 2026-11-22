@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "applications": {
+    "dashboard": {
+      "viteConfig": "vite.config.mjs",
+      "entry": "src/main.jsx",
+      "originalOrigin": "http://127.0.0.1:4236",
+      "readySelector": "#dashboard",
+      "dataAdapter": "none",
+      "startupScript": "dev",
+      "routes": [
+        {
+          "id": "orders",
+          "path": "/",
+          "ltr": "/?direction=ltr",
+          "rtl": "/?direction=rtl"
+        },
+        {
+          "id": "details-dialog",
+          "path": "/",
+          "ltr": "/?direction=ltr&dialog=details",
+          "rtl": "/?direction=rtl&dialog=details"
+        }
+      ]
+    }
+  },
+  "mappings": [
+    {
+      "source": "src/Dashboard.module.css",
+      "sourceSelector": ".statusBadge",
+      "targetSelector": ".statusBadge",
+      "routes": [
+        {
+          "application": "dashboard",
+          "route": "orders"
+        }
+      ]
+    },
+    {
+      "source": "src/Dashboard.module.css",
+      "sourceSelector": ".stickyId",
+      "targetSelector": ".stickyId",
+      "routes": [
+        {
+          "application": "dashboard",
+          "route": "orders"
+        }
+      ]
+    },
+    {
+      "source": "src/Dashboard.module.css",
+      "sourceSelector": ".amountCell",
+      "targetSelector": ".amountCell",
+      "routes": [
+        {
+          "application": "dashboard",
+          "route": "orders"
+        }
+      ]
+    },
+    {
+      "source": "src/Dashboard.module.css",
+      "sourceSelector": ".dialogTitle",
+      "targetSelector": ".dialogTitle",
+      "routes": [
+        {
+          "application": "dashboard",
+          "route": "details-dialog"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; }
+body { margin: 0; background: #f3f5f8; color: #1d2733; }
+.page { max-inline-size: 640px; margin-inline: auto; padding: 24px; }
+.toolbar { display: flex; gap: 8px; align-items: center; margin-block-end: 16px; }
+.tabs { display: flex; margin-inline-end: auto; }
+
+/* ATD-OK-02: logical tab spacing; no physical direction. */
+.tab { padding-block: 6px; padding-inline: 14px; margin-inline-end: 4px; border: 1px solid #9aa7b4; border-radius: 6px; background: #fff; font: inherit; }
+.tab[aria-selected="true"] { background: #dbe7ff; border-color: #174ea6; }
+
+.tableScroll { overflow-x: auto; max-inline-size: 100%; border: 1px solid #c6d0da; border-radius: 8px; background: #fff; }
+
+/* ATD-OK-01: table cells already use logical padding and start alignment. The cell rule below uses :where()
+   (zero specificity) so single-class cell rules such as .amountCell win the cascade. */
+.orders { border-collapse: collapse; inline-size: 100%; min-inline-size: 640px; }
+:where(.orders) :where(th, td) { padding-block: 10px; padding-inline: 12px; text-align: start; border-block-end: 1px solid #e2e8ee; }
+
+/* ATD-REVIEW-01 (TABLES-004): sticky identifier pinned with a physical edge. */
+.stickyId { position: sticky; left: 0; background: #f8fafc; }
+
+/* ATD-FIX-01 (TABLES-002): status badge spacing beside the customer name. */
+.statusBadge { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: #e3f4e8; color: #1c6b3a; font-size: 0.75rem; }
+
+/* ATD-REVIEW-02 (TABLES-002): amounts aligned to the physical right (wins over the zero-specificity table rule). */
+.amountCell { text-align: right; font-variant-numeric: tabular-nums; }
+
+.linkButton { padding: 0; border: 0; background: none; color: #174ea6; font: inherit; text-decoration: underline; cursor: pointer; }
+
+.backdrop { position: fixed; inset: 0; display: grid; place-items: center; background: #1d273355; }
+/* Suspected scanner false positive (see manifest): zero x-offset shadow. Kept intentionally. */
+.dialog { inline-size: min(420px, 90vw); padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 12px 32px #0004; }
+
+/* ATD-FIX-02 (OVERLAYS-004): dialog title spacing before the close button. margin-block (not the margin shorthand)
+   is not enough: attempt 1 (margin-block + margin-right in one rule) was still blocked with CSS_SPACING_CASCADE_DECLARATION_CONFLICT.
+   Attempt 2 moves the zero-margin reset to a separate zero-specificity rule so .dialogTitle holds only margin-right. */
+.dialogHeader { display: flex; align-items: center; justify-content: flex-start; }
+:where(.dialogHeader) > :where(h2) { margin: 0; }
+.dialogTitle { font-size: 1.25rem; margin-right: 24px; }
+.dialogClose { margin-inline-start: auto; padding-block: 4px; padding-inline: 12px; }
+.dialogBody { margin-block: 12px 0; }

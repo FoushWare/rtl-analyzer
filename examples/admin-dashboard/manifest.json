@@ -1,0 +1,238 @@
+{
+  "projectId": "admin-dashboard",
+  "status": "draft",
+  "catalogVersion": "0.1.0",
+  "note": "Project 3 of the documented example program. The matrix scopes TABLES-001..010, OVERLAYS-001..008 and ACCESSIBILITY-006; this is a deliberately small first slice. Expectations below were recorded BEFORE the first scan. Unselected catalogue IDs are deferred, not covered. The matrix defines no per-case findings or clean controls; the controls here are this slice's own.",
+  "selectedCatalogIds": [
+    "TABLES-002",
+    "TABLES-004",
+    "OVERLAYS-004",
+    "ACCESSIBILITY-006",
+    "TABLES-001"
+  ],
+  "deferredCatalogIds": "TABLES-003,005-010; OVERLAYS-001-003,005-008 (need richer interaction; later slices)",
+  "cases": [
+    {
+      "id": "ATD-FIX-01",
+      "catalogIds": [
+        "TABLES-002"
+      ],
+      "assignment": "Dashboard.module.css .statusBadge (badge after customer name, orders table)",
+      "scenario": "Physical margin-left separates the status badge from the customer name",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "brokenExample": "margin-left: 8px",
+      "negativeControl": "ATD-OK-01",
+      "expectedDetection": "yes (RTL.CSS.PHYSICAL)",
+      "expectedTransformation": "yes: candidate margin-inline-start: 8px; all 3 row badges are intended targets (data-driven rows), so 'All 3 targets' is expected. A recurring DIRECTION_EVIDENCE_AMBIGUOUS_TARGETS error would be a gap to report.",
+      "support": {
+        "scan": true,
+        "livePreview": true,
+        "transformation": true
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "All 3 targets verified; RTL gap Original 0,0,0 px -> After 8,8,8 px; LTR 8,8,8 both",
+        "Cold session needed the README troubleshooting workaround (Execution context was destroyed) in 3 of 3 sessions; DIRECTION_EVIDENCE_AMBIGUOUS_TARGETS seen once (session 1), not recurring"
+      ]
+    },
+    {
+      "id": "ATD-FIX-02",
+      "catalogIds": [
+        "OVERLAYS-004"
+      ],
+      "assignment": "Dashboard.module.css .dialogTitle (order details dialog header)",
+      "scenario": "Physical margin-right between dialog title and close control",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "brokenExample": "margin-right: 24px alone in .dialogTitle; zero-margin reset in a separate :where() rule (Original layout unchanged)",
+      "negativeControl": "ATD-OK-01",
+      "expectedDetection": "yes (RTL.CSS.PHYSICAL)",
+      "expectedTransformation": "yes (uncertain): candidate margin-inline-end: 24px with a live After in LTR and RTL on route ?dialog=details. If the Analyzer still blocks it, record the reason code.",
+      "support": {
+        "scan": true,
+        "livePreview": true,
+        "transformation": true
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "attempts": [
+        {
+          "n": 1,
+          "fixture": ".dialogTitle { margin-block: 0; margin-right: 24px }",
+          "observed": "manual review, CSS_SPACING_CASCADE_DECLARATION_CONFLICT (fresh copy run-admin-2); Original rendered in LTR and RTL"
+        },
+        {
+          "n": 2,
+          "fixture": ":where(.dialogHeader) > :where(h2) { margin: 0 } plus .dialogTitle { margin-right: 24px } alone",
+          "expected": "candidate margin-inline-end: 24px; if still blocked, the Analyzer rejects any sibling margin declaration or the separate reset rule, recorded as a scanner limitation. Recorded before the third scan.",
+          "observed": "candidate margin-inline-end: 24px with live After ('Preview ready', 1 target). Original layout unchanged from attempt 1. RTL: Original title x=578-698 (24px physical margin on the wrong, outer side) vs After x=602-722; LTR identical (302-424)."
+        }
+      ]
+    },
+    {
+      "id": "ATD-REVIEW-01",
+      "catalogIds": [
+        "TABLES-004"
+      ],
+      "assignment": "Dashboard.module.css .stickyId (sticky order-id column)",
+      "scenario": "position: sticky pinned with a physical left edge inside a horizontally scrolling table",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "brokenExample": "left: 0 (position: sticky)",
+      "negativeControl": "ATD-OK-01",
+      "expectedDetection": "yes (RTL.GEOMETRY.EDGE)",
+      "expectedTransformation": "no: manual review; After panel expected to say no supported candidate exists, citing coupled placement/containing block (as with ATC-REVIEW-01)",
+      "support": {
+        "scan": true,
+        "livePreview": true,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "humanDecisionReason": "Pinning the identifier to the physical left may be intended (fixed identifier gutter) or should become inline-start so the column sticks to the reading edge; scroll container and shadows also change. The scanner cannot decide and no ownership or intent is declared."
+    },
+    {
+      "id": "ATD-REVIEW-02",
+      "catalogIds": [
+        "TABLES-002"
+      ],
+      "assignment": "Dashboard.module.css .amountCell (amount column)",
+      "scenario": "Numeric amounts aligned to the physical right",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "brokenExample": "text-align: right",
+      "negativeControl": "ATD-OK-01",
+      "expectedDetection": "yes (RTL.CSS.PHYSICAL or RTL.TABLE.ALIGNMENT)",
+      "expectedTransformation": "no: manual review; After expected to cite ownership/reading-start-end intent (CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW). Fixture now guarantees computed text-align: right and amounts visibly flush to the cell's physical right edge in LTR and RTL.",
+      "support": {
+        "scan": true,
+        "livePreview": true,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "humanDecisionReason": "Right-aligned amounts keep decimals aligned and may be correct in RTL; or amounts may need to align to inline-end. Product decision.",
+      "evidence": [
+        "computed text-align: right on all 3 cells; amounts flush to the cell's physical right edge in LTR and RTL (0 px offset)",
+        "After: CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW in both directions"
+      ]
+    },
+    {
+      "id": "ATD-OK-01",
+      "catalogIds": [
+        "TABLES-001"
+      ],
+      "assignment": "Dashboard.module.css .tableScroll, .orders th/td",
+      "scenario": "Table with logical padding and text-align: start",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "brokenExample": "none",
+      "negativeControl": "self",
+      "expectedDetection": "no",
+      "expectedTransformation": "no",
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetectionVerified": false,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false
+    },
+    {
+      "id": "ATD-OK-02",
+      "catalogIds": [
+        "ACCESSIBILITY-006"
+      ],
+      "assignment": "Dashboard.module.css .toolbar, .tabs, .tab; direction select",
+      "scenario": "Direction selector and ARIA tabs with logical spacing",
+      "directionLocale": [
+        "ltr",
+        "rtl"
+      ],
+      "brokenExample": "none",
+      "negativeControl": "self",
+      "expectedDetection": "no",
+      "expectedTransformation": "no",
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": false,
+      "analyzerDetectionVerified": false,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false
+    }
+  ],
+  "expectedActionable": [
+    "ATD-FIX-01",
+    "ATD-FIX-02",
+    "ATD-REVIEW-01",
+    "ATD-REVIEW-02"
+  ],
+  "expectedDiagnostics": [
+    "RTL.DOCUMENT.INITIAL (Info, index.html)",
+    "RTL.RUNTIME.DIRECTION_UNKNOWN (Minor, src/App.jsx): expected as in account-checkout",
+    "possible: a bidi finding for dir=\"ltr\" on the order-id header cell; unknown, not a case result"
+  ],
+  "suspectedScannerFalsePositives": [
+    {
+      "id": "ATD-SUSPECT-01",
+      "catalogIds": [
+        "OVERLAYS-004"
+      ],
+      "selector": ".dialog",
+      "declaration": "box-shadow: 0 12px 32px #0004;",
+      "rule": "RTL.GEOMETRY.ORDER",
+      "observedTreatment": "manual review, UNSUPPORTED_TRANSFORMATION_FAMILY, no preview mapping",
+      "reason": "The horizontal offset is 0, so the shadow is direction-neutral; nothing mirrors in RTL. Suspected false positive. Analyzer code is intentionally unchanged; this fixture keeps the declaration to preserve the report.",
+      "expectedDetection": "yes (reproduces the suspected false positive)",
+      "actionable": false,
+      "status": "suspected, unconfirmed upstream",
+      "evidence": "Reproduced in three scans: RTL.GEOMETRY.ORDER, UNSUPPORTED_TRANSFORMATION_FAMILY, manual review, no preview."
+    }
+  ],
+  "recordedBeforeRescan": "2026-11-22: expectations above (FIX-01..OK-02 plus ATD-SUSPECT-01) written before the second scan of this example.",
+  "expectedOtherFindings": [
+    "ATD-SUSPECT-01 (RTL.GEOMETRY.ORDER on .dialog box-shadow, manual, not actionable)"
+  ],
+  "results": {
+    "scanDate": "2026-11-22",
+    "analyzer": "rtl-analyzer@0.3.0 from implementation 54648af (SHA-256 94d00198...)",
+    "actionableMatched": "ATD-FIX-01, ATD-FIX-02 (attempt 2), ATD-REVIEW-01, ATD-REVIEW-02",
+    "controlsClean": [
+      "ATD-OK-01",
+      "ATD-OK-02"
+    ],
+    "humanAcceptance": "pending (all review decisions left pending)",
+    "transformationApplied": "none; Apply/rollback not exercised"
+  }
+}
