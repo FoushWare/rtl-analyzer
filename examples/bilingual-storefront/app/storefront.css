@@ -1,0 +1,32 @@
+/* Plain (global) CSS so source selectors equal DOM selectors for the Analyzer. */
+
+/* SBF-FIX-01: cart count badge sits after the "Cart" label. Physical margin-left. */
+.cart-count {
+  margin-left: 6px;
+  min-width: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #b42318;
+  color: #fff;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* SBF-FIX-02: gap between the "Next" label and its arrow. Physical margin-left. */
+.pager-arrow {
+  margin-left: 8px;
+}
+
+/* SBF-REVIEW-01: mobile navigation drawer. Intended: opens from the reading-start edge.
+   Physical left: 0 anchors it to the left in both directions. */
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 16rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  z-index: 20;
+}

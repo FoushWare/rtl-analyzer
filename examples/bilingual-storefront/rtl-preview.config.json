@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "applications": {
+    "storefront": {
+      "viteConfig": "next.config.mjs",
+      "entry": "app/page.tsx",
+      "originalOrigin": "http://127.0.0.1:4246",
+      "readySelector": "#storefront",
+      "dataAdapter": "none",
+      "startupScript": "dev",
+      "routes": [
+        { "id": "listing", "path": "/", "ltr": "/?lang=en", "rtl": "/?lang=ar" },
+        { "id": "drawer", "path": "/", "ltr": "/?lang=en&drawer=open", "rtl": "/?lang=ar&drawer=open" }
+      ]
+    }
+  },
+  "mappings": [
+    { "source": "app/storefront.css", "sourceSelector": ".cart-count", "targetSelector": ".cart-count", "routes": [{ "application": "storefront", "route": "listing" }] },
+    { "source": "app/storefront.css", "sourceSelector": ".pager-arrow", "targetSelector": ".pager-arrow", "routes": [{ "application": "storefront", "route": "listing" }] },
+    { "source": "app/storefront.css", "sourceSelector": ".drawer", "targetSelector": ".drawer", "routes": [{ "application": "storefront", "route": "drawer" }] },
+    { "source": "app/icons.css", "sourceSelector": ".icon-forward", "targetSelector": ".icon-forward", "routes": [{ "application": "storefront", "route": "listing" }] }
+  ]
+}

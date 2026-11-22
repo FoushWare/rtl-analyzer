@@ -1,0 +1,21 @@
+/* No transform/transition declarations may appear in this file: the Analyzer's icon
+   candidate refuses stylesheets that could conflict with a mirror. */
+
+/* SBF-ICON-01: arrow meaning "next". Author opt-in marker below. */
+.icon-forward {
+  /* rtl-icon: progression-right */
+  display: inline-block;
+  flex: none;
+}
+
+/* SBF-MISS-01: arrow meaning "previous". Deliberately NOT marked. */
+.icon-back {
+  display: inline-block;
+  flex: none;
+}
+
+/* SBF-OK-02 / SBF-OK-03: direction-neutral controls. Never mirrored. */
+.icon-neutral {
+  display: inline-block;
+  flex: none;
+}

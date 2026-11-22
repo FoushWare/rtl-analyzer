@@ -1,0 +1,452 @@
+{
+  "projectId": "bilingual-storefront",
+  "status": "draft: browser baseline and Analyzer scan/review recorded; transformations and human acceptance not verified",
+  "catalogVersion": "0.1.0",
+  "note": "Project 4 of the documented example program (matrix scope NAVIGATION, ICONS). A deliberately small slice. Expectations were recorded BEFORE the first scan (see README). Unselected catalogue IDs are deferred, not covered. The matrix defines no per-case findings or controls; these are this slice's own. Marked UNCERTAIN: where detection, candidate or preview behaviour had not been audited.",
+  "selectedCatalogIds": [
+    "NAVIGATION-001",
+    "NAVIGATION-003",
+    "NAVIGATION-004",
+    "NAVIGATION-005",
+    "NAVIGATION-012",
+    "ICONS-001",
+    "ICONS-002",
+    "ICONS-003",
+    "ICONS-004",
+    "ICONS-007",
+    "ICONS-008"
+  ],
+  "deferredCatalogIds": "NAVIGATION-002,006-011 (tabs keyboard, tree indent, submenu, finding stepper, panel toggles, wizard); ICONS-005,006,009-015 (tree chevrons, sort, wordmark, photos, media, undo/redo, download, alignment, real-world symbols)",
+  "scanRoots": [
+    "app",
+    "components",
+    "lib",
+    "middleware.ts"
+  ],
+  "routes": {
+    "english": "/?lang=en",
+    "arabic": "/?lang=ar",
+    "drawerEnglish": "/?lang=en&drawer=open",
+    "drawerArabic": "/?lang=ar&drawer=open",
+    "page2": "/?lang=ar&page=2"
+  },
+  "expectedDiagnostics": "RTL.DOCUMENT.INITIAL / RTL.RUNTIME.DIRECTION_UNKNOWN possible because the html dir is data-driven (UNCERTAIN). Diagnostics are not case results.",
+  "previewSetup": "UNCERTAIN: rtl-preview.config.json declares the Next dev server through the Vite-shaped fields (viteConfig: next.config.mjs). The documented adapter is Vite-compatible; whether it can start or load a Next.js app is unknown before the first scan.",
+  "cases": [
+    {
+      "id": "SBF-FIX-01",
+      "catalogIds": [
+        "NAVIGATION-012",
+        "NAVIGATION-001"
+      ],
+      "assignment": "app/storefront.css .cart-count (header cart link, components/Header.tsx)",
+      "scenario": "Cart count badge separated from the 'Cart' label by a physical margin-left",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "margin-left: 6px",
+      "negativeControl": "SBF-OK-01 (logical spacing elsewhere)",
+      "expectedLtr": "6px gap before the badge, label first",
+      "expectedRtl": "Badge sits to the left of the label with a 6px gap between them. Broken specimen: the 6px margin is on the badge's physical left (far side from the label), so the badge touches the label",
+      "expectedDetection": "yes (RTL.CSS.PHYSICAL)",
+      "expectedTransformation": "yes: candidate margin-inline-start: 6px (UNCERTAIN: no explicit prior evidence for Next.js projects)",
+      "expectedPreview": "UNCERTAIN: Next.js is not a documented preview adapter (Vite-compatible only); previews may fail",
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": "candidate offered in code diff; live After not verified"
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "RTL.CSS.PHYSICAL at app/storefront.css:5; supported candidate margin-inline-start: 6px (code diff). Preview failed.",
+      "comparison": "Detection as expected. Candidate as expected. Live Original/After: ORIGINAL_PREVIEW_STARTUP_FAILED / Preview preparation failed (see README)."
+    },
+    {
+      "id": "SBF-FIX-02",
+      "catalogIds": [
+        "NAVIGATION-005",
+        "ICONS-002"
+      ],
+      "assignment": "app/storefront.css .pager-arrow (components/Pagination.tsx)",
+      "scenario": "Gap between the 'Next' label and its arrow uses physical margin-left",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "margin-left: 8px",
+      "negativeControl": "none",
+      "expectedLtr": "label, 8px gap, arrow",
+      "expectedRtl": "gap must sit between label and arrow at the reading end; broken: gap is on the arrow's physical left, which in RTL is outside the label/arrow pair",
+      "expectedDetection": "yes (RTL.CSS.PHYSICAL)",
+      "expectedTransformation": "yes: candidate margin-inline-start: 8px",
+      "expectedPreview": "UNCERTAIN: as SBF-FIX-01",
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": "candidate offered in code diff; live After not verified"
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "RTL.CSS.PHYSICAL at app/storefront.css:17; supported candidate margin-inline-start: 8px (code diff). Preview failed.",
+      "comparison": "As SBF-FIX-01."
+    },
+    {
+      "id": "SBF-ICON-01",
+      "catalogIds": [
+        "ICONS-002",
+        "ICONS-003"
+      ],
+      "assignment": "app/icons.css .icon-forward (Next arrow, product 'View details' arrow, breadcrumb chevrons)",
+      "scenario": "Directional icon: arrow means 'next/forward' so it must follow reading direction",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "author-marked progression arrow that never mirrors (/* rtl-icon: progression-right */)",
+      "negativeControl": "SBF-OK-02, SBF-OK-03 (neutral icons)",
+      "expectedLtr": "arrows point right; breadcrumb chevrons separate Home > Products > Headphones left to right",
+      "expectedRtl": "arrows point left (next is to the left); breadcrumb order is Home first on the right with chevrons pointing left; broken: arrows keep pointing right",
+      "expectedDetection": "yes (RTL.ICON.PROGRESSION; explicit author marker)",
+      "expectedTransformation": "yes: candidate adds .icon-forward:dir(rtl){scale:-1 1} (UNCERTAIN: many gating conditions: flat marked class, display box, no transform in stylesheet, ownership custom-css)",
+      "expectedPreview": "UNCERTAIN: as SBF-FIX-01",
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "RTL.ICON.PROGRESSION at app/icons.css:5 (marker detected); NO candidate: manual review, CSS_ICON_OWNER_OR_INTENT_REVIEW; finding ownership reported 'unknown' although rtl-scanner.config.json has an ownerOverrides entry for stylesheet/.icon-forward.",
+      "comparison": "Detection as expected; the uncertain candidate did NOT materialise (manual only). Cause of ownership 'unknown' not investigated."
+    },
+    {
+      "id": "SBF-REVIEW-01",
+      "catalogIds": [
+        "NAVIGATION-003"
+      ],
+      "assignment": "app/storefront.css .drawer (components/Drawer.tsx; route ?drawer=open, Menu button visible below md)",
+      "scenario": "Mobile navigation drawer is pinned to the physical left edge",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "position: fixed; left: 0",
+      "negativeControl": "none",
+      "expectedLtr": "drawer opens from the left (start) edge",
+      "expectedRtl": "drawer should open from the right (start) edge; broken: stays on the physical left",
+      "expectedDetection": "yes (RTL.CSS.PHYSICAL or equivalent on left: 0)",
+      "expectedTransformation": "no automatic candidate expected: manual review (UNCERTAIN: may or may not offer inset-inline-start)",
+      "expectedPreview": "UNCERTAIN: as SBF-FIX-01",
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "RTL.GEOMETRY.EDGE at app/storefront.css:26; manual, no candidate (CSS_DIRECTIONAL_OWNER_REQUIRES_REVIEW).",
+      "comparison": "As expected."
+    },
+    {
+      "id": "SBF-TW-01",
+      "catalogIds": [
+        "NAVIGATION-001",
+        "NAVIGATION-012"
+      ],
+      "assignment": "components/Header.tsx nav links className 'ml-6' (x2)",
+      "scenario": "Primary navigation spacing as physical Tailwind utility ml-6",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "ml-6 on Products and Account links",
+      "negativeControl": "SBF-OK-01 (ms-/ps-/gap-/text-start utilities)",
+      "expectedLtr": "items spaced 1.5rem apart to the right of each link",
+      "expectedRtl": "spacing should be on the start side; broken: gap on physical left, so Home/Products touch and Products/Account gap is on the wrong side",
+      "expectedDetection": "yes (tailwind-utility extraction exists for ml-*; UNCERTAIN: whether it becomes an actionable finding)",
+      "expectedTransformation": "no candidate expected for TSX (manual)",
+      "expectedPreview": "UNCERTAIN: JSX candidate/preview unlikely in Next.js",
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "2 x RTL.UTILITY.PHYSICAL (components/Header.tsx:17 and :18, ml-6); manual, no candidate (UTILITY_COMPILER_VERSION_AND_VARIANT_REVIEW_REQUIRED); no preview binding.",
+      "comparison": "As expected."
+    },
+    {
+      "id": "SBF-TW-02",
+      "catalogIds": [
+        "ICONS-004"
+      ],
+      "assignment": "components/ProductCard.tsx 'text-left' on product blurb",
+      "scenario": "Locale-dependent description forced to physical left alignment",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "text-left",
+      "negativeControl": "SBF-OK-01 (text-start)",
+      "expectedLtr": "left aligned (same as start)",
+      "expectedRtl": "Arabic blurb should align to the right; broken: forced left",
+      "expectedDetection": "yes (tailwind-utility extraction for text-left; UNCERTAIN: finding classification)",
+      "expectedTransformation": "no candidate expected (manual)",
+      "expectedPreview": "UNCERTAIN: as SBF-TW-01",
+      "support": {
+        "scan": true,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "RTL.UTILITY.PHYSICAL at components/ProductCard.tsx:11 (text-left); manual, no candidate.",
+      "comparison": "As expected."
+    },
+    {
+      "id": "SBF-MISS-01",
+      "catalogIds": [
+        "ICONS-001"
+      ],
+      "assignment": "app/icons.css .icon-back (Previous arrow, components/Pagination.tsx)",
+      "scenario": "Back arrow without the author opt-in marker: points left in both directions",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "unmarked arrow glyph",
+      "negativeControl": "SBF-ICON-01 (marked sibling)",
+      "expectedLtr": "arrow points left = previous: correct",
+      "expectedRtl": "arrow should point right; broken: keeps pointing left",
+      "expectedDetection": "no: the Analyzer's icon rule requires an explicit marker. Expected MISS (recorded limitation, not a defect to fix in the Analyzer)",
+      "expectedTransformation": "no",
+      "expectedPreview": "not applicable",
+      "support": {
+        "scan": false,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "No finding for .icon-back or the unmarked Previous arrow.",
+      "comparison": "Expected miss confirmed (icon rule is marker opt-in)."
+    },
+    {
+      "id": "SBF-OK-01",
+      "catalogIds": [
+        "NAVIGATION-004",
+        "NAVIGATION-001"
+      ],
+      "assignment": "components/Breadcrumb.tsx; Tailwind ms-/ps-/gap-/text-start/end-4 utilities",
+      "scenario": "Logical spacing controls",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "none (clean control)",
+      "negativeControl": "self",
+      "expectedLtr": "correct",
+      "expectedRtl": "correct",
+      "expectedDetection": "no finding",
+      "expectedTransformation": "none",
+      "expectedPreview": "not applicable",
+      "support": {
+        "scan": false,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "No finding.",
+      "comparison": "As expected."
+    },
+    {
+      "id": "SBF-OK-02",
+      "catalogIds": [
+        "ICONS-008"
+      ],
+      "assignment": "Search icon button (header), plus button (fixed bottom end)",
+      "scenario": "Direction-neutral icons used as clean controls; must not be mirrored",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "none (clean control)",
+      "negativeControl": "self",
+      "expectedLtr": "search lens/plus unchanged",
+      "expectedRtl": "identical glyph orientation in RTL; only position follows the logical end/start",
+      "expectedDetection": "no finding",
+      "expectedTransformation": "none (must never be mirrored)",
+      "expectedPreview": "not applicable",
+      "support": {
+        "scan": false,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "No finding; icons never mirrored in the live app.",
+      "comparison": "As expected."
+    },
+    {
+      "id": "SBF-OK-03",
+      "catalogIds": [
+        "ICONS-007"
+      ],
+      "assignment": "Language switch and sort-button chevrons (down chevron)",
+      "scenario": "Down chevron stays down in both directions",
+      "directionLocale": [
+        "en-ltr",
+        "ar-rtl"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844 (narrow)"
+      ],
+      "brokenExample": "none (clean control)",
+      "negativeControl": "self",
+      "expectedLtr": "points down",
+      "expectedRtl": "points down",
+      "expectedDetection": "no finding",
+      "expectedTransformation": "none",
+      "expectedPreview": "not applicable",
+      "support": {
+        "scan": false,
+        "livePreview": false,
+        "transformation": false
+      },
+      "fixtureImplemented": true,
+      "uiBaselineReviewed": true,
+      "analyzerDetectionVerified": true,
+      "transformationVerified": false,
+      "humanAcceptanceCompleted": false,
+      "evidence": [
+        "README.md#expected-versus-actual",
+        "scan 2026-11-22, rtl-analyzer@0.3.0, implementation 54648af"
+      ],
+      "actualAnalyzer": "No finding; chevron stays down in the live app.",
+      "comparison": "As expected."
+    }
+  ],
+  "unexpectedFindings": [
+    {
+      "ruleId": "RTL.BIDI.ISOLATION",
+      "path": "components/ProductCard.tsx",
+      "line": 8,
+      "original": "{product.name}",
+      "observed": "supported candidate <bdi dir=\"auto\">{product.name}</bdi>; no preview binding",
+      "assessment": "Not in the pre-scan expectations. Not judged a false positive: the product name is dynamic content rendered without a bdi/dir ancestor, in a bilingual UI. Ahmed to decide."
+    }
+  ],
+  "observedDiagnostics": "none (RTL.DOCUMENT.INITIAL and RTL.RUNTIME.DIRECTION_UNKNOWN were possible but did not appear)",
+  "previewSetupResult": "Failed as feared. The Analyzer starts the Original with 'npm run dev -- --config <vite config> --host --port --strictPort' and expects a Vite identity endpoint. Next.js rejects '--config' (error: unknown option '--config'). ORIGINAL_PREVIEW_STARTUP_FAILED for every finding with a binding.",
+  "verification": {
+    "analyzer": "rtl-analyzer@0.3.0 tarball sha256 94d001988755f06297d7a52088484fd441875035767238b8846b4336ffb0b07a, implementation 54648af70b4a2439da64fcfa654745cdf51de08b",
+    "scan": "13 files, 8 findings, 0 diagnostics",
+    "sourceHashSetSha256": "8c0f3f8c1af25608b33362c580eca30ea75a9ba8111ccc933805e68382a35c3d",
+    "sourceHashFiles": 24,
+    "reviewLeftSourceHashesIdentical": true,
+    "reviewDecisions": "all pending"
+  }
+}

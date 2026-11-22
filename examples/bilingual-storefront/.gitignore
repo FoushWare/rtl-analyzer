@@ -1,0 +1,10 @@
+node_modules/
+.next/
+next-env.d.ts
+dist/
+reports/
+state/
+*.tgz
+*.tsbuildinfo
+.rtl-preview/
+.rtl-vite-cache/
