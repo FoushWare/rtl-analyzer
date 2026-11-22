@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
+import { createInterface } from 'node:readline/promises';
 import { runCli, type CliIO } from './cli.js';
+import { decidePreviewConsent, inspectPreviewProject, type PreviewEligibility } from './preview-orchestrator.js';
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const browserLaunchTimeoutMs = 5_000;
@@ -15,7 +17,7 @@ async function version(): Promise<string> {
 }
 
 function help(): string {
-  return `RTL Analyzer — conservative RTL risk scanning\n\nUsage:\n  rtl-analyzer                    Scan the current directory and open a dashboard\n  rtl-analyzer scan [path] [options]\n  rtl-analyzer preview [--help]\n  rtl-analyzer --help\n  rtl-analyzer --version\n\nOptions:\n  --root <path>                 Scan this project root\n  --format <format>             json, markdown, markdown-structured, or dashboard\n  --output-dir <path>           Write report artifacts to this directory\n  --fail-on-findings            Exit 1 when actionable findings exist\n  --embed-source-snippets       Embed bounded source snippets in dashboard output\n`;
+  return `RTL Analyzer — conservative RTL risk scanning\n\nUsage:\n  rtl-analyzer                    Scan the current directory and open a dashboard\n  rtl-analyzer scan [path] [options]\n  rtl-analyzer preview [--help]\n  rtl-analyzer --help\n  rtl-analyzer --version\n  rtl-analyzer --approve-project-scripts   Authorize running the project's dev server for live preview\n\nOptions:\n  --root <path>                 Scan this project root\n  --format <format>             json, markdown, markdown-structured, or dashboard\n  --output-dir <path>           Write report artifacts to this directory\n  --fail-on-findings            Exit 1 when actionable findings exist\n  --embed-source-snippets       Embed bounded source snippets in dashboard output\n`;
 }
 
 const io: CliIO = {
@@ -62,18 +64,39 @@ export async function openDashboard(path: string, platform = process.platform, l
   });
 }
 
+export interface PreviewPlanOptions {
+  /** Explicit authorization for project scripts (`--approve-project-scripts`). */
+  readonly authorized?: boolean;
+  readonly interactive?: boolean;
+  readonly ask?: (question: string) => Promise<string>;
+  readonly inspect?: (root: string) => Promise<PreviewEligibility>;
+}
+
 export interface DefaultDashboardOptions {
   readonly io?: CliIO;
   readonly run?: typeof runCli;
   readonly open?: typeof openDashboard;
   readonly tempRoot?: string;
+  readonly root?: string;
+  readonly preview?: PreviewPlanOptions;
+}
+
+const APPROVE_PROJECT_SCRIPTS = '--approve-project-scripts';
+
+async function promptUser(question: string): Promise<string> {
+  const prompt = createInterface({ input: process.stdin, output: process.stderr });
+  try { return await prompt.question(question); } finally { prompt.close(); }
 }
 
 export async function runDefaultDashboard(options: DefaultDashboardOptions = {}): Promise<number> {
   const outputDir = await mkdtemp(join(await realpath(options.tempRoot ?? tmpdir()), 'rtl-analyzer-dashboard-'));
   const dashboardPath = join(outputDir, 'rtl-report-dashboard.html');
   const output = options.io ?? io;
-  const code = await (options.run ?? runCli)(['--root', process.cwd(), '--format', 'dashboard', '--output-dir', outputDir], output);
+  const root = options.root ?? process.cwd();
+  // Source snippets are part of the default workflow; they are embedded only inside the external dashboard output.
+  // The scan writes the dashboard into outputDir; its HTML must not be echoed to the terminal.
+  const scanIo: CliIO = { writeStdout: () => undefined, writeStderr: value => output.writeStderr(value) };
+  const code = await (options.run ?? runCli)(['--root', root, '--format', 'dashboard', '--output-dir', outputDir, '--embed-source-snippets'], scanIo);
   let dashboardExists = false;
   try { dashboardExists = (await lstat(dashboardPath)).isFile(); } catch { /* report the scan error below */ }
   if (!dashboardExists) {
@@ -81,12 +104,29 @@ export async function runDefaultDashboard(options: DefaultDashboardOptions = {})
     return code === 0 ? 2 : code;
   }
   output.writeStderr(`Dashboard: ${dashboardPath}`);
+
+  const preview = options.preview ?? {};
+  const eligibility = await (preview.inspect ?? inspectPreviewProject)(root);
+  if (!eligibility.eligible) {
+    output.writeStderr(`Live Preview Unavailable: ${eligibility.failure.message} The static report is available.`);
+  } else {
+    const decision = await decidePreviewConsent(eligibility, {
+      authorized: preview.authorized,
+      interactive: preview.interactive ?? Boolean(process.stdin.isTTY && process.stderr.isTTY),
+      ask: preview.ask ?? promptUser,
+      write: line => output.writeStderr(line),
+    });
+    if (decision.approved) output.writeStderr('Live preview approved. Automatic startup is not available in this build yet; the static report is available.');
+    else output.writeStderr(`Live preview not started: ${decision.failure.message}`);
+  }
+
   if (!(await (options.open ?? openDashboard)(dashboardPath))) output.writeStderr(`Could not open dashboard automatically. Open: ${dashboardPath}`);
   return code;
 }
 
 export async function main(argv: string[], output: CliIO = io): Promise<number> {
   if (argv.length === 0) return runDefaultDashboard({ io: output });
+  if (argv.length === 1 && argv[0] === APPROVE_PROJECT_SCRIPTS) return runDefaultDashboard({ io: output, preview: { authorized: true } });
   if (argv[0] === '--help' || argv[0] === '-h') {
     output.writeStdout(help());
     return 0;

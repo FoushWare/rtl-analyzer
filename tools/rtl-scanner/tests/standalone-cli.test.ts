@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { isDirectExecution, main, openDashboard, runDefaultDashboard, type DefaultDashboardOptions } from '../src/standalone-cli.js';
 import type { CliIO } from '../src/cli.js';
 import { discover } from '../src/discovery.js';
+import type { PreviewEligibility } from '../src/preview-orchestrator.js';
 
 function io() {
   const stdout: string[] = [];
@@ -118,5 +119,56 @@ describe('standalone CLI defaults', () => {
     expect(isDirectExecution(modulePath.toUpperCase(), modulePath, 'win32')).toBe(true);
     expect(isDirectExecution(`${modulePath}.cmd`, modulePath, 'win32')).toBe(false);
     expect(isDirectExecution(null, modulePath, 'win32')).toBe(false);
+  });
+});
+
+describe('default workflow preview consent (milestone 1)', () => {
+  async function runWith(preview: NonNullable<DefaultDashboardOptions['preview']>, root = '/fixture') {
+    const tempRoot = await mkdtemp(join(tmpdir(), 'rtl-cli-consent-output-'));
+    const output = io();
+    const opened: string[] = [];
+    const seenArgs: string[][] = [];
+    const code = await runDefaultDashboard({
+      io: output.io,
+      root,
+      tempRoot,
+      run: async args => {
+        seenArgs.push(args);
+        const outputDir = args[args.indexOf('--output-dir') + 1];
+        await mkdir(outputDir, { recursive: true });
+        await writeFile(join(outputDir, 'rtl-report-dashboard.html'), 'dashboard');
+        return 0;
+      },
+      open: async path => { opened.push(path); return true; },
+      preview,
+    });
+    return { code, output, opened, args: seenArgs[0] };
+  }
+  const eligible: PreviewEligibility = { eligible: true, applications: [], commands: ['npm run dev -- --port 4236'] };
+
+  it('embeds source snippets in the default dashboard and keeps the static report when unsupported', async () => {
+    const result = await runWith({ inspect: async () => ({ eligible: false, failure: { code: 'PREVIEW_CONFIGURATION_MISSING', message: 'No rtl-preview.config.json.' } }) });
+    expect(result.code).toBe(0);
+    expect(result.args).toContain('--embed-source-snippets');
+    expect(result.output.stderr.join('\n')).toContain('Live Preview Unavailable: No rtl-preview.config.json.');
+    expect(result.opened).toHaveLength(1);
+  });
+
+  it('never prompts or starts anything for an eligible project when non-interactive', async () => {
+    let asked = false;
+    const result = await runWith({ inspect: async () => eligible, interactive: false, ask: async () => { asked = true; return 'y'; } });
+    expect(asked).toBe(false);
+    expect(result.output.stderr.join('\n')).toContain('Live preview not started: Live preview needs approval');
+    expect(result.opened).toHaveLength(1);
+  });
+
+  it('records explicit authorization without starting services in this milestone', async () => {
+    const result = await runWith({ inspect: async () => eligible, authorized: true });
+    expect(result.output.stderr.join('\n')).toContain('Live preview approved');
+  });
+
+  it('declines an interactive prompt by default', async () => {
+    const result = await runWith({ inspect: async () => eligible, interactive: true, ask: async () => '' });
+    expect(result.output.stderr.join('\n')).toContain('Live preview not started');
   });
 });
