@@ -8,7 +8,10 @@ async function project(config: unknown, scripts: Record<string, string> = { dev:
   const root = await mkdtemp(join(tmpdir(), 'rtl-preview-orchestrator-'));
   if (config !== undefined) await writeFile(join(root, 'rtl-preview.config.json'), typeof config === 'string' ? config : JSON.stringify(config));
   await writeFile(join(root, 'package.json'), JSON.stringify({ name: 'fixture', scripts }));
-  if (withVite) await mkdir(join(root, 'node_modules', 'vite', 'bin'), { recursive: true }), await writeFile(join(root, 'node_modules', 'vite', 'bin', 'vite.js'), '');
+  if (withVite) {
+    await mkdir(join(root, 'node_modules', 'vite', 'bin'), { recursive: true });
+    await writeFile(join(root, 'node_modules', 'vite', 'bin', 'vite.js'), '');
+  }
   return root;
 }
 

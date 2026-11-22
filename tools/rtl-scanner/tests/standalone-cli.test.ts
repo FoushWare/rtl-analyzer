@@ -162,9 +162,29 @@ describe('default workflow preview consent (milestone 1)', () => {
     expect(result.opened).toHaveLength(1);
   });
 
-  it('records explicit authorization without starting services in this milestone', async () => {
-    const result = await runWith({ inspect: async () => eligible, authorized: true });
-    expect(result.output.stderr.join('\n')).toContain('Live preview approved');
+  it('starts services after authorization and stops them when the user asks', async () => {
+    const calls: string[] = [];
+    const result = await runWith({
+      inspect: async () => eligible,
+      authorized: true,
+      start: async options => { calls.push(options.companionEntry.split('/').pop()!); return { state: 'ready', dashboardUrl: 'http://127.0.0.1:4320/rtl-report-dashboard.html', stop: async () => { calls.push('stopped'); return 'released' as const; } }; },
+      waitForStop: async () => { calls.push('stop-requested'); },
+    });
+    expect(calls).toEqual(['preview-cli.js', 'stop-requested', 'stopped']);
+    expect(result.opened).toEqual(['http://127.0.0.1:4320/rtl-report-dashboard.html']);
+    expect(result.output.stderr.join('\n')).toContain('Live preview ready: http://127.0.0.1:4320/rtl-report-dashboard.html');
+  });
+
+  it('falls back to the static report when services cannot start', async () => {
+    let stopped = false;
+    const result = await runWith({
+      inspect: async () => eligible,
+      authorized: true,
+      start: async () => ({ state: 'startup_failed', failure: { code: 'PORT_CONFLICT_DASHBOARD', message: 'Port 4320 is in use.' }, stop: async () => { stopped = true; return 'not-held' as const; } }),
+    });
+    expect(stopped).toBe(true);
+    expect(result.output.stderr.join('\n')).toContain("Couldn't Start Live Preview: Port 4320 is in use. The static report is available.");
+    expect(result.opened).toHaveLength(1);
   });
 
   it('declines an interactive prompt by default', async () => {

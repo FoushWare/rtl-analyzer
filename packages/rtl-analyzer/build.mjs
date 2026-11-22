@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const packageDir=dirname(fileURLToPath(import.meta.url)),repo=resolve(packageDir,'../..');
 const implementation=join(repo,'implementation');
 const expected=JSON.parse(readFileSync(join(packageDir,'package.json'),'utf8')).rtlAnalyzerImplementation.commit;
-const overlayModules=['standalone-cli.ts','preview-orchestrator.ts'];
+const overlayModules=['standalone-cli.ts','preview-orchestrator.ts','preview-services.ts'];
 const git=(args)=>execFileSync('git',args,{cwd:implementation,encoding:'utf8'}).trim();
 if(git(['rev-parse','HEAD'])!==expected)throw Error('Implementation commit mismatch; run git submodule update --init');
 if(git(['status','--porcelain','--untracked-files=no']))throw Error('Implementation has tracked changes; refusing an unverifiable build');

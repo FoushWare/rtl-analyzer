@@ -7,6 +7,7 @@ import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process'
 import { createInterface } from 'node:readline/promises';
 import { runCli, type CliIO } from './cli.js';
 import { decidePreviewConsent, inspectPreviewProject, type PreviewEligibility } from './preview-orchestrator.js';
+import { COMPANION_PORT, startPreviewServices, type ReleaseOutcome, type ServiceResult } from './preview-services.js';
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const browserLaunchTimeoutMs = 5_000;
@@ -70,6 +71,10 @@ export interface PreviewPlanOptions {
   readonly interactive?: boolean;
   readonly ask?: (question: string) => Promise<string>;
   readonly inspect?: (root: string) => Promise<PreviewEligibility>;
+  /** Starts the packaged companion and dashboard server; injectable for tests. */
+  readonly start?: (options: Parameters<typeof startPreviewServices>[0]) => Promise<ServiceResult>;
+  /** Resolves when the user asks to stop (Ctrl-C or SIGTERM). Injectable for tests. */
+  readonly waitForStop?: () => Promise<void>;
 }
 
 export interface DefaultDashboardOptions {
@@ -82,6 +87,25 @@ export interface DefaultDashboardOptions {
 }
 
 const APPROVE_PROJECT_SCRIPTS = '--approve-project-scripts';
+
+/** Says so when the companion did not confirm this run's release, so the user knows a server may still be running. */
+function reportRelease(outcome: ReleaseOutcome, output: CliIO): void {
+  if (outcome !== 'release-failed') return;
+  output.writeStderr(`The preview companion did not confirm this run's release. The original application server may still be running; stop the preview companion on port ${COMPANION_PORT} to end it.`);
+}
+
+/** Aborts on Ctrl-C or SIGTERM. Installed before services start, so startup can be cancelled too. */
+function stopSignalController(): AbortController {
+  const controller = new AbortController();
+  const stop = () => controller.abort();
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+  return controller;
+}
+
+function abortPromise(signal: AbortSignal): Promise<void> {
+  return new Promise(resolve => { if (signal.aborted) resolve(); else signal.addEventListener('abort', () => resolve(), { once: true }); });
+}
 
 async function promptUser(question: string): Promise<string> {
   const prompt = createInterface({ input: process.stdin, output: process.stderr });
@@ -116,8 +140,34 @@ export async function runDefaultDashboard(options: DefaultDashboardOptions = {})
       ask: preview.ask ?? promptUser,
       write: line => output.writeStderr(line),
     });
-    if (decision.approved) output.writeStderr('Live preview approved. Automatic startup is not available in this build yet; the static report is available.');
-    else output.writeStderr(`Live preview not started: ${decision.failure.message}`);
+    if (!decision.approved) {
+      output.writeStderr(`Live preview not started: ${decision.failure.message}`);
+    } else {
+      const stopSignal = stopSignalController();
+      const services = await (preview.start ?? startPreviewServices)({
+        root,
+        reportPath: join(outputDir, 'rtl-report.json'),
+        dashboardDir: outputDir,
+        companionEntry: join(dirname(fileURLToPath(import.meta.url)), 'preview-cli.js'),
+        log: line => output.writeStderr(line),
+        signal: stopSignal.signal,
+      });
+      if (services.state === 'ready') {
+        output.writeStderr(`Live preview ready: ${services.dashboardUrl}`);
+        if (!(await (options.open ?? openDashboard)(services.dashboardUrl))) output.writeStderr(`Could not open dashboard automatically. Open: ${services.dashboardUrl}`);
+        await (preview.waitForStop ?? (() => abortPromise(stopSignal.signal)))();
+        output.writeStderr('Stopping live preview services owned by this run.');
+        reportRelease(await services.stop(), output);
+        return code;
+      }
+      reportRelease(await services.stop(), output);
+      // A Ctrl-C during startup ends the run; it must not open a browser.
+      if (stopSignal.signal.aborted) {
+        output.writeStderr('Live preview startup cancelled. Owned services were stopped.');
+        return code;
+      }
+      output.writeStderr(`${services.state === 'unsupported' ? 'Live Preview Unavailable' : "Couldn't Start Live Preview"}: ${services.failure.message} The static report is available.`);
+    }
   }
 
   if (!(await (options.open ?? openDashboard)(dashboardPath))) output.writeStderr(`Could not open dashboard automatically. Open: ${dashboardPath}`);
