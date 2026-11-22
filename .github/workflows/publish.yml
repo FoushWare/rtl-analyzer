@@ -58,11 +58,11 @@ jobs:
       - name: Build RTL scan
         run: npm run rtl:scan:build
 
-      - name: Test RTL scan
-        run: npm run rtl:scan:test
-
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Test RTL scan
+        run: npm run rtl:scan:test
 
       - name: Validate package
         run: npm run rtl:cli:package:smoke
