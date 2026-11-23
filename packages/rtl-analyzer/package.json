@@ -1,6 +1,6 @@
 {
   "name": "rtl-analyzer",
-  "version": "0.5.0-rc.1",
+  "version": "0.5.0",
   "description": "RTL analysis with isolated review, accepted-only Apply and receipt-backed rollback",
   "homepage": "https://github.com/FoushWare/rtl-analyzer#readme",
   "bugs": {

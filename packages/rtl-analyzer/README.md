@@ -34,7 +34,7 @@ npx rtl-analyzer --approve-project-scripts
 | `npx rtl-analyzer@next` | latest prerelease, for testing (`next`) |
 | `npx rtl-analyzer@<version>` | an exact version, for reproducible runs |
 
-`latest` is 0.4.0 until v0.5.0 is released. To try the v0.5.0 prerelease, use `npx rtl-analyzer@next`.
+`latest` is the current stable release, 0.5.0. To try a prerelease before it reaches `latest`, use `npx rtl-analyzer@next`, which currently runs 0.5.0-rc.1.
 
 Scan one folder, or show help:
 
