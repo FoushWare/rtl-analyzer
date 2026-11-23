@@ -1,6 +1,6 @@
 # Hands-on testing guide for the six example projects
 
-For `rtl-analyzer` **0.4.0**. Every command was run against this release's exact tarball on macOS (Node 22.21.1, Chromium, desktop width) unless marked **unverified**. The only difference after publication is the install line, which uses the registry (`rtl-analyzer@0.4.0`) instead of a local tarball; the published-package run is recorded in the release record.
+Verification record for `rtl-analyzer` **0.4.0**. General commands below use the versionless `npx rtl-analyzer` (npm `latest`); prerelease testing uses `npx rtl-analyzer@next`. The 0.5.0-rc.1 prerelease has not yet been verified with this guide. Every command was run against this release's exact tarball on macOS (Node 22.21.1, Chromium, desktop width) unless marked **unverified**. The only difference after publication is the install line, which uses the registry (`rtl-analyzer@0.4.0`) instead of a local tarball; the published-package run is recorded in the release record.
 
 Always test in a **disposable copy**. Never scan or apply inside the checked-in `examples/` folders.
 
@@ -20,9 +20,9 @@ cd "$RUN/project"
 npm install                               # Workspace Integration: npm ci
 npm run check                             # sanity build; every project has this script
 rm -rf dist .next .nx
-npm install --no-save --package-lock=false rtl-analyzer@0.4.0
+npm install --no-save --package-lock=false rtl-analyzer
 npx --no-install playwright install chromium
-npx --no-install rtl-analyzer --version   # expect 0.4.0
+npx --no-install rtl-analyzer --version   # prints the installed version
 npx --no-install rtl-analyzer scan --root "$PWD" --format dashboard --output-dir "$RUN/reports" --embed-source-snippets > /dev/null
 # So VS Code shows a clean source diff after Apply:
 git init -q && printf '.rtl-preview/\n.rtl-vite-cache/\n' >> .git/info/exclude && git add -A && git -c user.name=t -c user.email=t@t commit -qm baseline
@@ -66,7 +66,7 @@ cd "$RUN/project" && git checkout -- . && git clean -fdq -e node_modules
 
 and restart Terminals 2 and 3. If you reset the source, the scan report is still valid only because the source is back to baseline.
 
-> **Unverified:** `npx rtl-analyzer@0.4.0 preview` without installing first. The tested path is install, then `npx --no-install`.
+> **Unverified:** `npx rtl-analyzer preview` without installing first. The tested path is install, then `npx --no-install`.
 
 ## 1. Common checklist (one-by-one mode)
 

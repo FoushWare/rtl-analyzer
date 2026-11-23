@@ -1,6 +1,6 @@
 # Examples
 
-Six standalone demo projects for [RTL Analyzer](../packages/rtl-analyzer/README.md). Each README is self-contained: set up a disposable copy, run the app, scan with `rtl-analyzer@0.4.0`, and open Fix Studio where supported. They are source-only and are not part of the npm package.
+Six standalone demo projects for [RTL Analyzer](../packages/rtl-analyzer/README.md). Each README is self-contained: set up a disposable copy, run the app, scan with `npx rtl-analyzer` (npm `latest`; `rtl-analyzer@next` for the 0.5.0 prerelease), and open Fix Studio where supported. They are source-only and are not part of the npm package.
 
 - [Foundations Lab](foundations-lab/README.md) — a Vite account page with spacing, edge, transform and drawer defects.
 - [Account Checkout](account-checkout/README.md) — a React checkout with two supported fixes and one review-only case.

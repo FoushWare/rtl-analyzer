@@ -14,10 +14,10 @@ One shared-library defect that appears in both apps, one admin-only defect and a
 
 ## Prerequisites
 
-- macOS or Linux shell (zsh/bash). The commands below were verified on macOS only; **Windows is unsupported** (protected report and source operations need a POSIX filesystem profile).
+- macOS or Linux shell (zsh/bash). The commands below were verified on macOS only (for 0.4.0); **Windows is unsupported** (protected report and source operations need a POSIX filesystem profile).
 - Node.js 22.12+, npm, Python 3, `rsync`, and `git`.
 - A clone of this repository. Set `REPO` in the first terminal to its path.
-- Internet access to install dependencies, `rtl-analyzer@0.4.0` and Chromium.
+- Internet access to install dependencies, `rtl-analyzer` (npm `latest`; use `rtl-analyzer@next` to try the 0.5.0 prerelease) and Chromium.
 
 Work in a **disposable copy**. Never scan or apply inside `examples/` itself. The copy lives at `/private/tmp/workspace-integration` (use `/tmp/workspace-integration` on Linux; unverified). The folder to open in VS Code is **`/private/tmp/workspace-integration/project`**.
 
@@ -35,9 +35,9 @@ cd "$RUN/project"
 npm ci
 npm run check
 rm -rf dist .next .nx
-npm install --no-save --package-lock=false rtl-analyzer@0.4.0
+npm install --no-save --package-lock=false rtl-analyzer
 npx --no-install playwright install chromium
-npx rtl-analyzer@0.4.0 scan --root "$PWD" --format dashboard --output-dir "$RUN/reports" --embed-source-snippets > /dev/null
+npx rtl-analyzer scan --root "$PWD" --format dashboard --output-dir "$RUN/reports" --embed-source-snippets > /dev/null
 git init -q && printf '.rtl-preview/\n.rtl-vite-cache/\n' >> .git/info/exclude && git add -A && git -c user.name=t -c user.email=t@t commit -qm baseline
 ```
 
@@ -124,13 +124,15 @@ To start completely over, rerun step 1 (it deletes and recreates the copy). Roll
 
 ## Limitations
 
-- **Windows is unsupported**, and the Windows CI leg fails. Safari, other browsers, other package managers and narrow viewports are unverified.
+- **Windows is not supported in v0.5.0**. Safari, other browsers, other package managers and narrow viewports are unverified.
 - Previews cover only the findings bound in `rtl-preview.config.json`; the report itself does not list which apps consume a shared-library finding.
 - In Review one by one, After shows only the selected finding; switching findings restarts the candidate runtime (a few seconds).
 - Live review needs Chromium and trusted project scripts. Details: [advanced setup guide](../../docs/guides/developer-testing.md).
 
 ## Verified
 
-Checked on 2026-11-22 (macOS arm64, Node 22.21.1, headless Chromium driven by Playwright). I ran the commands in the blocks above, unchanged apart from `REPO`, in a fresh `/private/tmp/workspace-integration` copy against the published `rtl-analyzer@0.4.0`. Results: `npm ci`, check and scan succeeded; both app URLs responded; the badge numbers above were measured in the storefront app and in Fix Studio. **One by one** on the shared `.badge`: Preview ready (0 retries), Validate passed, Apply changed only `libs/ui/src/StatusBadge.module.css`, candidate ports 4202 and 4203 were released after Apply, Rollback restored every hash. **Batch:** 2 prepared, 0 manual; approving the first row (the admin `.refundNote`), Validate, Apply (only `apps/admin/src/Admin.module.css`) and Rollback passed. After Ctrl-C and waiting for the prompts, `all ports free`; Reset clean. Earlier on 2026-11-22 with the same build I also checked switching between the admin and shared findings in both orders (After shows only the selected finding) and the shared fix in both apps; that was **not** rerun for this page. **Not verified:** the admin-only fix in the admin app's After pane via these exact commands.
+Checked on 2026-11-22 (macOS arm64, Node 22.21.1, headless Chromium driven by Playwright). The 0.4.0 run used the commands in the blocks above with `rtl-analyzer@0.4.0` pinned in place of the versionless command, unchanged apart from `REPO`, in a fresh `/private/tmp/workspace-integration` copy against the published `rtl-analyzer@0.4.0`. It has not been re-run against `rtl-analyzer@0.5.0-rc.1`.
+
+Scan step against the published `rtl-analyzer@0.5.0-rc.1` (2026-11-23): **passed** (exit 0, dashboard produced, 6 findings). Live Preview, Fix Studio, Apply and Rollback against `0.5.0-rc.1`: **not verified**. Results: `npm ci`, check and scan succeeded; both app URLs responded; the badge numbers above were measured in the storefront app and in Fix Studio. **One by one** on the shared `.badge`: Preview ready (0 retries), Validate passed, Apply changed only `libs/ui/src/StatusBadge.module.css`, candidate ports 4202 and 4203 were released after Apply, Rollback restored every hash. **Batch:** 2 prepared, 0 manual; approving the first row (the admin `.refundNote`), Validate, Apply (only `apps/admin/src/Admin.module.css`) and Rollback passed. After Ctrl-C and waiting for the prompts, `all ports free`; Reset clean. Earlier on 2026-11-22 with the same build I also checked switching between the admin and shared findings in both orders (After shows only the selected finding) and the shared fix in both apps; that was **not** rerun for this page. **Not verified:** the admin-only fix in the admin app's After pane via these exact commands.
 
 Earlier notes from building this example are kept in [the verification history](../../docs/verification/examples-history/workspace-integration.md); they predate 0.4.0.
