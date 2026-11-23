@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { createServer } from 'node:http';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -140,7 +141,7 @@ describe('default workflow preview consent (milestone 1)', () => {
         return 0;
       },
       open: async path => { opened.push(path); return true; },
-      preview,
+      preview: { dashboardPort: 0, ...preview },
     });
     return { code, output, opened, args: seenArgs[0] };
   }
@@ -167,12 +168,13 @@ describe('default workflow preview consent (milestone 1)', () => {
     const result = await runWith({
       inspect: async () => eligible,
       authorized: true,
-      start: async options => { calls.push(options.companionEntry.split('/').pop()!); return { state: 'ready', dashboardUrl: 'http://127.0.0.1:4320/rtl-report-dashboard.html', stop: async () => { calls.push('stopped'); return 'released' as const; } }; },
+      start: async options => { calls.push(options.companionEntry.split('/').pop()!); return { state: 'ready', stop: async () => { calls.push('stopped'); return 'released' as const; } }; },
       waitForStop: async () => { calls.push('stop-requested'); },
     });
     expect(calls).toEqual(['preview-cli.js', 'stop-requested', 'stopped']);
-    expect(result.opened).toEqual(['http://127.0.0.1:4320/rtl-report-dashboard.html']);
-    expect(result.output.stderr.join('\n')).toContain('Live preview ready: http://127.0.0.1:4320/rtl-report-dashboard.html');
+    expect(result.opened).toHaveLength(1);
+    expect(result.opened[0]).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/rtl-report-dashboard\.html$/);
+    expect(result.output.stderr.join('\n')).toMatch(/Live preview ready: http:\/\/127\.0\.0\.1:\d+\/rtl-report-dashboard\.html/);
   });
 
   it('falls back to the static report when services cannot start', async () => {
@@ -182,9 +184,31 @@ describe('default workflow preview consent (milestone 1)', () => {
       authorized: true,
       start: async () => ({ state: 'startup_failed', failure: { code: 'PORT_CONFLICT_DASHBOARD', message: 'Port 4320 is in use.' }, stop: async () => { stopped = true; return 'not-held' as const; } }),
     });
-    expect(stopped).toBe(true);
+    // A failed attempt has already released what it acquired, so the session has nothing left to stop.
+    expect(stopped).toBe(false);
     expect(result.output.stderr.join('\n')).toContain("Couldn't Start Live Preview: Port 4320 is in use. The static report is available.");
     expect(result.opened).toHaveLength(1);
+    expect(result.opened[0]).toMatch(/rtl-report-dashboard\.html$/);
+  });
+
+  it('reports a busy dashboard port with the earlier wording and starts nothing', async () => {
+    const blocker = createServer();
+    await new Promise<void>(resolve => blocker.listen(0, '127.0.0.1', () => resolve()));
+    const port = (blocker.address() as { port: number }).port;
+    let started = false;
+    try {
+      const result = await runWith({
+        inspect: async () => eligible,
+        authorized: true,
+        dashboardPort: port,
+        start: async () => { started = true; return { state: 'ready', stop: async () => 'released' as const }; },
+      });
+      expect(started).toBe(false);
+      expect(result.output.stderr.join('\n')).toContain(`Couldn't Start Live Preview: Port ${port} is in use by another process. RTL Analyzer did not stop it; free the port and retry. The static report is available.`);
+      expect(result.opened).toHaveLength(1);
+    } finally {
+      await new Promise<void>(resolve => blocker.close(() => resolve()));
+    }
   });
 
   it('declines an interactive prompt by default', async () => {

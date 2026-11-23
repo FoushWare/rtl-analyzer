@@ -23,7 +23,7 @@ async function fixture(findingIds: string[] = ['f1']) {
   const dir = await realpath(await mkdtemp(join(tmpdir(), 'rtl-services-')));
   await writeFile(join(dir, 'rtl-report-dashboard.html'), '<!doctype html><title>dashboard</title>');
   await writeFile(join(dir, 'rtl-report.json'), JSON.stringify({ inputDigest: 'in', policyDigest: 'pol', findings: findingIds.map(id => ({ id })) }));
-  return { root: dir, dashboardDir: dir, reportPath: join(dir, 'rtl-report.json'), companionEntry: '/packaged/preview-cli.js' };
+  return { root: dir, logDir: dir, reportPath: join(dir, 'rtl-report.json'), companionEntry: '/packaged/preview-cli.js' };
 }
 
 interface HarnessOptions {
@@ -72,14 +72,6 @@ function harness(options: HarnessOptions, root: string) {
 }
 
 describe('preview services', () => {
-  it('refuses to start when the dashboard port is occupied, without spawning anything', async () => {
-    const f = await fixture();
-    const h = harness({}, f.root);
-    const result = await startPreviewServices(f, { ...h.deps, probePort: async () => false });
-    expect(result).toMatchObject({ state: 'startup_failed', failure: { code: 'PORT_CONFLICT_DASHBOARD' } });
-    expect(h.spawned).toEqual([]);
-  });
-
   it('never reuses a service that serves a different project or is not a companion', async () => {
     const f = await fixture();
     const other = harness({ companionHealth: { service: 'rtl-preview-companion', projectRoot: '/elsewhere' } }, f.root);
@@ -95,7 +87,7 @@ describe('preview services', () => {
     const result = await startPreviewServices(f, h.deps);
     expect(result.state).toBe('ready');
     if (result.state !== 'ready') throw new Error('expected ready');
-    expect(h.spawned).toEqual([{ entry: '/packaged/preview-cli.js', logPath: join(f.dashboardDir, 'preview-companion.log') }]);
+    expect(h.spawned).toEqual([{ entry: '/packaged/preview-cli.js', logPath: join(f.logDir, 'preview-companion.log') }]);
     expect(await result.stop()).toBe('released');
     expect(h.released).toEqual([{ application: 'dashboard', lease: 'lease-1' }]);
     expect(h.child.signals).toEqual([]);

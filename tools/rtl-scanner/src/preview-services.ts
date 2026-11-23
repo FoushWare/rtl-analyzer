@@ -1,19 +1,18 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { createServer as createNetServer } from 'node:net';
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { readFile, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PreviewFailure, PreviewState } from './preview-orchestrator.js';
 
-// Milestone 2: orchestrates the existing packaged preview companion. All preview runtime logic (original
-// dev-server start, identity checks, ownership and cleanup) stays inside the pinned implementation; this module
-// only starts it as a process, waits on its HTTP API, and serves the generated dashboard.
+// Orchestrates the packaged preview companion. All preview runtime logic (original dev-server start, identity
+// checks, ownership and cleanup) stays in the pinned implementation; this module starts the companion as a process,
+// waits on its HTTP API, and holds this run's lease. The dashboard server lives in dashboard-session.ts.
 
 export const COMPANION_PORT = 4318;
 export const DASHBOARD_PORT = 4320;
 export const DASHBOARD_FILE = 'rtl-report-dashboard.html';
-const DASHBOARD_ORIGIN = `http://127.0.0.1:${DASHBOARD_PORT}`;
+export const DASHBOARD_ORIGIN = `http://127.0.0.1:${DASHBOARD_PORT}`;
 const COMPANION_ORIGIN = `http://127.0.0.1:${COMPANION_PORT}`;
 const COMPANION_READY_TIMEOUT_MS = 15_000;
 const ORIGINAL_START_TIMEOUT_MS = 30_000;
@@ -29,7 +28,7 @@ const COMPANION_STDERR_TAIL = 2000;
 export type ReleaseOutcome = 'released' | 'not-held' | 'release-failed';
 
 export type ServiceResult =
-  | { readonly state: 'ready'; readonly dashboardUrl: string; readonly stop: () => Promise<ReleaseOutcome> }
+  | { readonly state: 'ready'; readonly stop: () => Promise<ReleaseOutcome> }
   | { readonly state: Exclude<PreviewState, 'ready' | 'starting'>; readonly failure: PreviewFailure; readonly stop: () => Promise<ReleaseOutcome> };
 
 /** Fields this module reads from companion responses; each is checked before use. */
@@ -50,14 +49,14 @@ export interface ServiceDependencies {
 export interface ServiceOptions {
   /** Absolute project root; must be the same root the scan used. */
   readonly root: string;
-  /** Path to the `rtl-report.json` written by the scan in the same output directory. */
+  /** Path to the `rtl-report.json` written by the scan. */
   readonly reportPath: string;
-  /** Directory that contains the generated dashboard HTML. */
-  readonly dashboardDir: string;
+  /** Directory for the companion log. */
+  readonly logDir: string;
   /** Path to the packaged companion entry (`dist/preview-cli.js`). */
   readonly companionEntry: string;
   readonly log?: (line: string) => void;
-  /** Aborting (Ctrl-C during startup) releases this run's lease and reports `CANCELLED`. The CLI never signals the companion. */
+  /** Aborting releases this run's lease (if any) and reports `CANCELLED`. The CLI never signals the companion. */
   readonly signal?: AbortSignal;
 }
 
@@ -93,37 +92,9 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/** Serves only the generated dashboard file; every other path is 404. */
-function serveDashboard(dashboardDir: string): Server {
-  return createServer(async (request: IncomingMessage, response: ServerResponse) => {
-    if (request.method !== 'GET' || request.url?.split('?')[0] !== `/${DASHBOARD_FILE}`) {
-      response.writeHead(404, { 'content-type': 'text/plain' }).end('Not found');
-      return;
-    }
-    try {
-      const html = await readFile(`${dashboardDir}/${DASHBOARD_FILE}`);
-      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }).end(html);
-    } catch {
-      response.writeHead(404, { 'content-type': 'text/plain' }).end('Not found');
-    }
-  });
-}
-
-function listen(server: Server): Promise<void> {
-  return new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(DASHBOARD_PORT, '127.0.0.1', () => { server.removeListener('error', reject); resolve(); });
-  });
-}
-
-function close(server: Server): Promise<void> {
-  return new Promise(resolve => server.close(() => resolve()));
-}
-
 /**
- * Starts (or reuses) the companion, serves the dashboard, and proves readiness:
- * companion health for this root, one original-application runtime started through the companion's own
- * contextual-preview route, and a successful self-fetch of the dashboard. Nothing is reported `ready` before that.
+ * Starts (or reuses) the companion and proves readiness: companion health for this root, and one original-application
+ * runtime started through the companion's own contextual-preview route. Nothing is reported `ready` before that.
  */
 export async function startPreviewServices(options: ServiceOptions, deps: ServiceDependencies = {}): Promise<ServiceResult> {
   const log = options.log ?? (() => undefined);
@@ -148,18 +119,12 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
 
   const root = await realpath(options.root);
   const cancelled = () => options.signal?.aborted === true;
-  const served: { dashboard?: Server } = {};
   // This run's lease on the original server. Set only after the companion confirms the start.
   let lease: { application: string; token: string } | undefined;
-  const logPath = join(options.dashboardDir, COMPANION_LOG);
+  const logPath = join(options.logDir, COMPANION_LOG);
   // Releases only this run's lease; never signals the companion. Safe to call repeatedly, and it also releases a
   // lease that arrives after an earlier call (cancellation can overlap a start request that is still in flight).
   const stop = async (): Promise<ReleaseOutcome> => {
-    if (served.dashboard) {
-      const dashboard = served.dashboard;
-      served.dashboard = undefined;
-      await close(dashboard);
-    }
     const held = lease;
     if (!held) return 'not-held';
     lease = undefined;
@@ -178,16 +143,9 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     await stop();
     return { state, failure: reason, stop: async () => 'not-held' };
   };
-  // Cancellation must not wait for a blocked request: stop the owned companion immediately.
-  options.signal?.addEventListener('abort', () => { void stop(); }, { once: true });
   const cancelledResult = () => fail('startup_failed', failure('CANCELLED', 'Live preview startup was cancelled. Owned services were stopped.'));
 
-  // 1. Dashboard port: must be free, because the companion only accepts requests from this origin.
-  if (!(await probePort(DASHBOARD_PORT))) {
-    return fail('startup_failed', failure('PORT_CONFLICT_DASHBOARD', `Port ${DASHBOARD_PORT} is in use by another process. RTL Analyzer did not stop it; free the port and retry.`));
-  }
-
-  // 2. Companion: reuse only a companion that serves this exact root; otherwise the port must be free.
+  // 1. Companion: reuse only a companion that serves this exact root; otherwise the port must be free.
   const existing = await health(COMPANION_ORIGIN);
   if (existing) {
     if (existing.service !== 'rtl-preview-companion' || existing.projectRoot !== root) {
@@ -218,7 +176,7 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     log(`Preview companion ready on port ${COMPANION_PORT}.`);
   }
 
-  // 3. Find a finding that the companion maps to a configured preview route. Read-only: nothing starts yet.
+  // 2. Find a finding that the companion maps to a configured preview route. Read-only: nothing starts yet.
   let report: { inputDigest?: string; policyDigest?: string; findings?: Array<{ id: string }> };
   try {
     report = JSON.parse(await readFile(options.reportPath, 'utf8'));
@@ -243,7 +201,7 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     return fail('unsupported', failure('PREVIEW_NO_MAPPED_FINDINGS', 'No finding in this report maps to a configured preview route.'));
   }
 
-  // 4. Start the original application through the companion's own route (Origin = this dashboard's origin).
+  // 3. Start the original application through the companion's own route (Origin = this dashboard's origin).
   if (cancelled()) return cancelledResult();
   try {
     const started = await fetchJson(`${COMPANION_ORIGIN}/contextual-preview/original?${params(mappedFinding)}`, {
@@ -265,18 +223,6 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     return fail('startup_failed', failure('ORIGINAL_START_FAILED', `The original application did not start: ${error instanceof Error ? error.message : 'request failed'}`));
   }
 
-  // 5. Serve the dashboard and prove it answers before reporting ready.
   if (cancelled()) return cancelledResult();
-  const dashboard = serveDashboard(options.dashboardDir);
-  served.dashboard = dashboard;
-  try {
-    await listen(dashboard);
-  } catch {
-    return fail('startup_failed', failure('PORT_CONFLICT_DASHBOARD', `Port ${DASHBOARD_PORT} became busy before the dashboard could start.`));
-  }
-  const dashboardUrl = `${DASHBOARD_ORIGIN}/${DASHBOARD_FILE}`;
-  const selfCheck = await fetch(dashboardUrl, { signal: AbortSignal.timeout(2000) }).catch(() => null);
-  if (!selfCheck?.ok) return fail('startup_failed', failure('DASHBOARD_SELF_CHECK_FAILED', 'The local dashboard server did not answer.'));
-
-  return { state: 'ready', dashboardUrl, stop };
+  return { state: 'ready', stop };
 }
