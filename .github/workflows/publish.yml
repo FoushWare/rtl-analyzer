@@ -87,6 +87,38 @@ jobs:
             exit 1
           fi
 
+      - name: Select npm dist-tag
+        id: dist-tag
+        working-directory: packages/rtl-analyzer
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          # Prerelease versions (semver with a "-" suffix) go to "next" so the stable "latest" tag never moves to a prerelease.
+          case "$PACKAGE_VERSION" in
+            *-*) DIST_TAG=next ;;
+            *) DIST_TAG=latest ;;
+          esac
+          echo "Publishing rtl-analyzer@$PACKAGE_VERSION under dist-tag $DIST_TAG"
+          echo "tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+
       - name: Publish to npm with OIDC
         working-directory: packages/rtl-analyzer
-        run: npm publish --access public
+        env:
+          DIST_TAG: ${{ steps.dist-tag.outputs.tag }}
+        run: npm publish --access public --tag "$DIST_TAG"
+
+      - name: Verify dist-tags after publish
+        working-directory: packages/rtl-analyzer
+        env:
+          DIST_TAG: ${{ steps.dist-tag.outputs.tag }}
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          for attempt in 1 2 3 4 5; do
+            if TAGGED=$(npm view "rtl-analyzer@$DIST_TAG" version --registry=https://registry.npmjs.org 2>/dev/null) && [ "$TAGGED" = "$PACKAGE_VERSION" ]; then break; fi
+            sleep 10
+          done
+          test "$TAGGED" = "$PACKAGE_VERSION" || { echo "dist-tag $DIST_TAG does not point to $PACKAGE_VERSION"; exit 1; }
+          if [ "$DIST_TAG" = "next" ]; then
+            LATEST=$(npm view rtl-analyzer@latest version --registry=https://registry.npmjs.org)
+            test "$LATEST" != "$PACKAGE_VERSION" || { echo "prerelease $PACKAGE_VERSION must not become latest"; exit 1; }
+            echo "latest remains $LATEST"
+          fi

@@ -95,7 +95,7 @@ Verified in this release (macOS, Chromium, desktop width):
 - **Live preview** supports Vite-compatible development scripts, including an Nx workspace that runs Vite. Next.js apps can be scanned statically, but live preview is not supported.
 - **Not detected:** JavaScript key handling, focus order and other behavior that is not expressed in styles.
 
-A scan reports potential issues; it does not prove a page renders correctly. Report publication and protected source operations use a trusted POSIX filesystem profile (macOS and Linux); Windows protected operations are unsupported. Safari, package managers other than npm and general framework compatibility are not certified. Project scripts must be trusted.
+A scan reports potential issues; it does not prove a page renders correctly. **Windows is not supported in v0.5.0.** The one-command dashboard and `--output-dir` report output are refused on Windows with `unsupported platform/filesystem profile` and exit code 2; nothing is written, and existing report files are left unchanged. Source snippets fail closed (`UNSUPPORTED_NOFOLLOW`) on Windows, so findings show as unavailable. Because the review workflow starts from the dashboard, it is not reachable through the packaged CLI on Windows in this release. Validation commands run only with npm on Windows; pnpm and yarn are refused. Windows support is planned for v0.6.0. Report publication and protected source operations use a trusted POSIX filesystem profile (macOS and Linux). Safari, package managers other than npm and general framework compatibility are not certified. Project scripts must be trusted.
 
 ## Example projects
 

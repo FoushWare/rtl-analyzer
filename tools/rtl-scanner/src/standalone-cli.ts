@@ -4,7 +4,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
+import { createInterface } from 'node:readline/promises';
 import { runCli, type CliIO } from './cli.js';
+import { decidePreviewConsent, inspectPreviewProject, type PreviewEligibility } from './preview-orchestrator.js';
+import { DASHBOARD_PORT, startPreviewServices, type ServiceResult } from './preview-services.js';
+import { DashboardSession } from './dashboard-session.js';
+import type { PreviewFailure } from './preview-orchestrator.js';
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const browserLaunchTimeoutMs = 5_000;
@@ -15,7 +20,7 @@ async function version(): Promise<string> {
 }
 
 function help(): string {
-  return `RTL Analyzer — conservative RTL risk scanning\n\nUsage:\n  rtl-analyzer                    Scan the current directory and open a dashboard\n  rtl-analyzer scan [path] [options]\n  rtl-analyzer preview [--help]\n  rtl-analyzer --help\n  rtl-analyzer --version\n\nOptions:\n  --root <path>                 Scan this project root\n  --format <format>             json, markdown, markdown-structured, or dashboard\n  --output-dir <path>           Write report artifacts to this directory\n  --fail-on-findings            Exit 1 when actionable findings exist\n  --embed-source-snippets       Embed bounded source snippets in dashboard output\n`;
+  return `RTL Analyzer — conservative RTL risk scanning\n\nUsage:\n  rtl-analyzer                    Scan the current directory and open a dashboard\n  rtl-analyzer scan [path] [options]\n  rtl-analyzer preview [--help]\n  rtl-analyzer --help\n  rtl-analyzer --version\n  rtl-analyzer --approve-project-scripts   Authorize running the project's dev server for live preview\n\nOptions:\n  --root <path>                 Scan this project root\n  --format <format>             json, markdown, markdown-structured, or dashboard\n  --output-dir <path>           Write report artifacts to this directory\n  --fail-on-findings            Exit 1 when actionable findings exist\n  --embed-source-snippets       Embed bounded source snippets in dashboard output\n`;
 }
 
 const io: CliIO = {
@@ -62,18 +67,58 @@ export async function openDashboard(path: string, platform = process.platform, l
   });
 }
 
+export interface PreviewPlanOptions {
+  /** Explicit authorization for project scripts (`--approve-project-scripts`). */
+  readonly authorized?: boolean;
+  readonly interactive?: boolean;
+  readonly ask?: (question: string) => Promise<string>;
+  readonly inspect?: (root: string) => Promise<PreviewEligibility>;
+  /** Starts the packaged companion and dashboard server; injectable for tests. */
+  readonly start?: (options: Parameters<typeof startPreviewServices>[0]) => Promise<ServiceResult>;
+  /** Dashboard port; tests use 0 for an ephemeral port. Default: the fixed port the companion accepts. */
+  readonly dashboardPort?: number;
+  /** Resolves when the user asks to stop (Ctrl-C or SIGTERM). Injectable for tests. */
+  readonly waitForStop?: () => Promise<void>;
+}
+
 export interface DefaultDashboardOptions {
   readonly io?: CliIO;
   readonly run?: typeof runCli;
   readonly open?: typeof openDashboard;
   readonly tempRoot?: string;
+  readonly root?: string;
+  readonly preview?: PreviewPlanOptions;
+}
+
+const APPROVE_PROJECT_SCRIPTS = '--approve-project-scripts';
+
+/** Aborts on Ctrl-C or SIGTERM. Installed before services start, so startup can be cancelled too. */
+function stopSignalController(): AbortController {
+  const controller = new AbortController();
+  const stop = () => controller.abort();
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+  return controller;
+}
+
+function abortPromise(signal: AbortSignal): Promise<void> {
+  return new Promise(resolve => { if (signal.aborted) resolve(); else signal.addEventListener('abort', () => resolve(), { once: true }); });
+}
+
+async function promptUser(question: string): Promise<string> {
+  const prompt = createInterface({ input: process.stdin, output: process.stderr });
+  try { return await prompt.question(question); } finally { prompt.close(); }
 }
 
 export async function runDefaultDashboard(options: DefaultDashboardOptions = {}): Promise<number> {
   const outputDir = await mkdtemp(join(await realpath(options.tempRoot ?? tmpdir()), 'rtl-analyzer-dashboard-'));
   const dashboardPath = join(outputDir, 'rtl-report-dashboard.html');
   const output = options.io ?? io;
-  const code = await (options.run ?? runCli)(['--root', process.cwd(), '--format', 'dashboard', '--output-dir', outputDir], output);
+  const root = options.root ?? process.cwd();
+  // Source snippets are part of the default workflow; they are embedded only inside the external dashboard output.
+  // The scan writes the dashboard into outputDir; its HTML must not be echoed to the terminal.
+  const scanIo: CliIO = { writeStdout: () => undefined, writeStderr: value => output.writeStderr(value) };
+  const code = await (options.run ?? runCli)(['--root', root, '--format', 'dashboard', '--output-dir', outputDir, '--embed-source-snippets'], scanIo);
   let dashboardExists = false;
   try { dashboardExists = (await lstat(dashboardPath)).isFile(); } catch { /* report the scan error below */ }
   if (!dashboardExists) {
@@ -81,12 +126,102 @@ export async function runDefaultDashboard(options: DefaultDashboardOptions = {})
     return code === 0 ? 2 : code;
   }
   output.writeStderr(`Dashboard: ${dashboardPath}`);
+
+  const preview = options.preview ?? {};
+  const interactive = preview.interactive ?? Boolean(process.stdin.isTTY && process.stderr.isTTY);
+  const eligibility = await (preview.inspect ?? inspectPreviewProject)(root);
+  const startServices = (signal: AbortSignal) => (preview.start ?? startPreviewServices)({
+    root,
+    reportPath: join(outputDir, 'rtl-report.json'),
+    logDir: outputDir,
+    companionEntry: join(dirname(fileURLToPath(import.meta.url)), 'preview-cli.js'),
+    log: line => output.writeStderr(line),
+    signal,
+  });
+
+  if (!eligibility.eligible) {
+    if (interactive) return runSession(options, outputDir, dashboardPath, code, { initial: { state: 'unsupported', failure: eligibility.failure }, interactive: true });
+    output.writeStderr(`Live Preview Unavailable: ${eligibility.failure.message} The static report is available.`);
+  } else {
+    const decision = await decidePreviewConsent(eligibility, {
+      authorized: preview.authorized,
+      interactive,
+      ask: preview.ask ?? promptUser,
+      write: line => output.writeStderr(line),
+    });
+    if (!decision.approved) {
+      output.writeStderr(`Live preview not started: ${decision.failure.message}`);
+    } else {
+      return runSession(options, outputDir, dashboardPath, code, { start: startServices, interactive });
+    }
+  }
+
   if (!(await (options.open ?? openDashboard)(dashboardPath))) output.writeStderr(`Could not open dashboard automatically. Open: ${dashboardPath}`);
+  return code;
+}
+
+interface SessionRequest {
+  /** Startup attempt for an approved project. */
+  readonly start?: (signal: AbortSignal) => Promise<ServiceResult>;
+  /** Interactive runs keep the page open so the preview modal can offer Retry, Continue, and Cancel. */
+  readonly interactive?: boolean;
+  /** A state that needs no attempt, such as an unsupported project. */
+  readonly initial?: { state: 'unsupported'; failure: PreviewFailure };
+}
+
+/**
+ * Serves the dashboard for this run and drives the preview state. The CLI stays up until End Review, Ctrl-C, or
+ * (non-interactive runs only) a failed startup, which falls back to the static report and exits.
+ */
+async function runSession(options: DefaultDashboardOptions, outputDir: string, dashboardPath: string, code: number, request: SessionRequest): Promise<number> {
+  const output = options.io ?? io;
+  const preview = options.preview ?? {};
+  const session = new DashboardSession({
+    dashboardDir: outputDir,
+    start: request.start,
+    log: line => output.writeStderr(line),
+    port: preview.dashboardPort,
+  });
+  const openPage = options.open ?? openDashboard;
+  try {
+    await session.listen();
+  } catch (error) {
+    // Same wording as the earlier port check, so a busy dashboard port reads the same to the user.
+    const port = preview.dashboardPort ?? DASHBOARD_PORT;
+    const busy = (error as NodeJS.ErrnoException | undefined)?.code === 'EADDRINUSE';
+    output.writeStderr(busy
+      ? `Couldn't Start Live Preview: Port ${port} is in use by another process. RTL Analyzer did not stop it; free the port and retry. The static report is available.`
+      : "Couldn't Start Live Preview: The local dashboard server did not answer. The static report is available.");
+    if (!(await openPage(dashboardPath))) output.writeStderr(`Could not open dashboard automatically. Open: ${dashboardPath}`);
+    return code;
+  }
+  const stopSignal = stopSignalController();
+  stopSignal.signal.addEventListener('abort', () => { void session.end(); }, { once: true });
+
+  if (request.initial) session.setInitial(request.initial.state, request.initial.failure);
+  const attempt = request.start ? session.begin() : undefined;
+  if (!request.interactive && attempt) {
+    await attempt;
+    if (session.status().state !== 'ready') {
+      output.writeStderr(`Couldn't Start Live Preview: ${session.status().failure?.message ?? 'Startup failed.'} The static report is available.`);
+      await session.end();
+      if (!(await openPage(dashboardPath))) output.writeStderr(`Could not open dashboard automatically. Open: ${dashboardPath}`);
+      return code;
+    }
+  }
+
+  if (session.status().state === 'ready') output.writeStderr(`Live preview ready: ${session.url}`);
+  output.writeStderr(`Dashboard: ${session.url}`);
+  if (!(await openPage(session.url))) output.writeStderr(`Could not open dashboard automatically. Open: ${session.url}`);
+  void (preview.waitForStop ?? (() => abortPromise(stopSignal.signal)))().then(() => session.end());
+  await session.waitForEnd();
+  output.writeStderr('Live preview services owned by this run were stopped.');
   return code;
 }
 
 export async function main(argv: string[], output: CliIO = io): Promise<number> {
   if (argv.length === 0) return runDefaultDashboard({ io: output });
+  if (argv.length === 1 && argv[0] === APPROVE_PROJECT_SCRIPTS) return runDefaultDashboard({ io: output, preview: { authorized: true } });
   if (argv[0] === '--help' || argv[0] === '-h') {
     output.writeStdout(help());
     return 0;
