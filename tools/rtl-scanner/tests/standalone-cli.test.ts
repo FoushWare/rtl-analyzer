@@ -155,6 +155,13 @@ describe('default workflow preview consent (milestone 1)', () => {
     expect(result.opened).toHaveLength(1);
   });
 
+  it('keeps dashboard HTML off stdout and reports the report file path, even when non-interactive', async () => {
+    const result = await runWith({ inspect: async () => eligible, interactive: false });
+    expect(result.code).toBe(0);
+    expect(result.output.stdout.join('')).not.toMatch(/<!doctype html>/i);
+    expect(result.output.stderr.join('\n')).toMatch(/Dashboard: .*rtl-report-dashboard\.html/);
+  });
+
   it('never prompts or starts anything for an eligible project when non-interactive', async () => {
     let asked = false;
     const result = await runWith({ inspect: async () => eligible, interactive: false, ask: async () => { asked = true; return 'y'; } });
