@@ -106,19 +106,50 @@ jobs:
           DIST_TAG: ${{ steps.dist-tag.outputs.tag }}
         run: npm publish --access public --tag "$DIST_TAG"
 
-      - name: Verify dist-tags after publish
+      - name: Verify published version and dist-tag
         working-directory: packages/rtl-analyzer
         env:
           DIST_TAG: ${{ steps.dist-tag.outputs.tag }}
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          for attempt in 1 2 3 4 5; do
-            if TAGGED=$(npm view "rtl-analyzer@$DIST_TAG" version --registry=https://registry.npmjs.org 2>/dev/null) && [ "$TAGGED" = "$PACKAGE_VERSION" ]; then break; fi
+          # npm can take several minutes to expose a new version. One shared deadline of 10 minutes covers both checks.
+          DEADLINE=$(( $(date +%s) + 600 ))
+
+          # 1. Is the version visible at all? If not, the publish did not land or is still processing.
+          VISIBLE=""
+          while [ "$(date +%s)" -lt "$DEADLINE" ]; do
+            if VISIBLE=$(npm view "rtl-analyzer@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org 2>/dev/null) && [ "$VISIBLE" = "$PACKAGE_VERSION" ]; then break; fi
+            VISIBLE=""
             sleep 10
           done
-          test "$TAGGED" = "$PACKAGE_VERSION" || { echo "dist-tag $DIST_TAG does not point to $PACKAGE_VERSION"; exit 1; }
+          if [ -z "$VISIBLE" ]; then
+            echo "MISSING VERSION: rtl-analyzer@$PACKAGE_VERSION is not visible on npm after 10 minutes."
+            echo "Check the package on npmjs.com. Do not republish from this workflow."
+            exit 1
+          fi
+
+          # 2. Does the expected dist-tag point at this version? This is reported separately from a missing version.
+          # The tag is always checked at least once, then polled until the shared deadline.
+          while true; do
+            TAGGED=$(npm view "rtl-analyzer@$DIST_TAG" version --registry=https://registry.npmjs.org 2>/dev/null || true)
+            if [ "$TAGGED" = "$PACKAGE_VERSION" ]; then break; fi
+            if [ "$(date +%s)" -ge "$DEADLINE" ]; then break; fi
+            sleep 10
+          done
+          if [ "$TAGGED" != "$PACKAGE_VERSION" ]; then
+            echo "WRONG DIST-TAG: '$DIST_TAG' points to '${TAGGED:-nothing}', expected $PACKAGE_VERSION."
+            echo "Correct the tag with npm dist-tag. Do not republish from this workflow."
+            exit 1
+          fi
+
+          # 3. A prerelease must never be the stable latest tag.
           if [ "$DIST_TAG" = "next" ]; then
-            LATEST=$(npm view rtl-analyzer@latest version --registry=https://registry.npmjs.org)
-            test "$LATEST" != "$PACKAGE_VERSION" || { echo "prerelease $PACKAGE_VERSION must not become latest"; exit 1; }
-            echo "latest remains $LATEST"
+            LATEST=$(npm view rtl-analyzer@latest version --registry=https://registry.npmjs.org 2>/dev/null || true)
+            if [ "$LATEST" = "$PACKAGE_VERSION" ]; then
+              echo "WRONG DIST-TAG: prerelease $PACKAGE_VERSION must not be the latest tag."
+              exit 1
+            fi
+            echo "next is $PACKAGE_VERSION; latest remains ${LATEST:-unknown}"
+          else
+            echo "latest is $PACKAGE_VERSION"
           fi

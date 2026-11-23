@@ -16,10 +16,10 @@ An English (LTR) and Arabic (RTL) storefront with a header, breadcrumb, paginati
 
 ## Prerequisites
 
-- macOS or Linux shell (zsh/bash). The commands below were verified on macOS only; **Windows is unsupported** (protected report and source operations need a POSIX filesystem profile).
+- macOS or Linux shell (zsh/bash). The commands below were verified on macOS only (for 0.4.0); **Windows is unsupported** (protected report and source operations need a POSIX filesystem profile).
 - Node.js 22.12+, npm, Python 3, `rsync`, and `git`.
 - A clone of this repository. Set `REPO` in the first terminal to its path.
-- Internet access to install dependencies, `rtl-analyzer@0.4.0` and Chromium.
+- Internet access to install dependencies, `rtl-analyzer` (npm `latest`; use `rtl-analyzer@next` to try the 0.5.0 prerelease) and Chromium.
 
 Work in a **disposable copy**. Never scan or apply inside `examples/` itself. The copy lives at `/private/tmp/bilingual-storefront` (use `/tmp/bilingual-storefront` on Linux; unverified). The folder to open in VS Code is **`/private/tmp/bilingual-storefront/project`**.
 
@@ -37,9 +37,9 @@ cd "$RUN/project"
 npm install
 npm run check
 rm -rf dist .next .nx
-npm install --no-save --package-lock=false rtl-analyzer@0.4.0
+npm install --no-save --package-lock=false rtl-analyzer
 npx --no-install playwright install chromium
-npx rtl-analyzer@0.4.0 scan --root "$PWD" --format dashboard --output-dir "$RUN/reports" --embed-source-snippets > /dev/null
+npx rtl-analyzer scan --root "$PWD" --format dashboard --output-dir "$RUN/reports" --embed-source-snippets > /dev/null
 git init -q && printf '.rtl-preview/\n.rtl-vite-cache/\n' >> .git/info/exclude && git add -A && git -c user.name=t -c user.email=t@t commit -qm baseline
 ```
 
@@ -117,13 +117,15 @@ To start completely over, rerun step 1 (it deletes and recreates the copy). Roll
 
 ## Limitations
 
-- **Windows is unsupported**, and the Windows CI leg fails. Safari, other browsers, other package managers and narrow viewports are unverified.
+- **Windows is not supported in v0.5.0**. Safari, other browsers, other package managers and narrow viewports are unverified.
 - **Next.js live preview is unsupported.** Starting a review shows *Preview preparation failed: Runtime unavailable*; Validate, Apply and Rollback cannot be exercised, and batch mode cannot prepare a candidate. Use this project for the static scan and for reading findings and source.
 - Tailwind utility findings are detection-only; `RTL.BIDI.ISOLATION` and the drawer are manual.
 - Live review needs Chromium and trusted project scripts. Details: [advanced setup guide](../../docs/guides/developer-testing.md).
 
 ## Verified
 
-Checked on 2026-11-22 (macOS arm64, Node 22.21.1, headless Chromium driven by Playwright). I ran the commands in the blocks above, unchanged apart from `REPO`, in a fresh `/private/tmp/bilingual-storefront` copy against the published `rtl-analyzer@0.4.0`. Results: setup, `npm run check` and the scan succeeded; the app responded at `?lang=en` and `?lang=ar` and the `.cart-count` margins above were measured there. The companion and report server started and the dashboard lists the findings. Starting a review on `.cart-count` failed with *Preview preparation failed: Runtime unavailable* as documented, so Validate, Apply, Rollback and batch were **not** exercised (unsupported). `all ports free`; Reset clean. **Not verified:** the other seven findings in the dashboard UI.
+Checked on 2026-11-22 (macOS arm64, Node 22.21.1, headless Chromium driven by Playwright). The 0.4.0 run used the commands in the blocks above with `rtl-analyzer@0.4.0` pinned in place of the versionless command, unchanged apart from `REPO`, in a fresh `/private/tmp/bilingual-storefront` copy against the published `rtl-analyzer@0.4.0`. It has not been re-run against `rtl-analyzer@0.5.0-rc.1`.
+
+Scan step against the published `rtl-analyzer@0.5.0-rc.1` (2026-11-23): **passed** (exit 0, dashboard produced, 8 findings). Live Preview, Fix Studio, Apply and Rollback against `0.5.0-rc.1`: **not verified**. Results: setup, `npm run check` and the scan succeeded; the app responded at `?lang=en` and `?lang=ar` and the `.cart-count` margins above were measured there. The companion and report server started and the dashboard lists the findings. Starting a review on `.cart-count` failed with *Preview preparation failed: Runtime unavailable* as documented, so Validate, Apply, Rollback and batch were **not** exercised (unsupported). `all ports free`; Reset clean. **Not verified:** the other seven findings in the dashboard UI.
 
 Earlier notes from building this example are kept in [the verification history](../../docs/verification/examples-history/bilingual-storefront.md); they predate 0.4.0.
