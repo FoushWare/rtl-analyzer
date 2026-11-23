@@ -1,5 +1,5 @@
 import { lstat, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, isAbsolute, join } from 'node:path';
 
 // Milestone 1: structured preview states and the consent gate. No process is started here.
 
@@ -29,7 +29,14 @@ export type PreviewEligibility =
   | { readonly eligible: true; readonly applications: readonly PreviewApplicationPlan[]; readonly commands: readonly string[] }
   | { readonly eligible: false; readonly failure: PreviewFailure };
 
-const VITE_CONFIG = /\.(?:[cm]?[jt]s)$/;
+// A Vite config is recognized by its file name AND by its content: it must import `vite`. A file name alone is not
+// enough, because a Next.js config (next.config.mjs) or any other module can carry a .mjs/.ts extension.
+const VITE_CONFIG_NAME = /^vite\.config\.(?:[cm]?[jt]s)$/;
+const VITE_IMPORT = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)["']vite["']/;
+const NEXT_NAME = /^next\.config\.(?:[cm]?[jt]s|json)$/;
+// A start script that runs the Next.js CLI (directly or through a package runner). Vite arguments must never reach it.
+const NEXT_COMMAND = /(?:^|[\s;&|(])(?:npx\s+|pnpm\s+(?:exec\s+)?|yarn\s+)?next(?:\s|$)/;
+const NEXT_UNSUPPORTED = 'Next.js live preview is not supported in this release; scanning stays static. Live Before/After needs a Vite or Nx-Vite app.';
 const SCRIPT_NAME = /^[-\w:]+$/;
 const LOOPBACK_ORIGIN = /^http:\/\/127\.0\.0\.1:(\d{1,5})$/;
 
@@ -39,6 +46,18 @@ function unsupported(code: string, message: string): PreviewEligibility {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** A regular (non-symlink) file whose name is a Vite config and whose content imports `vite`. */
+async function isViteConfigFile(root: string, relativePath: string): Promise<boolean> {
+  if (!VITE_CONFIG_NAME.test(basename(relativePath))) return false;
+  const path = join(root, relativePath);
+  try {
+    if (!(await lstat(path)).isFile()) return false;
+    return VITE_IMPORT.test(await readFile(path, 'utf8'));
+  } catch {
+    return false;
+  }
 }
 
 async function exists(path: string): Promise<boolean> {
@@ -86,8 +105,12 @@ export async function inspectPreviewProject(root: string): Promise<PreviewEligib
   for (const [application, value] of entries) {
     if (!isRecord(value)) return unsupported('PREVIEW_CONFIGURATION_INVALID', `Application "${application}" is not an object.`);
     const viteConfig = value.viteConfig;
-    if (typeof viteConfig !== 'string' || !VITE_CONFIG.test(viteConfig) || viteConfig.includes('..')) {
-      return unsupported('PREVIEW_UNSUPPORTED_BUILD_TOOL', `Application "${application}" needs a Vite config file (.js, .mjs or .ts).`);
+    if (typeof viteConfig !== 'string' || viteConfig.includes('..') || isAbsolute(viteConfig)) {
+      return unsupported('PREVIEW_UNSUPPORTED_BUILD_TOOL', `Application "${application}" needs a Vite config file inside the project.`);
+    }
+    if (NEXT_NAME.test(basename(viteConfig))) return unsupported('PREVIEW_UNSUPPORTED_BUILD_TOOL', NEXT_UNSUPPORTED);
+    if (!(await isViteConfigFile(root, viteConfig))) {
+      return unsupported('PREVIEW_UNSUPPORTED_BUILD_TOOL', `Application "${application}" needs a Vite config (vite.config.js, .mjs or .ts) that imports "vite".`);
     }
     if (typeof value.readySelector !== 'string' || value.readySelector.trim() === '') {
       return unsupported('PREVIEW_CONFIGURATION_INVALID', `Application "${application}" needs a readySelector.`);
@@ -105,9 +128,11 @@ export async function inspectPreviewProject(root: string): Promise<PreviewEligib
       if (typeof startupScript !== 'string' || !SCRIPT_NAME.test(startupScript)) {
         return unsupported('PREVIEW_CONFIGURATION_INVALID', `Application "${application}" has an invalid startupScript name.`);
       }
-      if (typeof packageScripts[startupScript] !== 'string') {
+      const script = packageScripts[startupScript];
+      if (typeof script !== 'string') {
         return unsupported('PREVIEW_STARTUP_SCRIPT_MISSING', `package.json has no "${startupScript}" script for application "${application}".`);
       }
+      if (NEXT_COMMAND.test(script)) return unsupported('PREVIEW_UNSUPPORTED_BUILD_TOOL', NEXT_UNSUPPORTED);
     } else if (!(await exists(join(root, 'node_modules', 'vite', 'bin', 'vite.js')))) {
       return unsupported('PREVIEW_VITE_NOT_INSTALLED', `Application "${application}" has no startupScript and Vite is not installed in node_modules.`);
     }
