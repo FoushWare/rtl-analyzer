@@ -1,4 +1,4 @@
-# RTL Analyzer 0.5.0 — release notes (draft)
+# RTL Analyzer 0.5.0 — release notes
 
 ## Platform support
 

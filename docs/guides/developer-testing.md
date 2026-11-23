@@ -1,6 +1,6 @@
 # Developer testing and configured review
 
-Maintained setup for `rtl-analyzer` 0.4.0. Read-only scans work without a preview configuration; live review requires the explicit project/runtime setup below. Use a disposable copy for first source-Apply testing.
+Maintained setup for `rtl-analyzer` 0.5.0. Read-only scans work without a preview configuration; live review requires the explicit project/runtime setup below. Use a disposable copy for first source-Apply testing.
 
 ## Commands and standalone configuration
 
@@ -122,7 +122,7 @@ npm run rtl:scan:test
 npm run rtl:cli:package:smoke
 ```
 
-For a published release checkout, select `v0.4.0` before updating submodules. The smoke command builds/packs, installs the tarball outside both repositories and exercises the wrapper's scan/preview routes, both review modes, accepted-only Apply and exact rollback. It requires free test ports, Python 3 and installed Chromium (`npx playwright install chromium`). The implementation pin and source lineage are recorded in package metadata; `prepack` refuses a mismatched or modified implementation and removes stale generated modules.
+For a published release checkout, select `v0.5.0` before updating submodules. The smoke command builds/packs, installs the tarball outside both repositories and exercises the wrapper's scan/preview routes, both review modes, accepted-only Apply and exact rollback. It requires free test ports, Python 3 and installed Chromium (`npx playwright install chromium`). The implementation pin and source lineage are recorded in package metadata; `prepack` refuses a mismatched or modified implementation and removes stale generated modules.
 
 Only `dist/*.js`, the package README, package metadata and the MIT license enter npm. Examples, source, tests, videos, reports, backups, local state, credentials and dependencies stay outside the tarball. The repository root is private. Development uses a Git submodule to avoid maintaining a copied second implementation.
 
