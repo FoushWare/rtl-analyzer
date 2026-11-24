@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { isDirectExecution, main, openDashboard, parseProjectScriptFlags, runDefaultDashboard, type DefaultDashboardOptions } from '../src/standalone-cli.js';
@@ -252,7 +252,7 @@ describe('default workflow preview consent (milestone 1)', () => {
     const result = await runWith({
       inspect: async () => eligible,
       authorized: true,
-      start: async options => { calls.push(options.companionEntry.split('/').pop()!); return { state: 'ready', stop: async () => { calls.push('stopped'); return 'released' as const; } }; },
+      start: async options => { calls.push(basename(options.companionEntry)); return { state: 'ready', stop: async () => { calls.push('stopped'); return 'released' as const; } }; },
       waitForStop: async () => { calls.push('stop-requested'); },
     });
     expect(calls).toEqual(['preview-cli.js', 'stop-requested', 'stopped']);
