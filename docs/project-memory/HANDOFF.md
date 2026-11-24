@@ -1,3 +1,9 @@
+# v0.6.2 performance, scalability and lifecycle — implemented up to Phase 3, unreleased
+
+**2026-11-25. Local only.** Wrapper branch `feat/v0.6.2-scanner-performance` (from `origin/main`), implementation branch of the same name at `3ac1864` (pinned). Nothing pushed, merged or published; release approval is required. Phase 4 (candidate runtime reuse, HMR) is **not implemented**; the feasibility assessment is in issue #40 and awaits approval. Next action: review the verification record, decide on the Phase 4 approach, and decide when to push the two branches and open PRs. The [verification record](../verification/live-preview-performance-v0.6.2-2026-11-25.md) owns evidence and limitations.
+
+---
+
 # Live Preview stability v0.6.1 — in progress
 
 **2026-11-24. Unreleased.** Branch `fix/live-preview-stability-v0.6.1` in both repositories. Implementation pin `94a14e7` is local only (three commits on `fix/live-preview-stability-v0.6.1`, based on `819b733`, which is not on the implementation repo's `main`). Browser reproduction and acceptance are blocked by a live `npx rtl-analyzer` session on ports 4216, 4318 and 4320, which was not touched. Next action: when those ports are free, reproduce the Before/After behaviour in a disposable Foundations Lab copy, run Phase 7, then decide the implementation PR base. The [verification record](../verification/live-preview-stability-v0.6.1-2026-11-24.md) owns evidence.
