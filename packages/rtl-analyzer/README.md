@@ -18,11 +18,14 @@ This scans the current directory, writes the reports to a temporary folder outsi
 
 - **Dashboard:** the scan summary, the findings, and a shareable report.
 - **Fix Studio:** open a finding to compare the original and the suggested change, then approve, validate, or roll back.
-- **Live Before/After** needs your project's development server. RTL Analyzer runs your project's scripts only when you approve it:
+- **Live Before/After** starts your project's development server for you. This works for projects that ship a `rtl-preview.config.json` (see [Project scripts](#project-scripts)). Install the project's dependencies first; if they are missing, the dashboard says so and the static report stays available.
 
 ```sh
-npx rtl-analyzer --approve-project-scripts
+npm ci            # once, in your project (npm install, pnpm install, or yarn install also work)
+npx rtl-analyzer
 ```
+
+In an interactive terminal the dev server starts by default. In scripts and CI (no terminal), add `--approve-project-scripts`. To skip starting the dev server, run `npx rtl-analyzer --no-project-scripts`.
 
 ### Which version runs?
 
@@ -34,7 +37,15 @@ npx rtl-analyzer --approve-project-scripts
 | `npx rtl-analyzer@next` | latest prerelease, for testing (`next`) |
 | `npx rtl-analyzer@<version>` | an exact version, for reproducible runs |
 
-`latest` is the current stable release, 0.5.0. To try a prerelease before it reaches `latest`, use `npx rtl-analyzer@next`, which currently runs 0.5.0-rc.1.
+`latest` is the current stable release. To try a prerelease before it reaches `latest`, use `npx rtl-analyzer@next`.
+
+### Project scripts
+
+Live Before/After runs one script from your project, and only when `rtl-preview.config.json` names it under an application's `startupScript`. RTL Analyzer runs that script (for example `npm run dev`) in the project root, with `--host 127.0.0.1 --port <port> --strictPort`. It never runs other scripts or discovered commands, and it never installs packages or changes lockfiles.
+
+**Security:** the script is your project's own code, the same code that `npm run dev` runs. Run `npx rtl-analyzer` only in projects you trust. Projects without `rtl-preview.config.json` never have a script run. To turn project scripts off, use `npx rtl-analyzer --no-project-scripts`; the static report is still produced. `--approve-project-scripts` is still accepted.
+
+If dependencies are missing, the dashboard shows "Live Preview needs setup" with the project path and the install command for your package manager.
 
 Scan one folder, or show help:
 

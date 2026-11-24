@@ -1,3 +1,11 @@
+# Default Live Preview startup — v0.6.0 candidate
+
+**Verified 2026-11-24 (candidate, not yet released).** Interactive `npx rtl-analyzer` starts the configured dev server by default; dependency preflight runs before the startup notice; non-interactive runs need `--approve-project-scripts`; `--no-project-scripts` opts out. The [verification record](../verification/default-preview-startup-2026-11-24.md) owns evidence, the origin/main baseline and the known pre-existing root typecheck and Nx build failures.
+
+Deferred to later releases: child-process stderr capture (needs a pinned implementation change), Guided Live Preview recovery (#32), Windows publication (#28). The pinned submodule was not changed.
+
+---
+
 # Batch-review and themes acceptance continuation
 
 **Verified 2026-11-21. CONTINUE.** Approved local dashboard implementation and automated/browser verification are complete; **Ahmed human acceptance remains pending**. No push/publish/tag/deploy is authorized.

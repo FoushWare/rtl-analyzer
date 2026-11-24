@@ -129,6 +129,23 @@ describe('preview services', () => {
     expect(h.child.signals).toEqual([]);
   });
 
+  it('turns companion start errors into actionable messages and passes unknown codes through', async () => {
+    const f = await fixture();
+    const h = harness({}, f.root);
+    for (const [code, expected] of [
+      ['ORIGINAL_PREVIEW_PORT_OCCUPIED', 'in use by another process. RTL Analyzer did not stop it'],
+      ['ORIGINAL_PREVIEW_STARTUP_FAILED', 'Run the project\'s dev script yourself'],
+      ['SOMETHING_NEW', 'did not start: SOMETHING_NEW'],
+    ] as const) {
+      const fetchJson = async (url: string, init?: RequestInit) => (url.includes('/contextual-preview/original') && init?.method === 'POST')
+        ? { status: 500, body: { error: code } }
+        : h.deps.fetchJson!(url, init);
+      const result = await startPreviewServices(f, { ...h.deps, fetchJson });
+      expect(result).toMatchObject({ state: 'startup_failed', failure: { code: 'ORIGINAL_START_FAILED' } });
+      expect(result.state === 'startup_failed' ? result.failure.message : '').toContain(expected);
+    }
+  });
+
   it('distinguishes unsupported mapping (no route) from a startup failure', async () => {
     const f = await fixture();
     const h = harness({ mapRoute: () => false }, f.root);
