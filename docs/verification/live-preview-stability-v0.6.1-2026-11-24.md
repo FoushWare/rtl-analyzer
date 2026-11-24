@@ -94,3 +94,10 @@ Manual reloads required in every run: 0. Leftover listeners on 4216, 4318, 4320,
 Automatic page loads during startup: 1 (the initial navigation). Apply and Rollback add the existing post-Apply reload.
 
 Evidence: `acc/runs/*/timeline.json` and screenshots in the scratchpad (not committed).
+
+
+## Pre-existing lint exception (approved, implementation PR #13)
+
+`npm run lint` in the implementation repo fails on pre-existing debt. The base branch `codex/companion-session-leases` at `819b733` has 344 violations, and the final PR head `b9f8ad2` has 344. Fingerprint comparison by file, rule and message: 0 new, 0 resolved. The exception is scoped to this lint failure. Lint configuration and branch protection are unchanged. The base branch has no protection rules.
+
+Final pin `b9f8ad2` differs from the browser-tested `0ef2f23` only in one test file. The built `dist` and `package.json` are byte-identical to the build the browser acceptance ran against.
