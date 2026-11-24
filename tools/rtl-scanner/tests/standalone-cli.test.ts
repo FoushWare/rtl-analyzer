@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { isDirectExecution, main, openDashboard, runDefaultDashboard, type DefaultDashboardOptions } from '../src/standalone-cli.js';
+import { isDirectExecution, main, openDashboard, parseProjectScriptFlags, runDefaultDashboard, type DefaultDashboardOptions } from '../src/standalone-cli.js';
 import type { CliIO } from '../src/cli.js';
 import { discover } from '../src/discovery.js';
 import type { PreviewEligibility } from '../src/preview-orchestrator.js';
@@ -156,17 +156,94 @@ describe('default workflow preview consent (milestone 1)', () => {
   });
 
   it('keeps dashboard HTML off stdout and reports the report file path, even when non-interactive', async () => {
-    const result = await runWith({ inspect: async () => eligible, interactive: false });
+    const result = await runWith({ inspect: async () => eligible, interactive: false, optOut: true });
     expect(result.code).toBe(0);
     expect(result.output.stdout.join('')).not.toMatch(/<!doctype html>/i);
     expect(result.output.stderr.join('\n')).toMatch(/Dashboard: .*rtl-report-dashboard\.html/);
   });
 
-  it('never prompts or starts anything for an eligible project when non-interactive', async () => {
-    let asked = false;
-    const result = await runWith({ inspect: async () => eligible, interactive: false, ask: async () => { asked = true; return 'y'; } });
-    expect(asked).toBe(false);
-    expect(result.output.stderr.join('\n')).toContain('Live preview not started: Live preview needs approval');
+  it('starts the dev server by default in an interactive terminal, without a flag or a prompt', async () => {
+    const calls: string[] = [];
+    const result = await runWith({
+      inspect: async () => eligible,
+      interactive: true,
+      dependencies: async () => ({ ok: true }),
+      start: async () => { calls.push('start'); return { state: 'ready', stop: async () => 'released' as const }; },
+      waitForStop: async () => undefined,
+    });
+    expect(calls).toEqual(['start']);
+    expect(result.output.stderr.join('\n')).toContain('RTL Analyzer is starting your project');
+    expect(result.output.stderr.join('\n')).toContain('npm run dev -- --port 4236');
+  });
+
+  it('needs --approve-project-scripts in a non-interactive run, and starts nothing without it', async () => {
+    let started = false;
+    const result = await runWith({ inspect: async () => eligible, interactive: false, start: async () => { started = true; return { state: 'ready', stop: async () => 'released' as const }; } });
+    expect(started).toBe(false);
+    expect(result.output.stderr.join('\n')).toContain('non-interactive runs need explicit approval');
+    expect(result.opened).toHaveLength(1);
+  });
+
+  it('prints the startup notice only after the dependency check passes, right before the dev server starts', async () => {
+    const events: string[] = [];
+    const stderr = (line: string) => events.push('notice:' + line.split('\n')[0]);
+    const runNotice = (dependencies: () => Promise<{ ok: true } | { ok: false; failure: { code: string; message: string } }>) => {
+      events.length = 0;
+      return runDefaultDashboard({
+        io: { writeStdout: () => undefined, writeStderr: stderr },
+        root: '/fixture',
+        tempRoot: tmpdir(),
+        run: async args => {
+          const outputDir = args[args.indexOf('--output-dir') + 1];
+          await mkdir(outputDir, { recursive: true });
+          await writeFile(join(outputDir, 'rtl-report-dashboard.html'), 'dashboard');
+          return 0;
+        },
+        open: async () => true,
+        preview: {
+          interactive: true,
+          dashboardPort: 0,
+          inspect: async () => eligible,
+          dependencies,
+          start: async () => { events.push('start'); return { state: 'ready', stop: async () => 'released' as const }; },
+          waitForStop: async () => undefined,
+        },
+      });
+    };
+    // Missing dependencies: no notice at all, and nothing starts.
+    await runNotice(async () => ({ ok: false, failure: { code: 'PREVIEW_DEPENDENCIES_MISSING', message: 'missing' } }));
+    expect(events.some(e => e.startsWith('notice:RTL Analyzer is starting'))).toBe(false);
+    expect(events).not.toContain('start');
+    // Dependencies installed: the notice comes first, immediately before the start.
+    await runNotice(async () => ({ ok: true }));
+    const noticeAt = events.findIndex(e => e.startsWith('notice:RTL Analyzer is starting'));
+    expect(noticeAt).toBeGreaterThanOrEqual(0);
+    expect(events[noticeAt + 1]).toBe('notice:  npm run dev -- --port 4236');
+    expect(events.indexOf('start')).toBeGreaterThan(noticeAt);
+  });
+
+  it('runs nothing with --no-project-scripts and keeps the static report', async () => {
+    let started = false;
+    const result = await runWith({ inspect: async () => eligible, interactive: false, optOut: true, start: async () => { started = true; return { state: 'ready', stop: async () => 'released' as const }; } });
+    expect(started).toBe(false);
+    expect(result.output.stderr.join('\n')).toContain('Live preview not started: Live preview was disabled with --no-project-scripts.');
+    expect(result.opened).toHaveLength(1);
+  });
+
+  it('reports missing dependencies as setup, never starts a companion, and keeps the static report', async () => {
+    let started = false;
+    const failure = { code: 'PREVIEW_DEPENDENCIES_MISSING', message: 'The project\'s dependencies are not installed: node_modules was not found.\nSuggested command (run it in the project folder): npm ci' };
+    const result = await runWith({
+      inspect: async () => eligible,
+      interactive: false,
+      authorized: true,
+      dependencies: async () => ({ ok: false, failure }),
+      start: async () => { started = true; return { state: 'ready', stop: async () => 'released' as const }; },
+    });
+    expect(started).toBe(false);
+    expect(result.code).toBe(0);
+    expect(result.output.stderr.join('\n')).toContain("Couldn't Start Live Preview: The project's dependencies are not installed");
+    expect(result.output.stderr.join('\n')).toContain('Suggested command (run it in the project folder): npm ci');
     expect(result.opened).toHaveLength(1);
   });
 
@@ -218,8 +295,12 @@ describe('default workflow preview consent (milestone 1)', () => {
     }
   });
 
-  it('declines an interactive prompt by default', async () => {
-    const result = await runWith({ inspect: async () => eligible, interactive: true, ask: async () => '' });
-    expect(result.output.stderr.join('\n')).toContain('Live preview not started');
+  it('parses the compatibility flag, the opt-out, and rejects both together', () => {
+    expect(parseProjectScriptFlags([])).toMatchObject({ isDefaultCommand: true, authorized: false, optOut: false });
+    expect(parseProjectScriptFlags(['--approve-project-scripts'])).toMatchObject({ isDefaultCommand: true, authorized: true, optOut: false });
+    expect(parseProjectScriptFlags(['--no-project-scripts'])).toMatchObject({ isDefaultCommand: true, authorized: false, optOut: true });
+    expect(parseProjectScriptFlags(['--approve-project-scripts', '--no-project-scripts'])).toMatchObject({ isDefaultCommand: true, error: expect.stringContaining('cannot be used together') });
+    // Flags on other commands keep the command's own argument handling.
+    expect(parseProjectScriptFlags(['scan', '--no-project-scripts'])).toMatchObject({ isDefaultCommand: false, optOut: false });
   });
 });

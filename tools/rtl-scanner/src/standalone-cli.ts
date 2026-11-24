@@ -4,11 +4,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
-import { createInterface } from 'node:readline/promises';
 import { runCli, type CliIO } from './cli.js';
-import { decidePreviewConsent, inspectPreviewProject, type PreviewEligibility } from './preview-orchestrator.js';
+import { decidePreviewConsent, inspectPreviewProject, startupNotice, type PreviewEligibility } from './preview-orchestrator.js';
 import { DASHBOARD_PORT, startPreviewServices, type ServiceResult } from './preview-services.js';
 import { DashboardSession } from './dashboard-session.js';
+import { checkProjectDependencies, type DependencyCheck, type PreflightApplication } from './preview-dependencies.js';
 import type { PreviewFailure } from './preview-orchestrator.js';
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -20,7 +20,7 @@ async function version(): Promise<string> {
 }
 
 function help(): string {
-  return `RTL Analyzer — conservative RTL risk scanning\n\nUsage:\n  rtl-analyzer                    Scan the current directory and open a dashboard\n  rtl-analyzer scan [path] [options]\n  rtl-analyzer preview [--help]\n  rtl-analyzer --help\n  rtl-analyzer --version\n  rtl-analyzer --approve-project-scripts   Authorize running the project's dev server for live preview\n\nOptions:\n  --root <path>                 Scan this project root\n  --format <format>             json, markdown, markdown-structured, or dashboard\n  --output-dir <path>           Write report artifacts to this directory\n  --fail-on-findings            Exit 1 when actionable findings exist\n  --embed-source-snippets       Embed bounded source snippets in dashboard output\n`;
+  return `RTL Analyzer — conservative RTL risk scanning\n\nUsage:\n  rtl-analyzer                    Scan the current directory and open a dashboard\n  rtl-analyzer scan [path] [options]\n  rtl-analyzer preview [--help]\n  rtl-analyzer --help\n  rtl-analyzer --version\n  rtl-analyzer --no-project-scripts        Do not start the project's dev server (static report only)\n\nOptions:\n  --root <path>                 Scan this project root\n  --format <format>             json, markdown, markdown-structured, or dashboard\n  --output-dir <path>           Write report artifacts to this directory\n  --fail-on-findings            Exit 1 when actionable findings exist\n  --embed-source-snippets       Embed bounded source snippets in dashboard output\n`;
 }
 
 const io: CliIO = {
@@ -68,10 +68,13 @@ export async function openDashboard(path: string, platform = process.platform, l
 }
 
 export interface PreviewPlanOptions {
-  /** Explicit authorization for project scripts (`--approve-project-scripts`). */
+  /** Accepted for compatibility (`--approve-project-scripts`); project startup is already the default. */
   readonly authorized?: boolean;
+  /** Explicit opt-out (`--no-project-scripts`): no project script runs. */
+  readonly optOut?: boolean;
   readonly interactive?: boolean;
-  readonly ask?: (question: string) => Promise<string>;
+  /** Checks that the executables the startup scripts need are installed. Injectable for tests. */
+  readonly dependencies?: (root: string, applications: readonly PreflightApplication[]) => Promise<DependencyCheck>;
   readonly inspect?: (root: string) => Promise<PreviewEligibility>;
   /** Starts the packaged companion and dashboard server; injectable for tests. */
   readonly start?: (options: Parameters<typeof startPreviewServices>[0]) => Promise<ServiceResult>;
@@ -91,6 +94,7 @@ export interface DefaultDashboardOptions {
 }
 
 const APPROVE_PROJECT_SCRIPTS = '--approve-project-scripts';
+const NO_PROJECT_SCRIPTS = '--no-project-scripts';
 
 /** Aborts on Ctrl-C or SIGTERM. Installed before services start, so startup can be cancelled too. */
 function stopSignalController(): AbortController {
@@ -103,11 +107,6 @@ function stopSignalController(): AbortController {
 
 function abortPromise(signal: AbortSignal): Promise<void> {
   return new Promise(resolve => { if (signal.aborted) resolve(); else signal.addEventListener('abort', () => resolve(), { once: true }); });
-}
-
-async function promptUser(question: string): Promise<string> {
-  const prompt = createInterface({ input: process.stdin, output: process.stderr });
-  try { return await prompt.question(question); } finally { prompt.close(); }
 }
 
 export async function runDefaultDashboard(options: DefaultDashboardOptions = {}): Promise<number> {
@@ -130,14 +129,22 @@ export async function runDefaultDashboard(options: DefaultDashboardOptions = {})
   const preview = options.preview ?? {};
   const interactive = preview.interactive ?? Boolean(process.stdin.isTTY && process.stderr.isTTY);
   const eligibility = await (preview.inspect ?? inspectPreviewProject)(root);
-  const startServices = (signal: AbortSignal) => (preview.start ?? startPreviewServices)({
-    root,
-    reportPath: join(outputDir, 'rtl-report.json'),
-    logDir: outputDir,
-    companionEntry: join(dirname(fileURLToPath(import.meta.url)), 'preview-cli.js'),
-    log: line => output.writeStderr(line),
-    signal,
-  });
+  const startServices = async (signal: AbortSignal): Promise<ServiceResult> => {
+    // Runs before any project script. A clearly missing dependency is reported as setup, not as a doomed startup.
+    const applications = eligibility.eligible ? eligibility.applications : [];
+    const dependencies = await (preview.dependencies ?? checkProjectDependencies)(root, applications);
+    if (!dependencies.ok) return { state: 'startup_failed', failure: dependencies.failure, stop: async () => 'not-held' };
+    // Announced only now: the dependency check has passed, and this attempt starts the dev server right away.
+    if (eligibility.eligible) for (const line of startupNotice(eligibility.commands)) output.writeStderr(line);
+    return (preview.start ?? startPreviewServices)({
+      root,
+      reportPath: join(outputDir, 'rtl-report.json'),
+      logDir: outputDir,
+      companionEntry: join(dirname(fileURLToPath(import.meta.url)), 'preview-cli.js'),
+      log: line => output.writeStderr(line),
+      signal,
+    });
+  };
 
   if (!eligibility.eligible) {
     if (interactive) return runSession(options, outputDir, dashboardPath, code, { initial: { state: 'unsupported', failure: eligibility.failure }, interactive: true });
@@ -145,9 +152,8 @@ export async function runDefaultDashboard(options: DefaultDashboardOptions = {})
   } else {
     const decision = await decidePreviewConsent(eligibility, {
       authorized: preview.authorized,
+      optOut: preview.optOut,
       interactive,
-      ask: preview.ask ?? promptUser,
-      write: line => output.writeStderr(line),
     });
     if (!decision.approved) {
       output.writeStderr(`Live preview not started: ${decision.failure.message}`);
@@ -219,9 +225,27 @@ async function runSession(options: DefaultDashboardOptions, outputDir: string, d
   return code;
 }
 
+/**
+ * Project-script flags apply only to the default dashboard command. Any other argument list is left to its own command,
+ * which keeps its existing argument checks.
+ */
+export function parseProjectScriptFlags(argv: readonly string[]): { isDefaultCommand: boolean; authorized: boolean; optOut: boolean; error?: string } {
+  const authorized = argv.includes(APPROVE_PROJECT_SCRIPTS);
+  const optOut = argv.includes(NO_PROJECT_SCRIPTS);
+  // Flags count only when nothing else is on the command line (the bare `rtl-analyzer` command with flags).
+  const isDefaultCommand = argv.every(arg => arg === APPROVE_PROJECT_SCRIPTS || arg === NO_PROJECT_SCRIPTS);
+  if (!isDefaultCommand) return { isDefaultCommand, authorized: false, optOut: false };
+  if (authorized && optOut) return { isDefaultCommand, authorized, optOut, error: APPROVE_PROJECT_SCRIPTS + ' and ' + NO_PROJECT_SCRIPTS + ' cannot be used together.' };
+  return { isDefaultCommand, authorized, optOut };
+}
+
 export async function main(argv: string[], output: CliIO = io): Promise<number> {
-  if (argv.length === 0) return runDefaultDashboard({ io: output });
-  if (argv.length === 1 && argv[0] === APPROVE_PROJECT_SCRIPTS) return runDefaultDashboard({ io: output, preview: { authorized: true } });
+  const scriptFlags = parseProjectScriptFlags(argv);
+  if (scriptFlags.error) {
+    output.writeStderr(scriptFlags.error);
+    return 2;
+  }
+  if (scriptFlags.isDefaultCommand) return runDefaultDashboard({ io: output, preview: { authorized: scriptFlags.authorized, optOut: scriptFlags.optOut } });
   if (argv[0] === '--help' || argv[0] === '-h') {
     output.writeStdout(help());
     return 0;

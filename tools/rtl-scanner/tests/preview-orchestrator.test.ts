@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { decidePreviewConsent, inspectPreviewProject, PREVIEW_STATES } from '../src/preview-orchestrator.js';
+import { decidePreviewConsent, inspectPreviewProject, PREVIEW_STATES, startupNotice } from '../src/preview-orchestrator.js';
 
 async function project(config: unknown, scripts: Record<string, string> = { dev: 'vite' }, withVite = false) {
   const root = await mkdtemp(join(tmpdir(), 'rtl-preview-orchestrator-'));
@@ -24,8 +24,6 @@ const validConfig = (application: Record<string, unknown> = {}) => ({
     dashboard: { viteConfig: 'vite.config.mjs', entry: 'src/main.jsx', originalOrigin: 'http://127.0.0.1:4236', readySelector: '#dashboard', dataAdapter: 'none', startupScript: 'dev', routes: [], ...application },
   },
 });
-
-const noConsent = { interactive: false, ask: async () => 'y', write: () => undefined };
 
 describe('preview states', () => {
   it('defines the four explicit states', () => {
@@ -77,23 +75,28 @@ describe('inspectPreviewProject', () => {
 describe('decidePreviewConsent', () => {
   const eligible = { eligible: true as const, applications: [], commands: ['npm run dev -- --port 4236'] };
 
-  it('approves only through explicit authorization or a typed yes', async () => {
-    expect(await decidePreviewConsent(eligible, { ...noConsent, authorized: true })).toEqual({ approved: true, source: 'flag' });
-    expect(await decidePreviewConsent(eligible, { interactive: true, ask: async () => 'yes', write: () => undefined })).toEqual({ approved: true, source: 'prompt' });
+  it('approves by default in an interactive terminal, without printing anything itself', async () => {
+    expect(await decidePreviewConsent(eligible, { interactive: true })).toEqual({ approved: true, source: 'default' });
   });
 
-  it('declines by default in an interactive prompt and shows the exact command first', async () => {
-    const lines: string[] = [];
-    const decision = await decidePreviewConsent(eligible, { interactive: true, ask: async () => '', write: line => lines.push(line) });
-    expect(decision).toMatchObject({ approved: false, failure: { code: 'PREVIEW_DECLINED' } });
-    expect(lines.join('\n')).toContain('npm run dev -- --port 4236');
+  it('records the compatibility flag as an explicit authorization', async () => {
+    expect(await decidePreviewConsent(eligible, { authorized: true, interactive: false })).toEqual({ approved: true, source: 'flag' });
   });
 
-  it('never prompts or runs scripts when non-interactive without authorization', async () => {
-    let asked = false;
-    const decision = await decidePreviewConsent(eligible, { interactive: false, ask: async () => { asked = true; return 'yes'; }, write: () => undefined });
-    expect(asked).toBe(false);
+  it('needs explicit approval in non-interactive runs (CI, pipes)', async () => {
+    const decision = await decidePreviewConsent(eligible, { interactive: false });
     expect(decision).toMatchObject({ approved: false, failure: { code: 'PREVIEW_APPROVAL_REQUIRED' } });
+  });
+
+  it('runs no project script when the user opts out with --no-project-scripts', async () => {
+    const decision = await decidePreviewConsent(eligible, { optOut: true, interactive: true });
+    expect(decision).toMatchObject({ approved: false, failure: { code: 'PREVIEW_DISABLED' } });
+  });
+
+  it('builds the startup notice with the exact command and the opt-out hint', () => {
+    const lines = startupNotice(['npm run dev -- --port 4236']);
+    expect(lines.join('\n')).toContain('npm run dev -- --port 4236');
+    expect(lines.at(-1)).toBe('Use --no-project-scripts to skip this.');
   });
 });
 

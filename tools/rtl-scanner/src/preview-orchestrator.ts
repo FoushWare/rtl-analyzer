@@ -146,26 +146,35 @@ export async function inspectPreviewProject(root: string): Promise<PreviewEligib
 }
 
 export type ConsentDecision =
-  | { readonly approved: true; readonly source: 'flag' | 'prompt' }
+  | { readonly approved: true; readonly source: 'flag' | 'default' }
   | { readonly approved: false; readonly failure: PreviewFailure };
 
 export interface ConsentOptions {
-  /** Explicit authorization from the command line (`--approve-project-scripts`). */
+  /** Explicit authorization from the command line (`--approve-project-scripts`). Accepted for compatibility; startup is the default. */
   readonly authorized?: boolean;
+  /** Explicit opt-out from the command line (`--no-project-scripts`). No project script runs when set. */
+  readonly optOut?: boolean;
+  /** Interactive terminal runs start by default. Non-interactive runs (CI, pipes) need explicit approval. */
   readonly interactive: boolean;
-  readonly ask: (question: string) => Promise<string>;
-  readonly write: (line: string) => void;
 }
 
-/** Project scripts run only after explicit approval. Non-interactive runs decline unless authorized. */
+/**
+ * Starts the project's configured dev server by default in an interactive terminal. Non-interactive runs need the
+ * flag. The project opted in by shipping rtl-preview.config.json,
+ * which names the exact script; RTL Analyzer runs only that script, in the project root, and never a discovered
+ * command. `--no-project-scripts` disables it. The commands are printed first, so the user can see what runs.
+ */
 export async function decidePreviewConsent(eligibility: Extract<PreviewEligibility, { eligible: true }>, options: ConsentOptions): Promise<ConsentDecision> {
-  if (options.authorized) return { approved: true, source: 'flag' };
-  if (!options.interactive) {
-    return { approved: false, failure: { code: 'PREVIEW_APPROVAL_REQUIRED', message: 'Live preview needs approval to run project scripts. Re-run with --approve-project-scripts to authorize it.' } };
+  if (options.optOut) {
+    return { approved: false, failure: { code: 'PREVIEW_DISABLED', message: 'Live preview was disabled with --no-project-scripts. The static report is still available.' } };
   }
-  options.write('RTL Analyzer can start your project\'s dev server for live Before/After previews. It will run:');
-  for (const command of eligibility.commands) options.write(`  ${command}`);
-  const answer = (await options.ask('Run these project scripts now? [y/N] ')).trim().toLowerCase();
-  if (answer === 'y' || answer === 'yes') return { approved: true, source: 'prompt' };
-  return { approved: false, failure: { code: 'PREVIEW_DECLINED', message: 'Live preview was not approved. The static report is still available.' } };
+  if (!options.authorized && !options.interactive) {
+    return { approved: false, failure: { code: 'PREVIEW_APPROVAL_REQUIRED', message: 'Live preview starts the project dev server, so non-interactive runs need explicit approval. Re-run with --approve-project-scripts, or run in a terminal to start it by default.' } };
+  }
+  return { approved: true, source: options.authorized ? 'flag' : 'default' };
+}
+
+/** The notice printed right before the dev server starts (after the dependency check passes), never before. */
+export function startupNotice(commands: readonly string[]): string[] {
+  return ["RTL Analyzer is starting your project's dev server for live Before/After previews. It runs:", ...commands.map(command => `  ${command}`), 'Use --no-project-scripts to skip this.'];
 }

@@ -69,9 +69,10 @@ export const CONTROLS_SCRIPT = String.raw`(function () {
       return;
     }
     if (state === 'startup_failed') {
-      setBar("Couldn't start live preview");
-      title.textContent = "Couldn't Start Live Preview";
-      body.textContent = 'The live preview did not start. The static report is still available.';
+      var setup = next.failure && next.failure.code === 'PREVIEW_DEPENDENCIES_MISSING';
+      setBar(setup ? 'Live preview needs setup' : "Couldn't start live preview");
+      title.textContent = setup ? 'Live Preview needs setup' : "Couldn't Start Live Preview";
+      body.textContent = setup ? 'The project\'s dependencies are not installed. Install them, then choose Retry Preview. The static report is still available.' : 'The live preview did not start. The static report is still available.';
       var code = document.createElement('code');
       code.textContent = next.failure ? next.failure.code : 'UNKNOWN';
       var message = document.createElement('p');

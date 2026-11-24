@@ -84,6 +84,20 @@ async function fetchJsonDefault(url: string, init?: RequestInit): Promise<{ stat
   return { status: response.status, body: (await response.json().catch(() => ({}))) as CompanionBody };
 }
 
+// Companion error codes that the user can act on. Anything else is shown verbatim, so no reason is hidden.
+const ORIGINAL_ERROR_MESSAGES: Readonly<Record<string, string>> = {
+  ORIGINAL_PREVIEW_PORT_OCCUPIED: "The original application's port is in use by another process. RTL Analyzer did not stop it. Free the port, then choose Retry Preview.",
+  ORIGINAL_PREVIEW_STARTUP_FAILED: "The original application exited or did not respond within the startup window. Run the project's dev script yourself to see its error output, fix the problem, then choose Retry Preview. RTL Analyzer does not capture that output yet.",
+  PREVIEW_STARTUP_SCRIPT_MISSING: 'package.json no longer has the startup script named in rtl-preview.config.json.',
+  UNAPPROVED_PREVIEW_ORIGIN: 'The original application origin must be an http://127.0.0.1 address in rtl-preview.config.json.',
+  ORIGINAL_APPLICATION_NOT_CONFIGURED: 'rtl-preview.config.json does not configure an original application origin.',
+};
+
+function describeOriginalError(error: unknown, fallback: string): string {
+  const code = typeof error === 'string' ? error : fallback;
+  return ORIGINAL_ERROR_MESSAGES[code] ?? code;
+}
+
 function failure(code: string, message: string): PreviewFailure {
   return { code, message };
 }
@@ -209,7 +223,7 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
       headers: { origin: DASHBOARD_ORIGIN },
     });
     if (started.status !== 200) {
-      return fail('startup_failed', failure('ORIGINAL_START_FAILED', `The original application did not start: ${String(started.body?.error ?? `HTTP ${started.status}`)}`));
+      return fail('startup_failed', failure('ORIGINAL_START_FAILED', `The original application did not start: ${describeOriginalError(started.body?.error, `HTTP ${started.status}`)}`));
     }
     if (started.body?.original?.available !== true) {
       return fail('startup_failed', failure('ORIGINAL_START_FAILED', `The original application did not become ready: ${String(started.body?.original?.reason ?? 'no reason reported')}`));

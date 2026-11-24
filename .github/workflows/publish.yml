@@ -64,6 +64,9 @@ jobs:
       - name: Test RTL scan
         run: npm run rtl:scan:test
 
+      - name: Test CLI preview and dependency startup
+        run: npm run rtl:overlay:test
+
       - name: Validate package
         run: npm run rtl:cli:package:smoke
 
