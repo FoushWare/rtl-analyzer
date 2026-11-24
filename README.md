@@ -47,6 +47,8 @@ Live Before/After runs one script from your project, and only when `rtl-preview.
 
 If dependencies are missing, the dashboard shows "Live Preview needs setup" with the project path and the install command for your package manager.
 
+**Startup time and status.** The dev server has 60 seconds to answer by default. Set `startupTimeoutMs` (10000 to 180000 milliseconds) on an application in `rtl-preview.config.json` to change it. While the preview starts, the Before and After panels each show their own loading status and render as soon as their preview is ready, with no page reload. If a preview fails or runs out of time, the dashboard names the cause and offers Retry Preview, Continue with Report, and Copy Diagnostics.
+
 Scan one folder, or show help:
 
 ```sh

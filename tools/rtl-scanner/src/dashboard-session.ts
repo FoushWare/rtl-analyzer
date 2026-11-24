@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import type { AddressInfo } from 'node:net';
 import { CONTROLS_MARKUP, CONTROLS_SCRIPT } from './dashboard-controls.js';
 import type { PreviewFailure } from './preview-orchestrator.js';
+import { formatDiagnosticsForCopy } from './preview-diagnostics.js';
 import { DASHBOARD_FILE, DASHBOARD_PORT, type ServiceResult } from './preview-services.js';
 
 // Owns the dashboard HTTP server for an interactive run and the preview state shown to the page. The page can
@@ -148,6 +149,12 @@ export class DashboardSession {
         this.state = 'static';
         this.failure = undefined;
         return { status: 200, body: this.status() };
+      case '/preview/diagnostics': {
+        // Sanitized plain text for Copy Diagnostics. Only a classified startup failure has anything to copy.
+        const diagnostic = this.failure?.diagnostic;
+        if (!diagnostic) return { status: 409, body: { error: 'DIAGNOSTICS_NOT_AVAILABLE' } };
+        return { status: 200, body: { text: formatDiagnosticsForCopy(diagnostic) } };
+      }
       case '/preview/continue':
         if (this.state === 'startup_failed' || this.state === 'unsupported') {
           this.state = 'static';

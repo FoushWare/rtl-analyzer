@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
 import { runCli, type CliIO } from './cli.js';
 import { decidePreviewConsent, inspectPreviewProject, startupNotice, type PreviewEligibility } from './preview-orchestrator.js';
-import { DASHBOARD_PORT, startPreviewServices, type ServiceResult } from './preview-services.js';
+import { DASHBOARD_PORT, startPreviewServices, stopOwnedCompanionProcess, type CompanionOwnership, type ServiceResult } from './preview-services.js';
 import { DashboardSession } from './dashboard-session.js';
 import { checkProjectDependencies, type DependencyCheck, type PreflightApplication } from './preview-dependencies.js';
 import type { PreviewFailure } from './preview-orchestrator.js';
@@ -129,6 +129,8 @@ export async function runDefaultDashboard(options: DefaultDashboardOptions = {})
   const preview = options.preview ?? {};
   const interactive = preview.interactive ?? Boolean(process.stdin.isTTY && process.stderr.isTTY);
   const eligibility = await (preview.inspect ?? inspectPreviewProject)(root);
+  // Shared by every attempt of this run, so the companion this run spawned is stopped when the run ends, even after a retry.
+  const ownership: CompanionOwnership = {};
   const startServices = async (signal: AbortSignal): Promise<ServiceResult> => {
     // Runs before any project script. A clearly missing dependency is reported as setup, not as a doomed startup.
     const applications = eligibility.eligible ? eligibility.applications : [];
@@ -143,6 +145,7 @@ export async function runDefaultDashboard(options: DefaultDashboardOptions = {})
       companionEntry: join(dirname(fileURLToPath(import.meta.url)), 'preview-cli.js'),
       log: line => output.writeStderr(line),
       signal,
+      ownership,
     });
   };
 
@@ -158,7 +161,7 @@ export async function runDefaultDashboard(options: DefaultDashboardOptions = {})
     if (!decision.approved) {
       output.writeStderr(`Live preview not started: ${decision.failure.message}`);
     } else {
-      return runSession(options, outputDir, dashboardPath, code, { start: startServices, interactive });
+      return runSession(options, outputDir, dashboardPath, code, { start: startServices, interactive, ownership });
     }
   }
 
@@ -171,6 +174,8 @@ interface SessionRequest {
   readonly start?: (signal: AbortSignal) => Promise<ServiceResult>;
   /** Interactive runs keep the page open so the preview modal can offer Retry, Continue, and Cancel. */
   readonly interactive?: boolean;
+  /** The companion this run spawns, stopped when the run ends. */
+  readonly ownership?: CompanionOwnership;
   /** A state that needs no attempt, such as an unsupported project. */
   readonly initial?: { state: 'unsupported'; failure: PreviewFailure };
 }
@@ -211,6 +216,7 @@ async function runSession(options: DefaultDashboardOptions, outputDir: string, d
     if (session.status().state !== 'ready') {
       output.writeStderr(`Couldn't Start Live Preview: ${session.status().failure?.message ?? 'Startup failed.'} The static report is available.`);
       await session.end();
+      stopOwnedCompanionProcess(request.ownership);
       if (!(await openPage(dashboardPath))) output.writeStderr(`Could not open dashboard automatically. Open: ${dashboardPath}`);
       return code;
     }
@@ -221,6 +227,7 @@ async function runSession(options: DefaultDashboardOptions, outputDir: string, d
   if (!(await openPage(session.url))) output.writeStderr(`Could not open dashboard automatically. Open: ${session.url}`);
   void (preview.waitForStop ?? (() => abortPromise(stopSignal.signal)))().then(() => session.end());
   await session.waitForEnd();
+  stopOwnedCompanionProcess(request.ownership);
   output.writeStderr('Live preview services owned by this run were stopped.');
   return code;
 }

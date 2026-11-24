@@ -8,6 +8,7 @@ Durable navigation for Codex sessions. Read this index first; source code, manif
 
 ## Documents
 
+- [Live Preview stability v0.6.1](../verification/live-preview-stability-v0.6.1-2026-11-24.md) — **in progress, unreleased**: bounded startup diagnostics, recovery dialog, readiness waiting. Unit-verified (implementation 533, overlay 474); browser acceptance blocked by a live session on ports 4216/4318/4320.
 - [Default Live Preview startup (v0.6.0 candidate)](../verification/default-preview-startup-2026-11-24.md) — verified 2026-11-24: interactive default start, dependency preflight before the startup notice, Retry, Live Before/After, Fix Studio, Apply and exact-hash Rollback, `--no-project-scripts`, non-interactive approval rule, consumer smoke, origin/main baseline. Release status is in that record.
 - [0.4.0 preparation](../releases/rtl-analyzer-0.4.0-preparation-2026-11-22.md) — prepared 2026-11-22, **not published**: smoke-gate regression fixed in local implementation commit `aa8873e` (unpushed), both-mode browser verification on the installed tarball, new README/screenshots and example testing guide. Awaiting approval of version/publish target.
 

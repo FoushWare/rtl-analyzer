@@ -191,3 +191,60 @@ describe('dashboard session actions', () => {
     await s.end();
   });
 });
+
+describe('startup diagnostics on the session', () => {
+  const classified: ServiceResult = {
+    state: 'startup_failed',
+    failure: {
+      code: 'ORIGINAL_START_FAILED',
+      message: 'Project dependencies are missing. vite is not installed in this project.',
+      diagnostic: {
+        category: 'missing-dependency',
+        code: 'ORIGINAL_PREVIEW_STARTUP_FAILED',
+        title: 'Project dependencies are missing',
+        explanation: 'vite is not installed in this project.',
+        recovery: 'npm ci',
+        technical: { exitCode: 127, output: 'sh: vite: command not found', command: 'npm', startupScript: 'dev', cwd: '~/project', port: 4216, reason: 'exited', waitedMs: 120 },
+      },
+    },
+    stop: async () => 'not-held',
+  };
+
+  it('copies sanitized plain-text diagnostics on request, and only for a classified failure', async () => {
+    const s = await session(async () => classified);
+    const secret = await secretOf(s);
+    const origin = `http://127.0.0.1:${new URL(s.url).port}`;
+    await s.begin();
+    const headers = { 'x-rtl-session': secret };
+    const copy = await fetch(`${origin}/preview/diagnostics`, { method: 'POST', headers: { origin, ...headers } });
+    expect(copy.status).toBe(200);
+    const body = await copy.json() as { text: string };
+    expect(body.text).toContain('Category: missing-dependency');
+    expect(body.text).toContain('Suggested command (run yourself): npm ci');
+    expect(body.text).toContain('Exit code: 127');
+    expect(body.text).not.toContain(secret);
+    await s.end();
+  });
+
+  it('refuses Copy Diagnostics when there is nothing classified to copy', async () => {
+    const s = await session(async () => ({ state: 'ready', stop: async () => 'not-held' }));
+    const secret = await secretOf(s);
+    const origin = `http://127.0.0.1:${new URL(s.url).port}`;
+    const response = await fetch(`${origin}/preview/diagnostics`, { method: 'POST', headers: { origin, 'x-rtl-session': secret } });
+    expect(response.status).toBe(409);
+    await s.end();
+  });
+
+  it('gives the page the classified failure so the dialog can explain it', async () => {
+    const s = await session(async () => classified);
+    await s.begin();
+    const html = await (await fetch(s.url)).text();
+    const config = /window\.__RTL_PREVIEW_SESSION__=(\{.*?\});<\/script>/.exec(html);
+    expect(config).not.toBeNull();
+    const parsed = JSON.parse(config![1]) as { state: string; failure: { diagnostic: { title: string; technical: { output: string } } } };
+    expect(parsed.state).toBe('startup_failed');
+    expect(parsed.failure.diagnostic.title).toBe('Project dependencies are missing');
+    expect(parsed.failure.diagnostic.technical.output).toBe('sh: vite: command not found');
+    await s.end();
+  });
+});

@@ -1,3 +1,9 @@
+# Live Preview stability v0.6.1 — in progress
+
+**2026-11-24. Unreleased.** Branch `fix/live-preview-stability-v0.6.1` in both repositories. Implementation pin `94a14e7` is local only (three commits on `fix/live-preview-stability-v0.6.1`, based on `819b733`, which is not on the implementation repo's `main`). Browser reproduction and acceptance are blocked by a live `npx rtl-analyzer` session on ports 4216, 4318 and 4320, which was not touched. Next action: when those ports are free, reproduce the Before/After behaviour in a disposable Foundations Lab copy, run Phase 7, then decide the implementation PR base. The [verification record](../verification/live-preview-stability-v0.6.1-2026-11-24.md) owns evidence.
+
+---
+
 # Default Live Preview startup — v0.6.0 candidate
 
 **Verified 2026-11-24 (candidate, not yet released).** Interactive `npx rtl-analyzer` starts the configured dev server by default; dependency preflight runs before the startup notice; non-interactive runs need `--approve-project-scripts`; `--no-project-scripts` opts out. The [verification record](../verification/default-preview-startup-2026-11-24.md) owns evidence, the origin/main baseline and the known pre-existing root typecheck and Nx build failures.
