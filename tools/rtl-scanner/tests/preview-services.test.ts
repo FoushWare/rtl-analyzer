@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ChildProcess } from 'node:child_process';
-import { startPreviewServices, type ServiceDependencies } from '../src/preview-services.js';
+import { startPreviewServices, stopOwnedCompanionProcess, type ServiceDependencies } from '../src/preview-services.js';
 
 interface FakeChild extends EventEmitter { exitCode: number | null; signalCode: string | null; signals: string[]; kill(signal?: string): boolean; stderr: EventEmitter }
 
@@ -134,7 +134,7 @@ describe('preview services', () => {
     const h = harness({}, f.root);
     for (const [code, expected] of [
       ['ORIGINAL_PREVIEW_PORT_OCCUPIED', 'in use by another process. RTL Analyzer did not stop it'],
-      ['ORIGINAL_PREVIEW_STARTUP_FAILED', 'Run the project\'s dev script yourself'],
+      ['ORIGINAL_PREVIEW_STARTUP_FAILED', 'RTL Analyzer could not identify the cause'],
       ['SOMETHING_NEW', 'did not start: SOMETHING_NEW'],
     ] as const) {
       const fetchJson = async (url: string, init?: RequestInit) => (url.includes('/contextual-preview/original') && init?.method === 'POST')
@@ -144,6 +144,19 @@ describe('preview services', () => {
       expect(result).toMatchObject({ state: 'startup_failed', failure: { code: 'ORIGINAL_START_FAILED' } });
       expect(result.state === 'startup_failed' ? result.failure.message : '').toContain(expected);
     }
+  });
+
+  it('classifies a timed-out original start as a startup timeout, and an unreachable companion as a connection failure', async () => {
+    const f = await fixture();
+    const h = harness({}, f.root);
+    const failingWith = (error: Error) => async (url: string, init?: RequestInit) => (url.includes('/contextual-preview/original') && init?.method === 'POST')
+      ? Promise.reject(error)
+      : h.deps.fetchJson!(url, init);
+    const timedOut = Object.assign(new Error('The operation was aborted due to timeout'), { name: 'TimeoutError' });
+    const slow = await startPreviewServices(f, { ...h.deps, fetchJson: failingWith(timedOut) });
+    expect(slow.state === 'startup_failed' ? slow.failure.diagnostic?.category : undefined).toBe('startup-timeout');
+    const unreachable = await startPreviewServices(f, { ...h.deps, fetchJson: failingWith(new Error('fetch failed')) });
+    expect(unreachable.state === 'startup_failed' ? unreachable.failure.diagnostic?.category : undefined).toBe('companion-connection');
   });
 
   it('distinguishes unsupported mapping (no route) from a startup failure', async () => {
@@ -161,7 +174,9 @@ describe('preview services', () => {
     const pending = startPreviewServices(f, { ...h.deps, health: async () => null, spawnCompanion: () => { setTimeout(() => { child.stderr.emit('data', 'EADDRINUSE: boom'); child.exitCode = 1; child.emit('exit', 1); }, 20); return child as unknown as ChildProcess; } });
     const result = await pending;
     expect(result).toMatchObject({ state: 'startup_failed', failure: { code: 'COMPANION_START_FAILED' } });
-    expect(result.state !== 'ready' && result.failure.message).toContain('EADDRINUSE: boom');
+    // The port error is classified, and the redacted output stays available in technical details.
+    expect(result.state !== 'ready' && result.failure.diagnostic?.category).toBe('port-in-use');
+    expect(result.state !== 'ready' && result.failure.diagnostic?.technical.output).toContain('EADDRINUSE: boom');
   });
 
   it('cancels a blocked companion startup without signalling the companion', async () => {
@@ -185,5 +200,29 @@ describe('preview services', () => {
     const result = await startPreviewServices({ ...f, signal: controller.signal }, h.deps);
     expect(result).toMatchObject({ state: 'startup_failed', failure: { code: 'CANCELLED' } });
     expect(h.released).toEqual([{ application: 'dashboard', lease: 'lease-1' }]);
+  });
+});
+
+describe('companion ownership', () => {
+  it('records the companion this run spawned, and stops only that handle when the run ends', async () => {
+    const f = await fixture();
+    const h = harness({}, f.root);
+    const ownership: { companion?: unknown } = {};
+    const result = await startPreviewServices({ ...f, ownership } as never, h.deps);
+    expect(result.state).toBe('ready');
+    expect(ownership.companion).toBe(h.child);
+    stopOwnedCompanionProcess(ownership as never);
+    expect(h.child.signals).toEqual(['SIGTERM']);
+    expect(ownership.companion).toBeUndefined();
+    stopOwnedCompanionProcess(ownership as never);
+    expect(h.child.signals).toEqual(['SIGTERM']);
+  });
+
+  it('does not claim a companion it reused from an earlier run', async () => {
+    const f = await fixture();
+    const h = harness({ companionHealth: { service: 'rtl-preview-companion', projectRoot: f.root } }, f.root);
+    const ownership: { companion?: unknown } = {};
+    await startPreviewServices({ ...f, ownership } as never, h.deps);
+    expect(ownership.companion).toBeUndefined();
   });
 });

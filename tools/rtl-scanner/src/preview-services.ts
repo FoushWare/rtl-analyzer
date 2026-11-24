@@ -4,6 +4,8 @@ import { createServer as createNetServer } from 'node:net';
 import { readFile, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PreviewFailure, PreviewState } from './preview-orchestrator.js';
+import { classifyStartupFailure, sanitizeDiagnosticText, type StartupEvidence } from './preview-diagnostics.js';
+import { detectPackageManager } from './preview-dependencies.js';
 
 // Orchestrates the packaged preview companion. All preview runtime logic (original dev-server start, identity
 // checks, ownership and cleanup) stays in the pinned implementation; this module starts the companion as a process,
@@ -16,6 +18,9 @@ export const DASHBOARD_ORIGIN = `http://127.0.0.1:${DASHBOARD_PORT}`;
 const COMPANION_ORIGIN = `http://127.0.0.1:${COMPANION_PORT}`;
 const COMPANION_READY_TIMEOUT_MS = 15_000;
 const ORIGINAL_START_TIMEOUT_MS = 30_000;
+// The original start may legitimately take as long as its configured startupTimeoutMs (at most 180 s). This outer timeout
+// must exceed that, so a valid slow start is never cut off here.
+const ORIGINAL_START_HTTP_TIMEOUT_MS = 240_000;
 const MAX_MAPPING_PROBES = 25;
 const COMPANION_LOG = 'preview-companion.log';
 const COMPANION_STDERR_TAIL = 2000;
@@ -31,10 +36,22 @@ export type ServiceResult =
   | { readonly state: 'ready'; readonly stop: () => Promise<ReleaseOutcome> }
   | { readonly state: Exclude<PreviewState, 'ready' | 'starting'>; readonly failure: PreviewFailure; readonly stop: () => Promise<ReleaseOutcome> };
 
+/** The companion process a run spawned. Shared across retries of the same run. */
+export interface CompanionOwnership { companion?: ChildProcess }
+
+/** Stops the companion this run spawned, if any, after its leases are released. Reused companions are never touched. */
+export function stopOwnedCompanionProcess(ownership: CompanionOwnership | undefined): void {
+  if (!ownership?.companion) return;
+  stopOwnedCompanion(ownership.companion);
+  ownership.companion = undefined;
+}
+
 /** Fields this module reads from companion responses; each is checked before use. */
 export interface CompanionBody {
   readonly route?: unknown;
   readonly error?: unknown;
+  /** Bounded, redacted startup evidence from the runtime (present on a failed original start). */
+  readonly diagnostics?: unknown;
   readonly original?: { readonly available?: unknown; readonly reason?: unknown };
   readonly originalLease?: { readonly application?: unknown; readonly token?: unknown };
 }
@@ -58,6 +75,8 @@ export interface ServiceOptions {
   readonly log?: (line: string) => void;
   /** Aborting releases this run's lease (if any) and reports `CANCELLED`. The CLI never signals the companion. */
   readonly signal?: AbortSignal;
+  /** Records the companion this run spawned (never a reused one), so the run can stop it when it ends. */
+  readonly ownership?: CompanionOwnership;
 }
 
 /** True when nothing listens on the loopback port. Any listener, including one of ours, counts as occupied. */
@@ -80,26 +99,78 @@ async function healthOf(origin: string): Promise<Record<string, unknown> | null>
 }
 
 async function fetchJsonDefault(url: string, init?: RequestInit): Promise<{ status: number; body: CompanionBody }> {
-  const response = await fetch(url, { ...init, signal: AbortSignal.timeout(ORIGINAL_START_TIMEOUT_MS) });
+  const isOriginalStart = init?.method === 'POST' && url.includes('/contextual-preview/original');
+  const response = await fetch(url, { ...init, signal: AbortSignal.timeout(isOriginalStart ? ORIGINAL_START_HTTP_TIMEOUT_MS : ORIGINAL_START_TIMEOUT_MS) });
   return { status: response.status, body: (await response.json().catch(() => ({}))) as CompanionBody };
 }
 
-// Companion error codes that the user can act on. Anything else is shown verbatim, so no reason is hidden.
+// Companion error codes that describe configuration rather than a failed start. Startup failures are classified instead.
 const ORIGINAL_ERROR_MESSAGES: Readonly<Record<string, string>> = {
-  ORIGINAL_PREVIEW_PORT_OCCUPIED: "The original application's port is in use by another process. RTL Analyzer did not stop it. Free the port, then choose Retry Preview.",
-  ORIGINAL_PREVIEW_STARTUP_FAILED: "The original application exited or did not respond within the startup window. Run the project's dev script yourself to see its error output, fix the problem, then choose Retry Preview. RTL Analyzer does not capture that output yet.",
-  PREVIEW_STARTUP_SCRIPT_MISSING: 'package.json no longer has the startup script named in rtl-preview.config.json.',
   UNAPPROVED_PREVIEW_ORIGIN: 'The original application origin must be an http://127.0.0.1 address in rtl-preview.config.json.',
   ORIGINAL_APPLICATION_NOT_CONFIGURED: 'rtl-preview.config.json does not configure an original application origin.',
 };
+
+/** Codes that come from a failed original start and are explained with a classified diagnostic. */
+const ORIGINAL_STARTUP_CODES = new Set(['ORIGINAL_PREVIEW_STARTUP_FAILED', 'ORIGINAL_PREVIEW_PORT_OCCUPIED', 'PREVIEW_STARTUP_SCRIPT_MISSING']);
+
+/** Copies only the known, typed fields of a runtime diagnostic. Anything else in the body is ignored. */
+function evidenceFrom(raw: unknown): Omit<StartupEvidence, 'code'> {
+  if (typeof raw !== 'object' || raw === null) return {};
+  const value = raw as Record<string, unknown>;
+  const text = (field: unknown) => (typeof field === 'string' ? field : undefined);
+  const number = (field: unknown) => (typeof field === 'number' && Number.isFinite(field) ? field : undefined);
+  return {
+    ...(text(value.reason) ? { reason: text(value.reason) } : {}),
+    ...(value.exitCode === null ? { exitCode: null } : number(value.exitCode) !== undefined ? { exitCode: number(value.exitCode) } : {}),
+    ...(value.signal === null ? { signal: null } : text(value.signal) ? { signal: text(value.signal) } : {}),
+    ...(text(value.spawnErrorCode) ? { spawnErrorCode: text(value.spawnErrorCode) } : {}),
+    ...(text(value.command) ? { command: text(value.command) } : {}),
+    ...(text(value.startupScript) ? { startupScript: text(value.startupScript) } : {}),
+    ...(text(value.cwd) ? { cwd: text(value.cwd) } : {}),
+    ...(number(value.port) !== undefined ? { port: number(value.port) } : {}),
+    ...(number(value.waitedMs) !== undefined ? { waitedMs: number(value.waitedMs) } : {}),
+    ...(text(value.output) ? { output: text(value.output) } : {}),
+  };
+}
+
+/** Startup failure for the page: a classified diagnostic, with the stable code kept for compatibility. */
+async function originalStartFailure(root: string, code: string, body: CompanionBody, status: number): Promise<PreviewFailure> {
+  if (!ORIGINAL_STARTUP_CODES.has(code)) {
+    return failure('ORIGINAL_START_FAILED', `The original application did not start: ${describeOriginalError(code, `HTTP ${status}`)}`);
+  }
+  const packageInfo = await detectPackageManager(root).catch(() => undefined);
+  const diagnostic = classifyStartupFailure({
+    ...evidenceFrom(body.diagnostics),
+    code,
+    cwd: root,
+    ...(packageInfo ? { packageManager: packageInfo.name, installCommand: packageInfo.installCommand } : {}),
+  });
+  return { code: 'ORIGINAL_START_FAILED', message: `${diagnostic.title}. ${diagnostic.explanation}`, diagnostic };
+}
 
 function describeOriginalError(error: unknown, fallback: string): string {
   const code = typeof error === 'string' ? error : fallback;
   return ORIGINAL_ERROR_MESSAGES[code] ?? code;
 }
 
+/** Stops a companion this run spawned and that never became ready. Signals only our own child handle. */
+function stopOwnedCompanion(child: ChildProcess): void {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  try {
+    if (process.platform !== 'win32' && child.pid) process.kill(-child.pid, 'SIGTERM');
+    else child.kill('SIGTERM');
+  } catch {
+    try { child.kill('SIGTERM'); } catch { /* already gone */ }
+  }
+}
+
 function failure(code: string, message: string): PreviewFailure {
   return { code, message };
+}
+
+/** A port that another process or service owns. The message names the port; the diagnostic explains the next step. */
+function portConflict(code: string, port: number, message: string): PreviewFailure {
+  return { code, message, diagnostic: classifyStartupFailure({ code, port }) };
 }
 
 function sleep(ms: number): Promise<void> {
@@ -163,14 +234,15 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
   const existing = await health(COMPANION_ORIGIN);
   if (existing) {
     if (existing.service !== 'rtl-preview-companion' || existing.projectRoot !== root) {
-      return fail('startup_failed', failure('PORT_CONFLICT_COMPANION', `Port ${COMPANION_PORT} is serving a different service or project. RTL Analyzer did not stop it.`));
+      return fail('startup_failed', portConflict('PORT_CONFLICT_COMPANION', COMPANION_PORT, `Port ${COMPANION_PORT} is serving a different service or project. RTL Analyzer did not stop it.`));
     }
     log(`Reusing the preview companion already serving this project on port ${COMPANION_PORT}.`);
   } else {
     if (!(await probePort(COMPANION_PORT))) {
-      return fail('startup_failed', failure('PORT_CONFLICT_COMPANION', `Port ${COMPANION_PORT} is in use by another process. RTL Analyzer did not stop it; free the port and retry.`));
+      return fail('startup_failed', portConflict('PORT_CONFLICT_COMPANION', COMPANION_PORT, `Port ${COMPANION_PORT} is in use by another process. RTL Analyzer did not stop it; free the port and retry.`));
     }
     const companion = spawnCompanion(root, options.companionEntry, logPath);
+    if (options.ownership) options.ownership.companion = companion;
     let stderrTail = '';
     companion.stderr?.on('data', chunk => { stderrTail = `${stderrTail}${String(chunk)}`.slice(-COMPANION_STDERR_TAIL); });
     const exited = new Promise<'exited'>(resolve => companion.once('exit', () => resolve('exited')));
@@ -184,8 +256,12 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     }
     if (cancelled()) return cancelledResult();
     if (!ready) {
+      // This run spawned the companion and it never became ready, so this run stops that child before reporting.
+      stopOwnedCompanion(companion);
       const logged = await readFile(logPath, 'utf8').then(text => text.slice(-COMPANION_STDERR_TAIL), () => '');
-      return fail('startup_failed', failure('COMPANION_START_FAILED', `The preview companion did not become ready. ${(stderrTail || logged).trim() || 'No error output.'}`.trim()));
+      const output = (stderrTail || logged).trim();
+      const diagnostic = classifyStartupFailure({ code: 'COMPANION_START_FAILED', port: COMPANION_PORT, output, ...(companion.exitCode !== null ? { reason: 'exited', exitCode: companion.exitCode } : { reason: 'timeout' }) });
+      return fail('startup_failed', { code: 'COMPANION_START_FAILED', message: `${diagnostic.title}. ${diagnostic.explanation}`, diagnostic });
     }
     log(`Preview companion ready on port ${COMPANION_PORT}.`);
   }
@@ -223,7 +299,8 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
       headers: { origin: DASHBOARD_ORIGIN },
     });
     if (started.status !== 200) {
-      return fail('startup_failed', failure('ORIGINAL_START_FAILED', `The original application did not start: ${describeOriginalError(started.body?.error, `HTTP ${started.status}`)}`));
+      const code = typeof started.body?.error === 'string' ? started.body.error : `HTTP ${started.status}`;
+      return fail('startup_failed', await originalStartFailure(root, code, started.body ?? {}, started.status));
     }
     if (started.body?.original?.available !== true) {
       return fail('startup_failed', failure('ORIGINAL_START_FAILED', `The original application did not become ready: ${String(started.body?.original?.reason ?? 'no reason reported')}`));
@@ -234,7 +311,13 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
       lease = { application: granted.application, token: granted.token };
     }
   } catch (error) {
-    return fail('startup_failed', failure('ORIGINAL_START_FAILED', `The original application did not start: ${error instanceof Error ? error.message : 'request failed'}`));
+    // The companion did not answer in time, or the connection dropped. Either way the original start is unconfirmed.
+    // A timeout means the original is still starting or never answered; an error means the companion itself was unreachable.
+    const timedOut = error instanceof Error && error.name === 'TimeoutError';
+    const diagnostic = timedOut
+      ? classifyStartupFailure({ code: 'ORIGINAL_PREVIEW_STARTUP_FAILED', reason: 'timeout' })
+      : classifyStartupFailure({ code: 'COMPANION_REQUEST_FAILED', port: COMPANION_PORT, output: error instanceof Error ? sanitizeDiagnosticText(error.message) : '' });
+    return fail('startup_failed', { code: 'ORIGINAL_START_FAILED', message: `${diagnostic.title}. ${diagnostic.explanation}`, diagnostic });
   }
 
   if (cancelled()) return cancelledResult();

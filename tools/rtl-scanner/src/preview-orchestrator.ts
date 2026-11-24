@@ -1,5 +1,6 @@
 import { lstat, readFile } from 'node:fs/promises';
 import { basename, isAbsolute, join } from 'node:path';
+import type { StartupDiagnostic } from './preview-diagnostics.js';
 
 // Milestone 1: structured preview states and the consent gate. No process is started here.
 
@@ -10,6 +11,8 @@ export type PreviewState = (typeof PREVIEW_STATES)[number];
 export interface PreviewFailure {
   readonly code: string;
   readonly message: string;
+  /** Present when a startup attempt failed and its evidence could be classified. */
+  readonly diagnostic?: StartupDiagnostic;
 }
 
 export interface PreviewStatus {
