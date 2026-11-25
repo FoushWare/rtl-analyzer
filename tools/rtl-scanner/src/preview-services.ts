@@ -21,7 +21,9 @@ const ORIGINAL_START_TIMEOUT_MS = 30_000;
 // The original start may legitimately take as long as its configured startupTimeoutMs (at most 180 s). This outer timeout
 // must exceed that, so a valid slow start is never cut off here.
 const ORIGINAL_START_HTTP_TIMEOUT_MS = 240_000;
-const MAX_MAPPING_PROBES = 25;
+// Mapping probes are read-only and cheap, so every finding is probed within a time budget, not a fixed prefix:
+// in a large report the mapped findings can sit far behind the first findings.
+const MAPPING_PROBE_BUDGET_MS = 20_000;
 const COMPANION_LOG = 'preview-companion.log';
 const COMPANION_STDERR_TAIL = 2000;
 
@@ -276,7 +278,9 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
   const params = (findingId: string) => new URLSearchParams({ findingId, inputDigest: String(report.inputDigest), policyDigest: String(report.policyDigest), mode: 'ltr' });
   let mappedFinding: string | undefined;
   let mappingError: string | undefined;
-  for (const finding of (report.findings ?? []).slice(0, MAX_MAPPING_PROBES)) {
+  const probeDeadline = Date.now() + MAPPING_PROBE_BUDGET_MS;
+  for (const finding of report.findings ?? []) {
+    if (Date.now() > probeDeadline) break;
     if (cancelled()) return cancelledResult();
     try {
       const response = await fetchJson(`${COMPANION_ORIGIN}/contextual-preview?${params(finding.id)}`);

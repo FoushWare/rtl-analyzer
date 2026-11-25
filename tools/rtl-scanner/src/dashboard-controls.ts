@@ -127,16 +127,11 @@ export const CONTROLS_SCRIPT = String.raw`(function () {
       return;
     }
     if (state === 'unsupported') {
-      setBar('Live preview unavailable');
-      title.textContent = 'Live Preview Unavailable';
-      body.textContent = 'The RTL report is available, but interactive Before/After previews cannot be started automatically.';
-      renderRecovery(null);
-      renderTechnical(null, next.failure);
-      setActions([
-        button('Continue with Report', true, function () { act('/preview/continue'); }),
-        button('Cancel', false, function () { act('/preview/cancel'); }),
-      ]);
-      openDialog();
+      // A report without a previewable route is not a failure and must not block review: the findings stay reviewable and
+      // each one shows its own unavailable state. No modal dialog.
+      setBar('Live preview unavailable for this report. Findings remain reviewable; static evidence is available.');
+      if (dialog.open) dialog.close();
+      setActions([]);
       return;
     }
     if (state === 'startup_failed') {
