@@ -146,3 +146,12 @@ Implementation HEAD and wrapper pin: `d340a9fbb598961195b18df4fb74cad529423244`.
 Final test results (same commit): scanner unit 579/579; root unit 9/9; scanner and implementation typecheck pass; implementation build passes; workflow lifecycle Node 3/3; Playwright apply-rollback 1/1, phase5 2/2, security-negative 15/15, workflow-approved-stale 1/1, workflow-failed-lifecycle 1/1, workflow-stale-lifecycle 1/1; restart reconnect 0/1 (blocked by PID 74803); runtime-reuse equivalence pass; packaged consumer smoke pass (`CONSUMER_PASSED`). The packaged smoke and all Playwright runs left no workspace in their isolated temporary directory.
 
 Remaining blockers: PIDs 74803, 94652, 94685, 80929, 80959 must be terminated before the restart test and the port gate can pass.
+
+## Second pass: release gates and PR readiness
+
+- Benchmark processes 74803, 94652, 94685, 80929, 80959: **still running** at the end of this pass. Not terminated; no permission was given. Port gate **not met**.
+- Restart reconnect test (`playwright.restart.config.ts`): **fails** on the port held by PID 74803. Its run left no workspace and started no process.
+- Wrapper overlay suite (`npm run rtl:overlay:test`): 477/477 after isolating its temporary roots (commit `d86bf75`; before this, about 280 workspaces were left in the OS temporary directory).
+- Wrapper root typecheck and Nx build: unchanged from baseline (five TS7016 errors; `implementation/libs/shared` defined twice).
+- PR ancestry: the implementation integration target `codex/companion-session-leases` (`819b733`) is an ancestor of implementation HEAD `d340a9f`; the branch is 44 commits ahead of it. Wrapper `origin/main` is an ancestor of the wrapper HEAD.
+- Platform limitation recorded: `owned-processes.ts` terminates by process group on POSIX only. On Windows it does not signal owned children, so candidate runtimes and validation commands may outlive a companion there. Protected operations are not supported on Windows, and Windows CI continues to run the typecheck, scanner tests, overlay tests and packaged smoke.
