@@ -307,6 +307,34 @@ describe('F-02 dashboard session (built dashboard)', () => {
   }, 20000);
 });
 
+describe('F-03 restart handling for a running dashboard (built companion and dashboard)', () => {
+  it('re-authorizes the page after the companion restarts with a new bootstrap secret', async () => {
+    const companionPort = await freePort();
+    const first = await startCompanion(companionPort);
+    const dashboardPort = await freePort();
+    const dir = join(workspace, 'restart-dashboard');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'rtl-report-dashboard.html'), '<!doctype html><html><head></head><body>r</body></html>\n');
+    const dashboard = new DashboardSession({ dashboardDir: dir, port: dashboardPort, start: async () => ({ state: 'ready' as const, stop: async () => 'released' as const, companion: { origin: `http://127.0.0.1:${companionPort}`, bootstrap: bootstrapOf(companionPort) } }) });
+    await dashboard.listen();
+    await dashboard.begin();
+    try {
+      expect(JSON.parse((await raw(dashboardPort, '/preview/companion-session')).text).token).toBeTruthy();
+      await stopChild(first.child);
+      const second = await startCompanion(companionPort);
+      try {
+        const reissued = JSON.parse((await raw(dashboardPort, '/preview/companion-session')).text) as { token?: string };
+        expect(reissued.token).toBeTruthy();
+        expect((await raw(companionPort, '/review/progress', { headers: { 'x-rtl-companion-session': reissued.token! } })).status).toBe(200);
+      } finally {
+        await stopChild(second.child);
+      }
+    } finally {
+      await dashboard.end();
+    }
+  }, 40000);
+});
+
 describe('overlay mirror of companion-auth stays identical to the pinned implementation', () => {
   it('matches the implementation file after the mirror header', () => {
     const mirror = readFileSync(resolve(import.meta.dirname, '../src/companion-auth.ts'), 'utf8');
