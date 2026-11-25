@@ -193,7 +193,7 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     const logFd = openSync(logPath, 'a');
     const child = spawn(process.execPath, [entry], {
       cwd: root,
-      env: { ...process.env, RTL_PROJECT_ROOT: root, RTL_PREVIEW_EXIT_WHEN_IDLE: '1' },
+      env: { ...process.env, RTL_PROJECT_ROOT: root, RTL_PREVIEW_EXIT_WHEN_IDLE: '1', RTL_PREVIEW_OWNER_PID: String(process.pid) },
       stdio: ['ignore', logFd, logFd],
       shell: false,
       detached: true,

@@ -76,6 +76,27 @@ Baseline note: the first baseline run showed two 5-second timeouts under load; o
 
 Not run here: cross-platform CI (macOS only); Windows checks; the Playwright `test:e2e:regression` suite; the 402-stylesheet browser run (single scan takes ~1.4 s, but the browser was not run at that size).
 
+## Round 2 (Phase 4, dashboard, navigation, lifecycle) — status
+
+Commits (implementation branch): `133a943` (typing fixes), `ad7d049` (runtime reuse), `9d731ad` (`RTL_PREVIEW_RUNTIME_REUSE=0` control), `13bfe5a` (owner watch). Earlier this round: `0cbcc80` (navigation during preparation, settled unmapped previews, bounded heartbeat), `9653fe4` (test temp isolation). Wrapper pins `13bfe5a`.
+
+Verified in this round:
+- Typecheck: **0 errors** (was 6). Exact cause: postcss 8.5.29 declares `AtRule_.type` as the base `string` rather than `'atrule'`, so `type === 'decl'` does not narrow the `ChildNode` union. Fixed with an explicit declaration type guard; the test error was an unchecked `PromiseSettledResult.value`. No check relaxed.
+- Scanner suite: **571/571**. Overlay suite: **477/477**. Build: clean.
+- Test isolation: each vitest run uses its own temporary root, removed afterwards; the user's temp directory is unchanged by a full run.
+- Runtime reuse, browser (one minimal run on `ad7d049`): **one runtime start (npm + Vite) for seven navigations**, every navigation ready with verified targets, warm navigations 0.84–1.91 s (previous build: median 2.10 s). Manual-review findings settle as unavailable.
+- Bridge equivalence: the page bridge built from the new state is byte-identical to the previous build's bridge for the same inputs (53-stylesheet fixture).
+
+Not verified, and why:
+- **Computed-style equivalence (reused versus fresh runtime):** the capture and the forced-restart control were prepared (`RTL_PREVIEW_RUNTIME_REUSE=0`, `CAPTURE=1`), but the process-running browser step was refused by the automated safety check in this session. Not claimed.
+- **Owner watch (`13bfe5a`):** implemented; not exercised by a process test (refused).
+- **Dashboard profiling (#41), eight rapid navigation actions with finding IDs, companion lifetime at 52 stylesheets:** not re-measured this round for the same reason.
+- **Packaged smoke and Playwright regression suite on `13bfe5a`:** not re-run this round.
+- **Apply, disposal, restart, rollback end to end:** the unit suite covers disposal, receipts and legacy rollback; a full workflow test needs valid validation evidence and is not yet written.
+- **Cross-platform CI:** not run; requires remote CI.
+
+Correction: the owner-watch code described in `0cbcc80` was not in that commit; it is in `13bfe5a`.
+
 ## Remaining risks
 
 - Warm navigation is still about 2.1 s on the minimal path (Phase 4 needed for the 1.5 s target).
