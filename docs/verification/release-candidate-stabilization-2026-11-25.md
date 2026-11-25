@@ -130,3 +130,19 @@ Escalate with `kill -KILL` only if any remains after a few seconds.
 - Restart reconnect test (blocked by blocker 1).
 - Promotion of the reuse-equivalence script into the repository (executed; not committed, since it uses absolute paths).
 - Wrapper release steps: publication, tagging and version bump are not part of this record.
+
+## Final release gates (2026-11-25, scope frozen)
+
+Implementation HEAD and wrapper pin: `d340a9fbb598961195b18df4fb74cad529423244`.
+
+| Gate | Result |
+| --- | --- |
+| Benchmark-owned processes gone (74803, 94652, 94685, 80929, 80959) | **Not met**: all five still running at the end of this run; no permission was given to terminate them |
+| Restart reconnect test, no orphaned processes or workspaces | Ran; **failed** on the port held by PID 74803 (the stop expectation). The run left no workspace and no new process |
+| Runtime-reuse equivalence (portable script, TSX and JSX) | **Pass**: `tests/e2e/runtime-reuse-equivalence.mjs`, committed in `d340a9f` |
+| Wrapper TypeScript errors and duplicate Nx project | **Unchanged**: five TS7016 errors in the tracked wrapper copies of `playwright.*.config.ts` and `tests/e2e/*`; Nx reports `implementation/libs/shared` defined in multiple locations |
+| Wrapper pins final implementation; packaged build includes the fixes | **Pass**: pin equals `d340a9f`; the packed `rtl-analyzer-0.6.1.tgz` contains `owned-processes.js`, `runtime-owner.js`, `ROLLBACK_FAILED`, `terminateOwnedGroups`, `RTL_RUNTIME_OWNER_PID`, `STALE_ORIGINAL_SOURCE` and the identity-check ordering |
+
+Final test results (same commit): scanner unit 579/579; root unit 9/9; scanner and implementation typecheck pass; implementation build passes; workflow lifecycle Node 3/3; Playwright apply-rollback 1/1, phase5 2/2, security-negative 15/15, workflow-approved-stale 1/1, workflow-failed-lifecycle 1/1, workflow-stale-lifecycle 1/1; restart reconnect 0/1 (blocked by PID 74803); runtime-reuse equivalence pass; packaged consumer smoke pass (`CONSUMER_PASSED`). The packaged smoke and all Playwright runs left no workspace in their isolated temporary directory.
+
+Remaining blockers: PIDs 74803, 94652, 94685, 80929, 80959 must be terminated before the restart test and the port gate can pass.
