@@ -155,3 +155,12 @@ Remaining blockers: PIDs 74803, 94652, 94685, 80929, 80959 must be terminated be
 - Wrapper root typecheck and Nx build: unchanged from baseline (five TS7016 errors; `implementation/libs/shared` defined twice).
 - PR ancestry: the implementation integration target `codex/companion-session-leases` (`819b733`) is an ancestor of implementation HEAD `d340a9f`; the branch is 44 commits ahead of it. Wrapper `origin/main` is an ancestor of the wrapper HEAD.
 - Platform limitation recorded: `owned-processes.ts` terminates by process group on POSIX only. On Windows it does not signal owned children, so candidate runtimes and validation commands may outlive a companion there. Protected operations are not supported on Windows, and Windows CI continues to run the typecheck, scanner tests, overlay tests and packaged smoke.
+
+## Third pass: final gates after process termination
+
+- Benchmark processes 74803, 94652, 94685, 80929, 80959: identities and ownership verified (working directories under the repository or the benchmark scratch area; parents launchd or PID 94652). Terminated with SIGTERM; all exited. SIGKILL not needed. No listener remains on 4200–4212, 4318–4320, 4399 or 4511–4512.
+- Restart reconnect test: **passed** (1 expected, 0 unexpected); no workspace left; no process left.
+- Final sequence on implementation `d340a9f` and wrapper pin `d340a9f`: scanner unit 579/579; root unit 9/9; scanner and implementation typecheck pass; implementation build pass; workflow lifecycle Node 3/3; Playwright apply-rollback 1/1, phase5 2/2, security 15/15, workflow approved-stale 1/1, failed-lifecycle 1/1, stale-lifecycle 1/1, restart 1/1; runtime-reuse equivalence pass (TSX and JSX); packaged smoke pass. Temporary directory after the sequence: empty except Node's cache.
+- Integration branch: `origin/codex/companion-session-leases` advanced to `f632178` (merge of PR #13, `fix/live-preview-stability-v0.6.1`, parents `819b733` and `b9f8ad2`). `b9f8ad2` is already an ancestor of the feature head; a trial merge of the feature head with `f632178` is conflict-free; the diff from `f632178` to the feature head is 53 files.
+- Wrapper: `origin/main` is `c875681`, an ancestor of the wrapper head; 9 commits, 10 files ahead.
+- Windows: CI keeps the Windows matrix. Known limitation (technical debt): owned-process termination is POSIX-only; on Windows, owned runtimes and validation commands may outlive the companion. Protected operations are not supported on Windows.
