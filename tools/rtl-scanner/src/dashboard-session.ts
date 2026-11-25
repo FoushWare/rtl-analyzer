@@ -6,7 +6,7 @@ import { CONTROLS_MARKUP, CONTROLS_SCRIPT } from './dashboard-controls.js';
 import type { PreviewFailure } from './preview-orchestrator.js';
 import { formatDiagnosticsForCopy } from './preview-diagnostics.js';
 import { COMPANION_PORT, DASHBOARD_FILE, DASHBOARD_PORT, type ServiceResult } from './preview-services.js';
-import { COMPANION_BOOTSTRAP_HEADER, COMPANION_SESSION_HEADER, isAllowedLoopbackHost, redactAbsolutePaths } from './companion-auth.js';
+import { COMPANION_BOOTSTRAP_HEADER, COMPANION_SESSION_HEADER, isAllowedLoopbackHost, readCompanionBootstrap, redactAbsolutePaths } from './companion-auth.js';
 
 // Owns the dashboard HTTP server for an interactive run and the preview state shown to the page. The page can
 // only drive this session: it cannot reach the companion's lease, and every action needs the per-run secret.
@@ -239,16 +239,22 @@ export class DashboardSession {
     }).catch(() => undefined)));
   }
 
-  /** Mints one companion session token for the page being served and revokes the previous page's token. */
+  /** Mints one companion session token for the page being served and revokes the previous page's token. A companion restart
+   *  replaces its bootstrap secret, so a refused mint re-reads the published secret once and retries. */
   private async mintPageToken(): Promise<string | undefined> {
     const companion = this.services?.companion;
     if (!companion || this.state !== 'ready') return undefined;
     await this.revokePageTokens();
-    const response = await fetch(`${companion.origin}/auth/session`, {
+    const mint = (bootstrap: string) => fetch(`${companion.origin}/auth/session`, {
       method: 'POST',
-      headers: { [COMPANION_BOOTSTRAP_HEADER]: companion.bootstrap },
+      headers: { [COMPANION_BOOTSTRAP_HEADER]: bootstrap },
       signal: AbortSignal.timeout(2000),
     }).catch(() => null);
+    let response = await mint(companion.bootstrap);
+    if (response?.status === 401) {
+      const fresh = readCompanionBootstrap(Number(new URL(companion.origin).port));
+      if (fresh && fresh !== companion.bootstrap) { (companion as { bootstrap: string }).bootstrap = fresh; response = await mint(fresh); }
+    }
     if (!response?.ok) return undefined;
     const issued = (await response.json().catch(() => ({}))) as { token?: unknown };
     if (typeof issued.token !== 'string') return undefined;
