@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { phase5Manifest } from './phase5-fixture.mjs';
-import { readCompanionBootstrap } from '../../dist/tools/rtl-scanner/companion-auth.js';
+import { readFileSync } from 'node:fs';
+import { tmpdir, userInfo } from 'node:os';
+import { join } from 'node:path';
+// Reads the per-run bootstrap secret from the companion's owner-only file. v0.6.2 writes no file and needs none.
+const readCompanionBootstrap = (port: number): string | undefined => { try { return JSON.parse(readFileSync(join(tmpdir(), 'rtl-analyzer-auth-' + userInfo().uid, 'companion-' + port + '.json'), 'utf8')).bootstrap; } catch { return undefined; } };
 // The page is served without a session here, so the test acts as a dashboard session: it mints a companion token with the
 // per-run bootstrap secret, exactly as the CLI does, and presents that token like the dashboard page does.
 async function sessionToken(): Promise<string> {
