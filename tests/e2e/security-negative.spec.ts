@@ -5,12 +5,13 @@ import { join } from 'node:path';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { request } from 'node:http';
 import { expect, test } from '@playwright/test';
+import { readCompanionBootstrap } from '../../dist/tools/rtl-scanner/companion-auth.js';
 
 const port = 4319;
 const sourcePath = 'apps/invoicing/src/components/InvoiceTable.tsx';
 const identity = { findingId: 'RTL.BIDI.ISOLATION:741d2ce2aec3a86cf2db37ea', sourcePath, inputDigest: '3011f559425f764e053dd89b48a060b24d79ce1d9a3eca068fb5e308fb81608a', policyDigest: 'fc82bc0137f0800c3c6818b55a14ef2ac9abaeb1b018d503834d9899183abf49', schemaVersion: 2 };
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
-const call = (path: string, body?: unknown) => new Promise<{ status: number; json: any }>((resolve, reject) => { const r = request({ host: '127.0.0.1', port, path, method: body === undefined ? 'GET' : 'POST', headers: body === undefined ? {} : { 'content-type': 'application/json', origin: 'http://127.0.0.1:4320' } }, res => { let text = ''; res.on('data', x => text += x); res.on('end', () => resolve({ status: res.statusCode ?? 0, json: JSON.parse(text || '{}') })); }); r.on('error', reject); if (body !== undefined) r.write(JSON.stringify(body)); r.end(); });
+const call = (path: string, body?: unknown) => new Promise<{ status: number; json: any }>((resolve, reject) => { const r = request({ host: '127.0.0.1', port, path, method: body === undefined ? 'GET' : 'POST', headers: { ...(path === '/health' ? {} : { 'x-rtl-companion-bootstrap': readCompanionBootstrap(port) ?? '' }), ...(body === undefined ? {} : { 'content-type': 'application/json', origin: 'http://127.0.0.1:4320' }) } }, res => { let text = ''; res.on('data', x => text += x); res.on('end', () => resolve({ status: res.statusCode ?? 0, json: JSON.parse(text || '{}') })); }); r.on('error', reject); if (body !== undefined) r.write(JSON.stringify(body)); r.end(); });
 const start = (root: string, state: string) => spawn(process.execPath, ['dist/tools/rtl-scanner/preview-companion.js'], { cwd: process.cwd(), env: { ...process.env, RTL_PREVIEW_PORT: String(port), RTL_PROJECT_ROOT: root, RTL_REVIEW_STORE_PATH: join(state, 'review-records-v1.json'), RTL_EVIDENCE_STORE_PATH: join(state, 'review-evidence-v1.json'), RTL_MANUAL_CHANGE_STORE_PATH: join(state, 'manual-changes-v1.json'), RTL_SCAN_MANIFEST_STORE_PATH: join(state, 'scan-manifests-v1.json'), RTL_AUDIT_STORE_PATH: join(state, 'apply-audit-v1.json'), RTL_APPLY_BACKUP_ROOT: join(state, 'backups') }, stdio: 'ignore' });
 const stop = async (child: ChildProcess) => { if (child.exitCode !== null) return; const done = new Promise<void>(resolve => child.once('exit', () => resolve())); child.kill('SIGTERM'); await done; };
 let portableFixtureRoot: string;
