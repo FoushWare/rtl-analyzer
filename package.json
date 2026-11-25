@@ -17,7 +17,7 @@
     "storybook": "storybook dev -p 6006",
     "rtl:scan": "node packages/rtl-analyzer/dist/cli.js",
     "rtl:scan:test": "npm --prefix implementation run rtl:scan:test",
-    "rtl:overlay:test": "tsc -p tools/rtl-scanner/tsconfig.json --noEmit && vitest run --config tools/rtl-scanner/vitest.config.ts",
+    "rtl:overlay:test": "tsc -p tools/rtl-scanner/tsconfig.json && vitest run --config tools/rtl-scanner/vitest.config.ts",
     "rtl:scan:typecheck": "npm --prefix implementation run rtl:scan:typecheck",
     "rtl:scan:build": "npm run build --prefix packages/rtl-analyzer",
     "rtl:cli:package:smoke": "node scripts/consumer-smoke.mjs",
