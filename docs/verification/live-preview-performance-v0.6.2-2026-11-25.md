@@ -1,6 +1,6 @@
 # v0.6.2 performance, scalability and resource lifecycle — verification record
 
-**2026-11-25. Local branches only; nothing pushed, merged, tagged or published.**
+**2026-11-25. Local branches only; nothing pushed, merged, tagged or published. Round 3 results: see the section at the end.**
 
 - Wrapper branch: `feat/v0.6.2-scanner-performance` (from `origin/main` `c875681`).
 - Implementation branch: `feat/v0.6.2-scanner-performance` in `implementation/` (from pinned `b9f8ad2`); head `13bfe5a` at the end of round 2, which the wrapper pins (`packages/rtl-analyzer/package.json`; earlier head `3ac1864` in round 1).
@@ -96,6 +96,67 @@ Not verified, and why:
 - **Cross-platform CI:** not run; requires remote CI.
 
 Correction: the owner-watch code described in `0cbcc80` was not in that commit; it is in `13bfe5a`.
+
+## Round 3 — final verification (head `bdeb955`, wrapper pin `bdeb955`)
+
+Commits this round (implementation): `13a7dec` (one direction browser per process; verified direction gate memo), `bdeb955` (original and candidate direction pages captured concurrently); wrapper `91c3468` (probe budget; unsupported preview is not modal).
+
+**Navigation performance, same harness and steps (next x6, prev; 5 runs each; warm = navigation with a ready After pane)**
+
+| Build | Warm median | Warm P95 | Warm max | Runtime starts per run | Prepare request median / P95 |
+| --- | --- | --- | --- | --- | --- |
+| v0.6.1 (published) | 1.78 s | 2.40 s | 2.42 s | 6 | 1.10 s / 2.02 s |
+| v0.6.2 restart control (`RTL_PREVIEW_RUNTIME_REUSE=0`) | 1.50 s | 1.90 s | 1.91 s | 11–12 | 1.12 s / 1.48 s |
+| **v0.6.2 (`bdeb955`)** | **0.84 s** | **1.12 s** | **1.18 s** | **1** | **0.61 s / 1.02 s** |
+
+Target warm navigation P95 ≤ 1.5 s: **met** (1.12 s, 20 warm navigations). Cold navigation median 2.74 s (v0.6.1) → 1.98 s. Initial readiness median 1.55 s → 1.05 s.
+
+**Runtime reuse equivalence** (computed styles, 139 elements, 11 properties; RTL and LTR; candidate page)
+- Reuse vs fresh-restart control at the same finding: **identical** in RTL and LTR.
+- A → B → A (reuse) vs fresh runtime at A: **identical** in RTL.
+- Sensitivity: in RTL the patch changes computed styles (candidate vs unpatched original: one element, `border-left-width` 4px → 0). In LTR the patch is invisible by design (physical-to-logical margin conversion keeps the computed left-to-right value), so RTL is the discriminating mode.
+- JS/TS/JSX composition: **not verified** (the lab has no supported JS or TSX patch; `src/app.js` yields only a direction-unknown diagnostic).
+
+**Rapid navigation** (eight dispatched clicks at 60 ms; finding IDs recorded after each click)
+- All eight clicks dispatched; the selection changed on each click; navigation was not blocked by preparation.
+- Final selection matched the candidate frame's finding ID in one run; the other final finding has no supported route and its pane reports unavailable with no candidate frame (no stale preview shown).
+- Runtime starts: one per run (the composition changes did not restart the server).
+
+**Dashboard (#41)**
+- Root cause of the blocking state: a startup probe read only the first 25 findings; in a 52-stylesheet report the mapped findings come later, so the global state became `unsupported`, which opened a modal that intercepted clicks. Fixed: probe within a 20 s budget; unsupported is a status line, not a modal.
+- 52-stylesheet run: readiness 1.05–4.3 s; each unsupported finding navigates in 0.1–0.2 s; no modal in any run after the fix.
+- Heartbeats: bounded to one outstanding request with a 5 s timeout. In browser runs, 2–3 heartbeats per two-minute run were aborted (`ERR_ABORTED`) while the companion answered the same request in 6–113 ms when probed. **Root cause not identified**; accumulation is bounded.
+- Not measured: main-thread profile and DOM size for medium and large reports (no profiling run completed this round).
+
+**Process and resource lifecycle**
+- Normal CLI stop: candidate present before stop (1), removed by the companion's shutdown (0), all ports free, isolated temporary root removed.
+- Interrupted CLI (SIGKILL, harness-driven): companion exited in **1.6 s** (owner watch), candidate removed, all ports free.
+- Orphan recovery: unit-tested (marker, owner liveness by start time, reference and grace checks, unmarked legacy never removed). Not exercised across a crashed companion in a process test.
+- Temporary-directory isolation: vitest runs use a per-run root; the CLI in browser runs uses a per-run `TMPDIR` outside the project copy.
+
+**Apply, dispose, restart, rollback — end to end** (`scratchpad/e2e/apply-rollback-e2e.mjs`, disposable lab copy, isolated HOME and TMPDIR)
+1. Select and prepare `RTL.CSS.PHYSICAL:b8a43565…` (candidate runtime healthy).
+2. Accept; validate → **Passed** (typecheck, build, test, scanner, runtime LTR, runtime RTL, runtime scoped direction).
+3. Apply → state Applied; source SHA-256 changed (`76a9c244…`); candidate workspace **disposed** (`workspaceDisposal.state = disposed`, path absent).
+4. Companion stopped and restarted; workflow persisted as **Applied**.
+5. Rollback → state Rolled Back; restored SHA-256 `929268f3…` equals the original: **exact restoration**. Verdict **PASS**.
+
+**Regression**
+
+| Check | Result |
+| --- | --- |
+| Implementation scanner suite | 571 / 571 |
+| Overlay suite (wrapper `tools/rtl-scanner`) | 477 / 477 |
+| Typecheck (`tsconfig.typecheck.json`) | 0 errors (was 6; cause fixed, see `133a943`) |
+| Package build | clean |
+| Packaged consumer smoke (`npm run rtl:cli:package:smoke`) | passes at `bdeb955` |
+| Playwright `apply-rollback-disposable` | 1 failed |
+| Playwright `phase5-progress` | 2 failed |
+| Playwright manual regression (security, restart, stale, failed lifecycle) | 7 failed, 13 passed |
+
+The nine Playwright failures are **identical at v0.6.1** (`b9f8ad2`, checked out and run the same way): pre-existing in this environment, not introduced in this round. They must be explained before release.
+
+**Not run:** the v0.6.1 recovery acceptance matrix (22-run harness); cross-platform CI; Windows.
 
 ## Remaining risks
 
