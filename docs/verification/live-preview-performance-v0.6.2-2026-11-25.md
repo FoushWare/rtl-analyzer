@@ -3,7 +3,7 @@
 **2026-11-25. Local branches only; nothing pushed, merged, tagged or published.**
 
 - Wrapper branch: `feat/v0.6.2-scanner-performance` (from `origin/main` `c875681`).
-- Implementation branch: `feat/v0.6.2-scanner-performance` in `implementation/` (from pinned `b9f8ad2`); head `3ac1864`, which the wrapper pins (`packages/rtl-analyzer/package.json`).
+- Implementation branch: `feat/v0.6.2-scanner-performance` in `implementation/` (from pinned `b9f8ad2`); head `13bfe5a` at the end of round 2, which the wrapper pins (`packages/rtl-analyzer/package.json`; earlier head `3ac1864` in round 1).
 - Issues: milestone `v0.6.2` (#4). New: #37 scanner scalability, #38 preview concurrency and lifetime, #39 durable rollback backups, #40 runtime reuse feasibility (Phase 4), #41 large-project dashboard stall. Moved and commented: #18 (workspace cleanup), #34 (readiness UX).
 
 ## Phase 1 — scanner scalability (verified)
