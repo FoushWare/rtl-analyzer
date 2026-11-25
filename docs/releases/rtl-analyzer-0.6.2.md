@@ -37,7 +37,7 @@ Caveat: these measurements were taken at head `bdeb955`. Commits after it change
 - Dashboard: an unmapped first finding no longer opens a blocking modal; large reports (52 stylesheets) reach readiness.
 - Lifecycle: owned process groups on POSIX; bounded companion shutdown; orphan workspace sweep at startup, which removes only marked workspaces that are no longer referenced.
 - Rollback: `ROLLBACK_FAILED` is recorded for authorized source-conflict rejections, with no source content in the journal.
-- Runtime reuse equivalence verified for TSX and JSX fixtures.
+- Runtime reuse equivalence: the portable-fixture check (`runtime-reuse-equivalence.mjs`) confirms TSX and JSX render identically with and without reuse. It passes in CI.
 
 ## Known limitations
 
@@ -48,4 +48,4 @@ Caveat: these measurements were taken at head `bdeb955`. Commits after it change
 - The root cause of a CI-only Python dashboard server stall is not established. The affected suites now use the Node harness. Tracked in [enterprise-rtl-migration-lab#18](https://github.com/FoushWare/enterprise-rtl-migration-lab/issues/18).
 - Heartbeat requests are occasionally aborted in browser runs; accumulation is bounded, and the root cause is not identified (round 3 record).
 - Large-report main-thread profiling was not measured.
-- JS and TSX composition is verified only for the runtime-reuse fixture, not for arbitrary patches.
+- The round-3 lab check did not cover JS or TSX patch composition. Composition is verified only on the portable runtime-reuse fixture, not for arbitrary patches.
