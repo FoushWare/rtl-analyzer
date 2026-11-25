@@ -1,11 +1,13 @@
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { request } from 'node:http';
 import { expect, test } from '@playwright/test';
-import { readCompanionBootstrap } from '../../dist/tools/rtl-scanner/companion-auth.js';
+// The per-run bootstrap secret is read from the companion's owner-only file (same path rule as companion-auth.ts). Builds
+// without that file (v0.6.2) have no bootstrap and need none, so the value is empty there.
+const readCompanionBootstrap = (port: number): string | undefined => { try { return JSON.parse(readFileSync(join(tmpdir(), 'rtl-analyzer-auth-' + userInfo().uid, 'companion-' + port + '.json'), 'utf8')).bootstrap; } catch { return undefined; } };
 
 const port = 4319;
 const sourcePath = 'apps/invoicing/src/components/InvoiceTable.tsx';
