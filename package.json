@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:regression": "playwright test --config=playwright.apply-rollback.config.ts tests/e2e/apply-rollback-disposable.spec.ts && playwright test --config=playwright.phase5.config.ts tests/e2e/phase5-progress.spec.ts && playwright test --config=playwright.manual-regression.config.ts tests/e2e/security-negative.spec.ts tests/e2e/restart-infrastructure.spec.ts tests/e2e/stale-lifecycle.spec.ts tests/e2e/failed-lifecycle.spec.ts",
+    "test:e2e:regression": "npm --prefix implementation run test:e2e:regression",
+    "rtl:e2e:build": "node scripts/build-e2e-dist.mjs",
+    "pretest:e2e:regression": "node scripts/build-e2e-dist.mjs && node scripts/verify-e2e-dist.mjs",
     "test:visual": "playwright test --grep visual",
     "storybook": "storybook dev -p 6006",
     "rtl:scan": "node packages/rtl-analyzer/dist/cli.js",
@@ -19,7 +21,9 @@
     "rtl:scan:typecheck": "npm --prefix implementation run rtl:scan:typecheck",
     "rtl:scan:build": "npm run build --prefix packages/rtl-analyzer",
     "rtl:cli:package:smoke": "node scripts/consumer-smoke.mjs",
-    "rtl:preview": "node packages/rtl-analyzer/dist/preview-cli.js"
+    "rtl:preview": "node packages/rtl-analyzer/dist/preview-cli.js",
+    "test:e2e:workflow-lifecycle": "npm --prefix implementation run test:e2e:workflow-lifecycle",
+    "test:e2e:lifecycle-node": "npm --prefix implementation run test:e2e:lifecycle-node"
   },
   "dependencies": {
     "@emotion/cache": "11.14.0",

@@ -53,3 +53,82 @@ jobs:
 
       - name: Package CLI smoke test
         run: npm run rtl:cli:package:smoke
+
+  e2e-overlay:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix implementation ci
+
+      - name: Build the implementation at the pinned commit (its test helpers import dist)
+        run: npm --prefix implementation run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Regression suites (provenance build and verification run first; canonical, implementation)
+        run: npm run test:e2e:regression
+
+      - name: Workflow lifecycle suites (canonical, implementation)
+        run: npm run test:e2e:workflow-lifecycle
+
+      - name: Companion lifecycle Node suite (canonical, implementation)
+        run: npm run test:e2e:lifecycle-node
+
+      - name: Companion API lifecycle (blocking; independent of the review journeys)
+        working-directory: implementation
+        run: RTL_REVIEW_SPECS=tests/e2e/api-companion-lifecycle.spec.ts node tests/e2e/run-review-workflows.mjs
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-overlay
+          path: playwright-report/
+
+  # Known v0.6.2 defects (preview startup in the One-by-One journey; batch "View diff" in the Apply First journey). They fail
+  # identically at the published v0.6.2 baseline. This job keeps the journeys visible as diagnostic coverage and is NOT a
+  # release gate: job-level continue-on-error keeps it from blocking, and no required gate depends on it.
+  review-diagnostics:
+    name: "[diagnostic, non-blocking] review journeys (known v0.6.2 defects)"
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix implementation ci
+
+      - name: Build the implementation at the pinned commit (its test helpers import dist)
+        run: npm --prefix implementation run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Review One-by-One and Apply First (diagnostic; known defects)
+        working-directory: implementation
+        run: node tests/e2e/run-review-workflows.mjs

@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import type { PreviewFailure, PreviewState } from './preview-orchestrator.js';
 import { classifyStartupFailure, sanitizeDiagnosticText, type StartupEvidence } from './preview-diagnostics.js';
 import { detectPackageManager } from './preview-dependencies.js';
+import { COMPANION_BOOTSTRAP_HEADER, projectRootDigest, readCompanionBootstrap } from './companion-auth.js';
 
 // Orchestrates the packaged preview companion. All preview runtime logic (original dev-server start, identity
 // checks, ownership and cleanup) stays in the pinned implementation; this module starts the companion as a process,
@@ -35,7 +36,7 @@ const COMPANION_STDERR_TAIL = 2000;
 export type ReleaseOutcome = 'released' | 'not-held' | 'release-failed';
 
 export type ServiceResult =
-  | { readonly state: 'ready'; readonly stop: () => Promise<ReleaseOutcome> }
+  | { readonly state: 'ready'; readonly stop: () => Promise<ReleaseOutcome>; readonly companion?: { readonly origin: string; readonly bootstrap: string } }
   | { readonly state: Exclude<PreviewState, 'ready' | 'starting'>; readonly failure: PreviewFailure; readonly stop: () => Promise<ReleaseOutcome> };
 
 /** The companion process a run spawned. Shared across retries of the same run. */
@@ -63,6 +64,8 @@ export interface ServiceDependencies {
   readonly health?: (origin: string) => Promise<Record<string, unknown> | null>;
   readonly spawnCompanion?: (root: string, entry: string, logPath: string) => ChildProcess;
   readonly fetchJson?: (url: string, init?: RequestInit) => Promise<{ status: number; body: CompanionBody }>;
+  /** Reads the companion's bootstrap secret for a port (injectable for tests). */
+  readonly readBootstrap?: (port: number) => string | undefined;
 }
 
 export interface ServiceOptions {
@@ -211,12 +214,15 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
   const logPath = join(options.logDir, COMPANION_LOG);
   // Releases only this run's lease; never signals the companion. Safe to call repeatedly, and it also releases a
   // lease that arrives after an earlier call (cancellation can overlap a start request that is still in flight).
+  // Every call to the companion carries the bootstrap secret once the companion is ready (see companion-auth.ts).
+  let bootstrap: string | undefined;
+  const companionFetch = (url: string, init?: RequestInit) => fetchJson(url, bootstrap ? { ...init, headers: { ...(init?.headers as Record<string, string> | undefined), [COMPANION_BOOTSTRAP_HEADER]: bootstrap } } : init);
   const stop = async (): Promise<ReleaseOutcome> => {
     const held = lease;
     if (!held) return 'not-held';
     lease = undefined;
     try {
-      const response = await fetchJson(`${COMPANION_ORIGIN}/contextual-preview/original/release`, {
+      const response = await companionFetch(`${COMPANION_ORIGIN}/contextual-preview/original/release`, {
         method: 'POST',
         headers: { origin: DASHBOARD_ORIGIN, 'content-type': 'application/json' },
         body: JSON.stringify({ application: held.application, lease: held.token }),
@@ -235,7 +241,7 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
   // 1. Companion: reuse only a companion that serves this exact root; otherwise the port must be free.
   const existing = await health(COMPANION_ORIGIN);
   if (existing) {
-    if (existing.service !== 'rtl-preview-companion' || existing.projectRoot !== root) {
+    if (existing.service !== 'rtl-preview-companion' || existing.projectRootDigest !== projectRootDigest(root)) {
       return fail('startup_failed', portConflict('PORT_CONFLICT_COMPANION', COMPANION_PORT, `Port ${COMPANION_PORT} is serving a different service or project. RTL Analyzer did not stop it.`));
     }
     log(`Reusing the preview companion already serving this project on port ${COMPANION_PORT}.`);
@@ -252,7 +258,7 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     let ready = false;
     while (Date.now() < deadline && !cancelled()) {
       const probe = await health(COMPANION_ORIGIN);
-      if (probe && probe.service === 'rtl-preview-companion' && probe.projectRoot === root) { ready = true; break; }
+      if (probe && probe.service === 'rtl-preview-companion' && probe.projectRootDigest === projectRootDigest(root)) { ready = true; break; }
       if (companion.exitCode !== null || companion.signalCode !== null) break;
       await Promise.race([sleep(150), exited]);
     }
@@ -267,6 +273,9 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     }
     log(`Preview companion ready on port ${COMPANION_PORT}.`);
   }
+
+  bootstrap = (deps.readBootstrap ?? readCompanionBootstrap)(COMPANION_PORT);
+  if (!bootstrap) return fail('startup_failed', failure('COMPANION_AUTH_UNAVAILABLE', 'The preview companion did not publish its authorization secret. Restart the preview.'));
 
   // 2. Find a finding that the companion maps to a configured preview route. Read-only: nothing starts yet.
   let report: { inputDigest?: string; policyDigest?: string; findings?: Array<{ id: string }> };
@@ -283,7 +292,7 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
     if (Date.now() > probeDeadline) break;
     if (cancelled()) return cancelledResult();
     try {
-      const response = await fetchJson(`${COMPANION_ORIGIN}/contextual-preview?${params(finding.id)}`);
+      const response = await companionFetch(`${COMPANION_ORIGIN}/contextual-preview?${params(finding.id)}`);
       if (response.status === 200 && response.body?.route) { mappedFinding = finding.id; break; }
       if (response.status !== 200) mappingError ??= String(response.body?.error ?? `HTTP ${response.status}`);
     } catch (error) {
@@ -298,7 +307,7 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
   // 3. Start the original application through the companion's own route (Origin = this dashboard's origin).
   if (cancelled()) return cancelledResult();
   try {
-    const started = await fetchJson(`${COMPANION_ORIGIN}/contextual-preview/original?${params(mappedFinding)}`, {
+    const started = await companionFetch(`${COMPANION_ORIGIN}/contextual-preview/original?${params(mappedFinding)}`, {
       method: 'POST',
       headers: { origin: DASHBOARD_ORIGIN },
     });
@@ -325,5 +334,5 @@ export async function startPreviewServices(options: ServiceOptions, deps: Servic
   }
 
   if (cancelled()) return cancelledResult();
-  return { state: 'ready', stop };
+  return { state: 'ready', stop, companion: { origin: COMPANION_ORIGIN, bootstrap } };
 }
