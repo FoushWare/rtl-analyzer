@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
+import { realpath } from 'node:fs/promises';
 import { request as httpRequest } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -148,7 +149,8 @@ describe('F-03 companion session authorization (built companion)', () => {
     const health = await raw(port, '/health');
     expect(health.status).toBe(200);
     const body = JSON.parse(health.text) as Record<string, unknown>;
-    expect(body.projectRootDigest).toBe(projectRootDigest(realpathSync(PROJECT)));
+    // Same canonicalization as the companion (project-root.ts uses node:fs/promises realpath).
+    expect(body.projectRootDigest).toBe(projectRootDigest(await realpath(PROJECT)));
     expect(health.text).not.toContain(workspace);
     expect(health.text).not.toMatch(/"projectRoot"|"path"/);
   });
@@ -238,10 +240,15 @@ describe('F-03 session expiry and restart (built companion)', () => {
     expect(readFileSync(path, 'utf8')).toContain('"bootstrap"');
     const first = bootstrapOf(port);
     await stopChild(child);
-    expect(() => readFileSync(path, 'utf8')).toThrow();
+    if (process.platform !== 'win32') {
+      // Graceful shutdown (SIGTERM handled by the companion) removes its bootstrap file.
+      expect(() => readFileSync(path, 'utf8')).toThrow();
+    }
     const again = await startCompanion(port);
     try {
       expect(bootstrapOf(port)).not.toBe(first);
+      // The previous run's bootstrap secret, stale on disk or not, must not mint a session.
+      expect((await raw(port, '/auth/session', { method: 'POST', headers: { 'x-rtl-companion-bootstrap': first } })).status).toBe(401);
       const oldToken = 'stale-token-from-previous-run';
       expect((await raw(port, '/review/progress', { headers: { 'x-rtl-companion-session': oldToken } })).status).toBe(401);
     } finally {
