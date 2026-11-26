@@ -39,6 +39,8 @@ export class DashboardSession {
   // only after the companion rejects it (for example after a restart), and minted once for concurrent requests.
   private pageToken?: string;
   private pageTokenMint?: Promise<string | undefined>;
+  // The companion bootstrap secret under which pageToken was issued.
+  private pageTokenBootstrap?: string;
   private attempt?: { readonly controller: AbortController; readonly done: Promise<void> };
   private readonly endedPromise: Promise<void>;
   private resolveEnded!: () => void;
@@ -252,7 +254,11 @@ export class DashboardSession {
   private async mintPageToken(rejected?: string): Promise<string | undefined> {
     const companion = this.services?.companion;
     if (!companion || this.state !== 'ready') return undefined;
-    if (this.pageToken && this.pageToken !== rejected) return this.pageToken;
+    // A companion restart publishes a new bootstrap secret. A token issued under the previous secret is dead even if the page
+    // has not been refused yet, so reuse requires the same bootstrap identity as the one that issued it.
+    const published = readCompanionBootstrap(Number(new URL(companion.origin).port));
+    if (published && published !== companion.bootstrap) (companion as { bootstrap: string }).bootstrap = published;
+    if (this.pageToken && this.pageToken !== rejected && this.pageTokenBootstrap === companion.bootstrap) return this.pageToken;
     if (!this.pageTokenMint) {
       this.pageTokenMint = this.issuePageToken(companion, this.pageToken).finally(() => { this.pageTokenMint = undefined; });
     }
@@ -280,9 +286,11 @@ export class DashboardSession {
       if (fresh && fresh !== companion.bootstrap) { (companion as { bootstrap: string }).bootstrap = fresh; response = await mint(fresh); }
     }
     if (!response?.ok) return undefined;
+    const issuedUnder = companion.bootstrap;
     const issued = (await response.json().catch(() => ({}))) as { token?: unknown };
     if (typeof issued.token !== 'string') return undefined;
     this.pageToken = issued.token;
+    this.pageTokenBootstrap = issuedUnder;
     return issued.token;
   }
 

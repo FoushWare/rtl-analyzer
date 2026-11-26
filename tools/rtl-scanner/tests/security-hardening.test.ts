@@ -395,3 +395,104 @@ describe('F-04 redaction and comparison helpers', () => {
     expect(companionBootstrapPath(65000, base)).toContain('companion-65000.json');
   });
 });
+
+describe('F-03 page token lifecycle across restart, bootstrap change, concurrency and revocation (built companion and dashboard)', () => {
+  const pageToken = async (dashboardPort: number, rejected?: string): Promise<string> => {
+    const path = '/preview/companion-session' + (rejected ? `?rejected=${encodeURIComponent(rejected)}` : '');
+    const response = await raw(dashboardPort, path);
+    expect(response.status).toBe(200);
+    return (JSON.parse(response.text) as { token: string }).token;
+  };
+  const progress = (companionPort: number, token: string) => raw(companionPort, '/review/progress', { headers: { 'x-rtl-companion-session': token } });
+
+  it('reuses the page token while the companion bootstrap is unchanged, without a new mint', async () => {
+    const companionPort = await freePort();
+    const first = await startCompanion(companionPort);
+    const dashboardPort = await freePort();
+    const dir = join(workspace, 'reuse-dashboard');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'rtl-report-dashboard.html'), '<!doctype html><html><head></head><body>r</body></html>\n');
+    const dashboard = new DashboardSession({ dashboardDir: dir, port: dashboardPort, start: async () => ({ state: 'ready' as const, stop: async () => 'released' as const, companion: { origin: `http://127.0.0.1:${companionPort}`, bootstrap: bootstrapOf(companionPort) } }) });
+    await dashboard.listen();
+    await dashboard.begin();
+    try {
+      const a = await pageToken(dashboardPort);
+      const b = await pageToken(dashboardPort);
+      expect(b).toBe(a);
+      expect((await progress(companionPort, a)).status).toBe(200);
+    } finally {
+      await stopChild(first.child);
+      await dashboard.end();
+    }
+  });
+
+  it('re-mints after a bootstrap change even when the page was never refused, and the old token stays dead', async () => {
+    const companionPort = await freePort();
+    const first = await startCompanion(companionPort);
+    const dashboardPort = await freePort();
+    const dir = join(workspace, 'changed-bootstrap-dashboard');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'rtl-report-dashboard.html'), '<!doctype html><html><head></head><body>r</body></html>\n');
+    const dashboard = new DashboardSession({ dashboardDir: dir, port: dashboardPort, start: async () => ({ state: 'ready' as const, stop: async () => 'released' as const, companion: { origin: `http://127.0.0.1:${companionPort}`, bootstrap: bootstrapOf(companionPort) } }) });
+    await dashboard.listen();
+    await dashboard.begin();
+    let second: Awaited<ReturnType<typeof startCompanion>> | undefined;
+    try {
+      const old = await pageToken(dashboardPort);
+      await stopChild(first.child);
+      second = await startCompanion(companionPort);
+      const fresh = await pageToken(dashboardPort);
+      expect(fresh).not.toBe(old);
+      expect((await progress(companionPort, fresh)).status).toBe(200);
+      expect((await progress(companionPort, old)).status).toBe(401);
+    } finally {
+      if (second) await stopChild(second.child);
+      await dashboard.end();
+    }
+  });
+
+  it('shares one mint among concurrent requests that report the same rejected token', async () => {
+    const companionPort = await freePort();
+    const first = await startCompanion(companionPort);
+    const dashboardPort = await freePort();
+    const dir = join(workspace, 'concurrent-dashboard');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'rtl-report-dashboard.html'), '<!doctype html><html><head></head><body>r</body></html>\n');
+    const dashboard = new DashboardSession({ dashboardDir: dir, port: dashboardPort, start: async () => ({ state: 'ready' as const, stop: async () => 'released' as const, companion: { origin: `http://127.0.0.1:${companionPort}`, bootstrap: bootstrapOf(companionPort) } }) });
+    await dashboard.listen();
+    await dashboard.begin();
+    let second: Awaited<ReturnType<typeof startCompanion>> | undefined;
+    try {
+      const old = await pageToken(dashboardPort);
+      await stopChild(first.child);
+      second = await startCompanion(companionPort);
+      const tokens = await Promise.all(Array.from({ length: 6 }, () => pageToken(dashboardPort, old)));
+      expect(new Set(tokens).size).toBe(1);
+      expect((await progress(companionPort, tokens[0])).status).toBe(200);
+    } finally {
+      if (second) await stopChild(second.child);
+      await dashboard.end();
+    }
+  });
+
+  it('revokes the page token when the session ends and keeps the companion protections in place', async () => {
+    const companionPort = await freePort();
+    const first = await startCompanion(companionPort);
+    const dashboardPort = await freePort();
+    const dir = join(workspace, 'revoke-dashboard');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'rtl-report-dashboard.html'), '<!doctype html><html><head></head><body>r</body></html>\n');
+    const dashboard = new DashboardSession({ dashboardDir: dir, port: dashboardPort, start: async () => ({ state: 'ready' as const, stop: async () => 'released' as const, companion: { origin: `http://127.0.0.1:${companionPort}`, bootstrap: bootstrapOf(companionPort) } }) });
+    await dashboard.listen();
+    await dashboard.begin();
+    try {
+      const token = await pageToken(dashboardPort);
+      expect((await progress(companionPort, token)).status).toBe(200);
+      await dashboard.end();
+      expect((await progress(companionPort, token)).status).toBe(401);
+      expect((await raw(companionPort, '/review/progress')).status).toBe(401);
+    } finally {
+      await stopChild(first.child);
+    }
+  });
+});
