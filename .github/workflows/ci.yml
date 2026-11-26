@@ -78,14 +78,14 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Regression suites (provenance build and verification run first)
+      - name: Regression suites (provenance build and verification run first; canonical, implementation)
         run: npm run test:e2e:regression
 
-      - name: Workflow lifecycle suites
-        run: |
-          npx playwright test --config=playwright.workflow-lifecycle.config.ts tests/e2e/workflow-approved-stale.spec.ts
-          npx playwright test --config=playwright.workflow-lifecycle.config.ts tests/e2e/workflow-failed-lifecycle.spec.ts
-          npx playwright test --config=playwright.workflow-lifecycle.config.ts tests/e2e/workflow-stale-lifecycle.spec.ts
+      - name: Workflow lifecycle suites (canonical, implementation)
+        run: npm run test:e2e:workflow-lifecycle
+
+      - name: Companion lifecycle Node suite (canonical, implementation)
+        run: npm run test:e2e:lifecycle-node
 
       - name: Review One-by-One and Apply First (served dashboard)
         working-directory: implementation
