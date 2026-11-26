@@ -52,6 +52,8 @@ async function startCompanion(port: number, env: Record<string, string> = {}): P
     env: {
       ...process.env,
       TMPDIR: TMP,
+      TMP,
+      TEMP: TMP,
       RTL_PROJECT_ROOT: PROJECT,
       RTL_PREVIEW_PORT: String(port),
       RTL_REVIEW_STORE_PATH: join(STATE, 'review-records-v1.json'),
@@ -98,6 +100,8 @@ beforeAll(() => {
   writeFileSync(join(PROJECT, 'src', 'styles.css'), '.card {\n  margin-left: 8px;\n}\n');
   writeFileSync(join(PROJECT, 'rtl-scanner.config.json'), JSON.stringify({ schemaVersion: 1, generatedStyleOwner: 'unknown', ownership: { css: 'custom-css' }, approvals: [], exceptions: [], issueBindings: [], dynamicExceptions: [], roles: [] }));
   process.env.TMPDIR = TMP;
+  process.env.TMP = TMP;
+  process.env.TEMP = TMP;
 });
 
 afterAll(() => {
@@ -339,7 +343,8 @@ describe('overlay mirror of companion-auth stays identical to the pinned impleme
   it('matches the implementation file after the mirror header', () => {
     const mirror = readFileSync(resolve(import.meta.dirname, '../src/companion-auth.ts'), 'utf8');
     const pinned = readFileSync(resolve(import.meta.dirname, '../../../implementation/tools/rtl-scanner/src/companion-auth.ts'), 'utf8');
-    expect(mirror.endsWith(pinned)).toBe(true);
+    const lf = (text: string) => text.replace(/\r\n/g, '\n');
+    expect(lf(mirror).endsWith(lf(pinned))).toBe(true);
   });
 });
 
