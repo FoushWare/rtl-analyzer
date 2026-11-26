@@ -3,6 +3,7 @@ import { mkdtemp, realpath, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { projectRootDigest } from '../src/companion-auth.js';
 import type { ChildProcess } from 'node:child_process';
 import { startPreviewServices, stopOwnedCompanionProcess, type ServiceDependencies } from '../src/preview-services.js';
 
@@ -44,11 +45,12 @@ function harness(options: HarnessOptions, root: string) {
   let running = false;
   const child = options.child ?? fakeChild();
   const deps: ServiceDependencies = {
+    readBootstrap: () => 'test-bootstrap',
     probePort: async () => true,
     health: async origin => {
       if (!origin.endsWith(':4318')) return null;
       if (options.companionHealth !== undefined) return options.companionHealth;
-      return running ? { service: 'rtl-preview-companion', projectRoot: root } : null;
+      return running ? { service: 'rtl-preview-companion', projectRootDigest: projectRootDigest(root) } : null;
     },
     spawnCompanion: (_root, entry, logPath) => { spawned.push({ entry, logPath }); running = true; return child as unknown as ChildProcess; },
     fetchJson: async (url, init) => {
@@ -74,7 +76,7 @@ function harness(options: HarnessOptions, root: string) {
 describe('preview services', () => {
   it('never reuses a service that serves a different project or is not a companion', async () => {
     const f = await fixture();
-    const other = harness({ companionHealth: { service: 'rtl-preview-companion', projectRoot: '/elsewhere' } }, f.root);
+    const other = harness({ companionHealth: { service: 'rtl-preview-companion', projectRootDigest: projectRootDigest('/elsewhere') } }, f.root);
     expect(await startPreviewServices(f, other.deps)).toMatchObject({ state: 'startup_failed', failure: { code: 'PORT_CONFLICT_COMPANION' } });
     const foreign = harness({ companionHealth: { ok: true } }, f.root);
     expect(await startPreviewServices(f, foreign.deps)).toMatchObject({ failure: { code: 'PORT_CONFLICT_COMPANION' } });
@@ -95,7 +97,7 @@ describe('preview services', () => {
 
   it('reuses a compatible companion, releases only its own lease, and never terminates the companion', async () => {
     const f = await fixture();
-    const h = harness({ companionHealth: { service: 'rtl-preview-companion', projectRoot: f.root } }, f.root);
+    const h = harness({ companionHealth: { service: 'rtl-preview-companion', projectRootDigest: projectRootDigest(f.root) } }, f.root);
     const result = await startPreviewServices(f, h.deps);
     expect(result.state).toBe('ready');
     if (result.state !== 'ready') throw new Error('expected ready');
@@ -220,7 +222,7 @@ describe('companion ownership', () => {
 
   it('does not claim a companion it reused from an earlier run', async () => {
     const f = await fixture();
-    const h = harness({ companionHealth: { service: 'rtl-preview-companion', projectRoot: f.root } }, f.root);
+    const h = harness({ companionHealth: { service: 'rtl-preview-companion', projectRootDigest: projectRootDigest(f.root) } }, f.root);
     const ownership: { companion?: unknown } = {};
     await startPreviewServices({ ...f, ownership } as never, h.deps);
     expect(ownership.companion).toBeUndefined();

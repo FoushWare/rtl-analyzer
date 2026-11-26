@@ -1,11 +1,11 @@
 import { readFile } from 'node:fs/promises';
-import { GenericApplyService, GENERIC_APPLY_CONFIRMATION } from '../../../../dist/tools/rtl-scanner/generic-apply.js';
-import { GenericRollbackService, GENERIC_ROLLBACK_CONFIRMATION } from '../../../../dist/tools/rtl-scanner/generic-rollback.js';
-import { GenericRecoveryService } from '../../../../dist/tools/rtl-scanner/generic-recovery.js';
-import { TrustedRoot } from '../../../../dist/tools/rtl-scanner/generic-trusted-root.js';
-import { acquireGenericLock } from '../../../../dist/tools/rtl-scanner/generic-lock.js';
-import { GenericMultiFileApplyService, GENERIC_MULTI_APPLY_CONFIRMATION, GenericMultiFileRollbackService, GENERIC_MULTI_ROLLBACK_CONFIRMATION } from '../../../../dist/tools/rtl-scanner/generic-multi-file-transaction.js';
-import { GenericMultiFileRecoveryService } from '../../../../dist/tools/rtl-scanner/generic-multi-file-recovery.js';
+import { GenericApplyService, GENERIC_APPLY_CONFIRMATION } from '../../../../dist/overlay-check/generic-apply.js';
+import { GenericRollbackService, GENERIC_ROLLBACK_CONFIRMATION } from '../../../../dist/overlay-check/generic-rollback.js';
+import { GenericRecoveryService } from '../../../../dist/overlay-check/generic-recovery.js';
+import { TrustedRoot } from '../../../../dist/overlay-check/generic-trusted-root.js';
+import { acquireGenericLock } from '../../../../dist/overlay-check/generic-lock.js';
+import { GenericMultiFileApplyService, GENERIC_MULTI_APPLY_CONFIRMATION, GenericMultiFileRollbackService, GENERIC_MULTI_ROLLBACK_CONFIRMATION } from '../../../../dist/overlay-check/generic-multi-file-transaction.js';
+import { GenericMultiFileRecoveryService } from '../../../../dist/overlay-check/generic-multi-file-recovery.js';
 
 const payload = JSON.parse(await readFile(process.argv[2], 'utf8'));
 const root = await TrustedRoot.create(payload.projectRoot, payload.storageRoot);

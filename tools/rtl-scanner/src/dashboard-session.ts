@@ -5,7 +5,8 @@ import type { AddressInfo } from 'node:net';
 import { CONTROLS_MARKUP, CONTROLS_SCRIPT } from './dashboard-controls.js';
 import type { PreviewFailure } from './preview-orchestrator.js';
 import { formatDiagnosticsForCopy } from './preview-diagnostics.js';
-import { DASHBOARD_FILE, DASHBOARD_PORT, type ServiceResult } from './preview-services.js';
+import { COMPANION_PORT, DASHBOARD_FILE, DASHBOARD_PORT, type ServiceResult } from './preview-services.js';
+import { COMPANION_BOOTSTRAP_HEADER, COMPANION_SESSION_HEADER, isAllowedLoopbackHost, readCompanionBootstrap, redactAbsolutePaths } from './companion-auth.js';
 
 // Owns the dashboard HTTP server for an interactive run and the preview state shown to the page. The page can
 // only drive this session: it cannot reach the companion's lease, and every action needs the per-run secret.
@@ -33,7 +34,13 @@ export class DashboardSession {
   private readonly secret = randomUUID();
   private state: SessionState = 'static';
   private failure?: PreviewFailure;
-  private services?: { readonly stop: () => Promise<'released' | 'not-held' | 'release-failed'> };
+  private services?: { readonly stop: () => Promise<'released' | 'not-held' | 'release-failed'>; readonly companion?: { readonly origin: string; readonly bootstrap: string } };
+  // The companion session token this dashboard hands to its page. It is reused while the companion accepts it, replaced
+  // only after the companion rejects it (for example after a restart), and minted once for concurrent requests.
+  private pageToken?: string;
+  private pageTokenMint?: Promise<string | undefined>;
+  // The companion bootstrap secret under which pageToken was issued.
+  private pageTokenBootstrap?: string;
   private attempt?: { readonly controller: AbortController; readonly done: Promise<void> };
   private readonly endedPromise: Promise<void>;
   private resolveEnded!: () => void;
@@ -116,6 +123,7 @@ export class DashboardSession {
   async end(): Promise<void> {
     if (this.ended) return this.endedPromise;
     this.ended = true;
+    await this.revokePageTokens();
     await this.cancelWork(true);
     this.state = 'ended';
     await new Promise<void>(resolve => (this.server ? this.server.close(() => resolve()) : resolve()));
@@ -153,7 +161,7 @@ export class DashboardSession {
         // Sanitized plain text for Copy Diagnostics. Only a classified startup failure has anything to copy.
         const diagnostic = this.failure?.diagnostic;
         if (!diagnostic) return { status: 409, body: { error: 'DIAGNOSTICS_NOT_AVAILABLE' } };
-        return { status: 200, body: { text: formatDiagnosticsForCopy(diagnostic) } };
+        return { status: 200, body: { text: redactAbsolutePaths(formatDiagnosticsForCopy(diagnostic)) } };
       }
       case '/preview/continue':
         if (this.state === 'startup_failed' || this.state === 'unsupported') {
@@ -173,16 +181,36 @@ export class DashboardSession {
 
   private async handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const path = (request.url ?? '/').split('?')[0];
+    // DNS-rebinding defense: only the exact loopback host names for this server's port reach any handler.
+    if (!isAllowedLoopbackHost(request.headers.host, this.port)) {
+      response.writeHead(403, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+      response.end(JSON.stringify({ error: 'HOST_NOT_ALLOWED' }));
+      return;
+    }
     const send = (status: number, body: unknown, type = 'application/json') => {
       response.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
       response.end(typeof body === 'string' ? body : JSON.stringify(body));
     };
     if (request.method === 'GET' && path === `/${DASHBOARD_FILE}`) {
+      // The report and its session secret are served only to top-level navigations and same-origin fetches, never cross-site.
+      const site = request.headers['sec-fetch-site'];
+      if (site !== undefined && site !== 'none' && site !== 'same-origin') { send(403, { error: 'CROSS_SITE_REQUEST_REJECTED' }); return; }
       try {
         send(200, await this.pageHtml(), 'text/html; charset=utf-8');
       } catch {
         send(404, { error: 'NOT_FOUND' });
       }
+      return;
+    }
+    if (request.method === 'GET' && path === '/preview/companion-session') {
+      // Same-origin page requests only: cross-site navigations and fetches are refused, as for the report itself.
+      const site = request.headers['sec-fetch-site'];
+      if (site !== undefined && site !== 'none' && site !== 'same-origin') { send(403, { error: 'CROSS_SITE_REQUEST_REJECTED' }); return; }
+      // `rejected` names a token the page just got 401 for. Only that token is replaced; a newer live token is returned as is.
+      const rejected = new URL(request.url ?? '/', 'http://127.0.0.1').searchParams.get('rejected') ?? undefined;
+      const token = await this.mintPageToken(rejected);
+      if (!token) { const starting = this.state === 'starting'; send(starting ? 202 : 409, { error: starting ? 'COMPANION_STARTING' : 'COMPANION_NOT_READY', state: this.state }); return; }
+      send(200, { token });
       return;
     }
     if (request.method === 'GET' && path === '/preview/status') {
@@ -203,14 +231,114 @@ export class DashboardSession {
     send(404, { error: 'NOT_FOUND' });
   }
 
+
+  /** Revokes the page's companion token (session termination). Safe to call when none is held. */
+  private async revokePageTokens(): Promise<void> {
+    const companion = this.services?.companion;
+    const token = this.pageToken;
+    this.pageToken = undefined;
+    if (!companion || !token) return;
+    await fetch(`${companion.origin}/auth/revoke`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', [COMPANION_BOOTSTRAP_HEADER]: companion.bootstrap },
+      body: JSON.stringify({ token }),
+      signal: AbortSignal.timeout(2000),
+    }).catch(() => undefined);
+  }
+
+  /**
+   * Returns the page's companion token. A live token is returned without minting. A `rejected` token (the companion refused
+   * it) is replaced once: concurrent callers share one in-flight mint, so no request revokes a token another request holds.
+   * A companion restart replaces its bootstrap secret, so a refused mint re-reads the published secret once and retries.
+   */
+  private async mintPageToken(rejected?: string): Promise<string | undefined> {
+    const companion = this.services?.companion;
+    if (!companion || this.state !== 'ready') return undefined;
+    // A companion restart publishes a new bootstrap secret. A token issued under the previous secret is dead even if the page
+    // has not been refused yet, so reuse requires the same bootstrap identity as the one that issued it.
+    const published = readCompanionBootstrap(Number(new URL(companion.origin).port));
+    if (published && published !== companion.bootstrap) (companion as { bootstrap: string }).bootstrap = published;
+    if (this.pageToken && this.pageToken !== rejected && this.pageTokenBootstrap === companion.bootstrap) return this.pageToken;
+    if (!this.pageTokenMint) {
+      this.pageTokenMint = this.issuePageToken(companion, this.pageToken).finally(() => { this.pageTokenMint = undefined; });
+    }
+    return this.pageTokenMint;
+  }
+
+  private async issuePageToken(companion: { readonly origin: string; readonly bootstrap: string }, previous: string | undefined): Promise<string | undefined> {
+    if (previous) {
+      this.pageToken = undefined;
+      await fetch(`${companion.origin}/auth/revoke`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [COMPANION_BOOTSTRAP_HEADER]: companion.bootstrap },
+        body: JSON.stringify({ token: previous }),
+        signal: AbortSignal.timeout(2000),
+      }).catch(() => undefined);
+    }
+    const mint = (bootstrap: string) => fetch(`${companion.origin}/auth/session`, {
+      method: 'POST',
+      headers: { [COMPANION_BOOTSTRAP_HEADER]: bootstrap },
+      signal: AbortSignal.timeout(2000),
+    }).catch(() => null);
+    let response = await mint(companion.bootstrap);
+    if (response?.status === 401) {
+      const fresh = readCompanionBootstrap(Number(new URL(companion.origin).port));
+      if (fresh && fresh !== companion.bootstrap) { (companion as { bootstrap: string }).bootstrap = fresh; response = await mint(fresh); }
+    }
+    if (!response?.ok) return undefined;
+    const issuedUnder = companion.bootstrap;
+    const issued = (await response.json().catch(() => ({}))) as { token?: unknown };
+    if (typeof issued.token !== 'string') return undefined;
+    this.pageToken = issued.token;
+    this.pageTokenBootstrap = issuedUnder;
+    return issued.token;
+  }
+
   private async pageHtml(): Promise<string> {
     const html = await readFile(`${this.options.dashboardDir}/${DASHBOARD_FILE}`, 'utf8');
+    const companion = this.services?.companion;
     // JSON with < escaped, so no status text can close the script element.
-    const config = JSON.stringify({ secret: this.secret, ...this.status() }).replace(/</g, '\\u003c');
-    const script = `<script>window.__RTL_PREVIEW_SESSION__=${config};</script>\n<script>${CONTROLS_SCRIPT}</script>`;
+    const config = JSON.stringify({ secret: this.secret, ...this.status(), companionOrigin: `http://127.0.0.1:${COMPANION_PORT}` }).replace(/</g, '\\u003c');
+    // Runs before the page script. Requests to the companion origin get a session header; the token is fetched from this
+    // dashboard (same origin, Host-checked) on first use, so a page loaded while the preview is still starting still works.
+    // A 401 from the companion means the token expired or was revoked: the guard fetches a fresh one and retries once.
+    const guard = `(function(){
+ var c=window.__RTL_PREVIEW_SESSION__||{};var o=c.companionOrigin;if(!o||!window.fetch)return;
+ var H='x-rtl-companion-session';var tok=null;var f=window.fetch.bind(window);
+ // Fetches the page's token. rejected names the token the companion refused, so the dashboard replaces only that one.
+ function attempt(n,rejected){
+  var url='/preview/companion-session'+(rejected?'?rejected='+encodeURIComponent(rejected):'');
+  return f(url,{cache:'no-store',credentials:'same-origin'}).then(function(r){
+   if(r.status===202&&n<240)return new Promise(function(res){setTimeout(res,250);}).then(function(){return attempt(n+1,rejected);});
+   return r.ok?r.json().then(function(b){tok=(b&&b.token)||null;return tok;}):null;
+  }).catch(function(){return null;});
+ }
+ function token(){return tok?Promise.resolve(tok):attempt(0);}
+ function withToken(input,init,t){var h=new Headers((init&&init.headers)||(typeof input!=='string'&&input.headers)||undefined);h.set(H,t);return Object.assign({},init||{},{headers:h});}
+ function method(input,init){return String((init&&init.method)||(typeof input!=='string'&&input.method)||'GET').toUpperCase();}
+ window.fetch=function(input,init){
+  var u=typeof input==='string'?input:(input&&input.url)||'';
+  if(u!==o&&u.indexOf(o+'/')!==0)return f(input,init);
+  var safe=method(input,init)==='GET'||method(input,init)==='HEAD';
+  return token().then(function(t){
+   if(!t)return f(input,init);
+   return f(input,withToken(input,init,t)).then(function(res){
+    if(res.status!==401)return res;
+    tok=null;
+    // Only idempotent reads are retried after recovery. A write refused for authorization is reported, never replayed.
+    if(!safe)return res;
+    return attempt(0,t).then(function(t2){return t2?f(input,withToken(input,init,t2)):res;});
+   });
+  });
+ };
+})();`;
+    const head = `<script>window.__RTL_PREVIEW_SESSION__=${config};${guard}</script>`;
+const script = `<script>window.__RTL_PREVIEW_SESSION__=${config};</script>\n<script>${CONTROLS_SCRIPT}</script>`;
     // The status bar is placed in normal page flow at the top of the body, not as a fixed overlay, so it never covers
     // Approve, Validate, Apply or navigation controls at the bottom or right edge of the review.
-    const withBar = /<body\b[^>]*>/i.test(html) ? html.replace(/<body\b[^>]*>/i, match => `${match}\n${CONTROLS_MARKUP}`) : `${CONTROLS_MARKUP}\n${html}`;
+    const withHead = /<head\b[^>]*>/i.test(html) ? html.replace(/<head\b[^>]*>/i, match => `${match}\n${head}`) : `${head}\n${html}`;
+    const withBar = /<body\b[^>]*>/i.test(withHead) ? withHead.replace(/<body\b[^>]*>/i, match => `${match}\n${CONTROLS_MARKUP}`) : `${CONTROLS_MARKUP}\n${withHead}`;
     return withBar.includes('</body>') ? withBar.replace('</body>', () => `${script}\n</body>`) : `${withBar}\n${script}`;
   }
+
 }

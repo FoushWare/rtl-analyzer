@@ -53,3 +53,54 @@ jobs:
 
       - name: Package CLI smoke test
         run: npm run rtl:cli:package:smoke
+
+  # Overlay-owned E2E: suites that need the provenance-verified wrapper runtime (DashboardSession, the review dashboard,
+  # the companion-authorized preview) or the wrapper-only harnesses. Ownership and coverage: implementation/docs/ci-test-ownership.md
+  e2e-overlay:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix implementation ci
+
+      - name: Build the implementation at the pinned commit (its test helpers import dist)
+        run: npm --prefix implementation run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Regression suites (provenance build and verification run first; canonical, implementation)
+        run: npm run test:e2e:regression
+
+      - name: Workflow lifecycle suites (canonical, implementation)
+        run: npm run test:e2e:workflow-lifecycle
+
+      - name: Companion lifecycle Node suite (canonical, implementation)
+        run: npm run test:e2e:lifecycle-node
+
+      - name: Review One-by-One and Apply First (served dashboard)
+        working-directory: implementation
+        run: node tests/e2e/run-review-workflows.mjs
+
+      - name: Companion API lifecycle (served dashboard)
+        working-directory: implementation
+        run: RTL_REVIEW_SPECS=tests/e2e/api-companion-lifecycle.spec.ts node tests/e2e/run-review-workflows.mjs
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-overlay
+          path: playwright-report/
