@@ -75,6 +75,9 @@ jobs:
           npm ci
           npm --prefix implementation ci
 
+      - name: Build the implementation at the pinned commit (its test helpers import dist)
+        run: npm --prefix implementation run build
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
